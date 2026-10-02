@@ -1155,27 +1155,29 @@ function openEmpForm(id) {
             </select>
           </div>
         </div>
+
         <h4 class="font-bold text-slate-700 mt-6 mb-3">Identification</h4>
-<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-  <div><label class="text-sm font-medium">National ID No.</label><input id="f_nid" class="input" value="${emp.national_id || ''}"></div>
-  <div><label class="text-sm font-medium">ID Expiry</label><input id="f_nid_exp" type="date" class="input" value="${emp.national_id_expiry || ''}"></div>
-  <div><label class="text-sm font-medium">ID Status</label>
-    <select id="f_nid_status" class="input">
-      <option value="valid" ${emp.national_id_status==='valid'?'selected':''}>Valid</option>
-      <option value="expired" ${emp.national_id_status==='expired'?'selected':''}>Expired</option>
-    </select>
-  </div>
-  <div><label class="text-sm font-medium">Driving License No.</label><input id="f_dl_no" class="input" value="${emp.driving_license_no || ''}" placeholder="DL-123456"></div>
-  <div><label class="text-sm font-medium">License Expiry</label><input id="f_dl_exp" type="date" class="input" value="${emp.driving_license_expiry || ''}"></div>
-  <div><label class="text-sm font-medium">License Status</label>
-    <select id="f_dl_status" class="input">
-      <option value="none" ${emp.driving_license_status==='none'?'selected':''}>None</option>
-      <option value="valid" ${emp.driving_license_status==='valid'?'selected':''}>Valid</option>
-      <option value="expired" ${emp.driving_license_status==='expired'?'selected':''}>Expired</option>
-      <option value="pending" ${emp.driving_license_status==='pending'?'selected':''}>Pending</option>
-    </select>
-  </div>
-</div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div><label class="text-sm font-medium">National ID No.</label><input id="f_nid" class="input" value="${emp.national_id || ''}"></div>
+          <div><label class="text-sm font-medium">ID Expiry</label><input id="f_nid_exp" type="date" class="input" value="${emp.national_id_expiry || ''}"></div>
+          <div><label class="text-sm font-medium">ID Status</label>
+            <select id="f_nid_status" class="input">
+              <option value="valid" ${emp.national_id_status==='valid'?'selected':''}>Valid</option>
+              <option value="expired" ${emp.national_id_status==='expired'?'selected':''}>Expired</option>
+            </select>
+          </div>
+          <div><label class="text-sm font-medium">Driving License No.</label><input id="f_dl_no" class="input" value="${emp.driving_license_no || ''}" placeholder="DL-123456"></div>
+          <div><label class="text-sm font-medium">License Expiry</label><input id="f_dl_exp" type="date" class="input" value="${emp.driving_license_expiry || ''}"></div>
+          <div><label class="text-sm font-medium">License Status</label>
+            <select id="f_dl_status" class="input">
+              <option value="none" ${emp.driving_license_status==='none'?'selected':''}>None</option>
+              <option value="valid" ${emp.driving_license_status==='valid'?'selected':''}>Valid</option>
+              <option value="expired" ${emp.driving_license_status==='expired'?'selected':''}>Expired</option>
+              <option value="pending" ${emp.driving_license_status==='pending'?'selected':''}>Pending</option>
+            </select>
+          </div>
+        </div>
+      </div>
 
       <div id="tab-contact" class="tab-content hidden">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
