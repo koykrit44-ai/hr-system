@@ -1935,19 +1935,83 @@ function openOrgModal(type) {
   openModal();
 }
 
-function saveOrg(type) {
-  const code = document.getElementById('org_code').value.trim();
-  const name = document.getElementById('org_name').value.trim();
-  if (!code || !name) return toast('❌ សូមបំពេញ', 'error');
 
-  if (type === 'company') DB.companies.push({ id: DB.nextId.company++, code, name, status: 'active' });
-  else if (type === 'branch') DB.branches.push({ id: DB.nextId.branch++, company_id: 1, code, name, status: 'active' });
-  else if (type === 'department') DB.departments.push({ id: DB.nextId.dept++, company_id: 1, branch_id: 1, code, name, manager_id: null, status: 'active' });
-  else if (type === 'division') DB.divisions.push({ id: DB.nextId.div++, code, name });
-  else if (type === 'team') DB.teams.push({ id: DB.nextId.team++, code, name });
-  else if (type === 'position') DB.positions.push({ id: DB.nextId.pos++, code, title: name, department_id: null, grade_id: 3, level: 3 });
+function openGradeModal() {
+  document.getElementById('modalContainer').classList.add('modal-md');
+  document.getElementById('modalContainer').classList.remove('modal-xl', 'modal-lg');
+  document.getElementById('modalTitle').textContent = '➕ បន្ថែម Job Grade';
+  document.getElementById('modalBody').innerHTML = `
+    <div class="grid grid-cols-2 gap-4">
+      <div><label class="text-sm font-medium">Code</label><input id="g_code" class="input" placeholder="G7"></div>
+      <div><label class="text-sm font-medium">Name</label><input id="g_name" class="input" placeholder="Executive"></div>
+      <div><label class="text-sm font-medium">Level</label><input id="g_level" type="number" class="input" value="7"></div>
+      <div><label class="text-sm font-medium">Min Salary ($)</label><input id="g_min" type="number" class="input" value="0"></div>
+      <div><label class="text-sm font-medium">Max Salary ($)</label><input id="g_max" type="number" class="input" value="0"></div>
+    </div>
+    <div class="flex justify-end gap-2 mt-6 pt-4 border-t">
+      <button onclick="closeModal()" class="btn btn-secondary">Cancel</button>
+      <button onclick="saveNewGrade()" class="btn btn-primary">💾 Save</button>
+    </div>
+  `;
+  openModal();
+}
 
-  saveDB(); closeModal(); renderOrganization(); toast('✅ Added');
+function saveNewGrade() {
+  const code = document.getElementById('g_code').value.trim();
+  const name = document.getElementById('g_name').value.trim();
+  const level = +document.getElementById('g_level').value || 1;
+  const min_salary = +document.getElementById('g_min').value || 0;
+  const max_salary = +document.getElementById('g_max').value || 0;
+  if (!code || !name) return toast('❌ សូមបំពេញ Code និង Name', 'error');
+  
+  DB.jobGrades.push({ id: DB.nextId.grade++, code, name, level, min_salary, max_salary });
+  logAudit(currentUser.id, 'CREATE_GRADE', 'organization', null, 'Created ' + name);
+  saveDB(); closeModal(); renderPositions(); toast('✅ Added');
+}
+
+function editGrade(id) {
+  const g = DB.jobGrades.find(x => x.id === id);
+  if (!g) return;
+  document.getElementById('modalContainer').classList.add('modal-md');
+  document.getElementById('modalContainer').classList.remove('modal-xl', 'modal-lg');
+  document.getElementById('modalTitle').textContent = '✏️ កែ Job Grade';
+  document.getElementById('modalBody').innerHTML = `
+    <div class="grid grid-cols-2 gap-4">
+      <div><label class="text-sm font-medium">Code</label><input id="g_code" class="input" value="${escapeHtml(g.code)}"></div>
+      <div><label class="text-sm font-medium">Name</label><input id="g_name" class="input" value="${escapeHtml(g.name)}"></div>
+      <div><label class="text-sm font-medium">Level</label><input id="g_level" type="number" class="input" value="${g.level}"></div>
+      <div><label class="text-sm font-medium">Min Salary ($)</label><input id="g_min" type="number" class="input" value="${g.min_salary}"></div>
+      <div><label class="text-sm font-medium">Max Salary ($)</label><input id="g_max" type="number" class="input" value="${g.max_salary}"></div>
+    </div>
+    <div class="flex justify-end gap-2 mt-6 pt-4 border-t">
+      <button onclick="closeModal()" class="btn btn-secondary">Cancel</button>
+      <button onclick="saveEditGrade(${id})" class="btn btn-primary">💾 Save</button>
+    </div>
+  `;
+  openModal();
+}
+
+function saveEditGrade(id) {
+  const g = DB.jobGrades.find(x => x.id === id);
+  if (!g) return;
+  g.code = document.getElementById('g_code').value.trim();
+  g.name = document.getElementById('g_name').value.trim();
+  g.level = +document.getElementById('g_level').value || 1;
+  g.min_salary = +document.getElementById('g_min').value || 0;
+  g.max_salary = +document.getElementById('g_max').value || 0;
+  
+  logAudit(currentUser.id, 'UPDATE_GRADE', 'organization', id, 'Updated ' + g.name);
+  saveDB(); closeModal(); renderPositions(); toast('✅ Updated');
+}
+
+function deleteGrade(id) {
+  const g = DB.jobGrades.find(x => x.id === id);
+  if (!g) return;
+  if (!confirm('លុប Grade "' + g.name + '"?')) return;
+  DB.jobGrades = DB.jobGrades.filter(x => x.id !== id);
+  logAudit(currentUser.id, 'DELETE_GRADE', 'organization', id, 'Deleted ' + g.name);
+  saveDB(); renderPositions(); toast('🗑️ Deleted');
+}
 }
 
 // =====================================================
@@ -1981,8 +2045,11 @@ function renderPositions() {
           </tbody>
         </table>
       </div>
-      <div class="card">
-        <h3 class="font-bold mb-3">📊 Job Grades</h3>
+            <div class="card">
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="font-bold">📊 Job Grades</h3>
+          <button onclick="openGradeModal()" class="btn btn-primary btn-sm">+ បន្ថែម</button>
+        </div>
         <div class="space-y-2">
           ${DB.jobGrades.map(g => `
             <div class="flex items-center justify-between p-3 border rounded-lg">
@@ -1990,8 +2057,10 @@ function renderPositions() {
                 <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-lg flex items-center justify-center font-bold">${escapeHtml(g.code)}</div>
                 <div><div class="font-medium">${escapeHtml(g.name)}</div><div class="text-xs text-slate-500">Level ${g.level}</div></div>
               </div>
-              <div class="text-right">
+              <div class="text-right flex items-center gap-2">
                 <div class="font-bold text-green-600">$${g.min_salary} - $${g.max_salary}</div>
+                <button onclick="editGrade(${g.id})" class="text-amber-600 hover:bg-amber-50 px-2 py-1 rounded text-xs">✏️</button>
+                <button onclick="deleteGrade(${g.id})" class="text-red-600 hover:bg-red-50 px-2 py-1 rounded text-xs">🗑️</button>
               </div>
             </div>
           `).join('')}
