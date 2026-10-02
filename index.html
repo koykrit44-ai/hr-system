@@ -2012,7 +2012,7 @@ function deleteGrade(id) {
   logAudit(currentUser.id, 'DELETE_GRADE', 'organization', id, 'Deleted ' + g.name);
   saveDB(); renderPositions(); toast('🗑️ Deleted');
 }
-}
+
 
 // =====================================================
 // POSITIONS
