@@ -1916,24 +1916,21 @@ function exportOrgPDF(type) {
   doc.save('Departments.pdf');
   toast('📕 Downloaded');
 }
+function saveOrg(type) {
+  const code = document.getElementById('org_code').value.trim();
+  const name = document.getElementById('org_name').value.trim();
+  if (!code || !name) return toast('❌ សូមបំពេញ', 'error');
 
-function openOrgModal(type) {
-  document.getElementById('modalContainer').classList.add('modal-md');
-  document.getElementById('modalContainer').classList.remove('modal-xl', 'modal-lg');
-  document.getElementById('modalTitle').textContent = `➕ បន្ថែម ${type}`;
+  if (type === 'company') DB.companies.push({ id: DB.nextId.company++, code, name, status: 'active' });
+  else if (type === 'branch') DB.branches.push({ id: DB.nextId.branch++, company_id: 1, code, name, status: 'active' });
+  else if (type === 'department') DB.departments.push({ id: DB.nextId.dept++, company_id: 1, branch_id: 1, code, name, manager_id: null, status: 'active' });
+  else if (type === 'division') DB.divisions.push({ id: DB.nextId.div++, code, name });
+  else if (type === 'team') DB.teams.push({ id: DB.nextId.team++, code, name });
+  else if (type === 'position') DB.positions.push({ id: DB.nextId.pos++, code, title: name, department_id: null, grade_id: 3, level: 3 });
 
-  document.getElementById('modalBody').innerHTML = `
-    <div class="grid grid-cols-2 gap-4">
-      <div><label class="text-sm font-medium">Code</label><input id="org_code" class="input"></div>
-      <div><label class="text-sm font-medium">Name</label><input id="org_name" class="input"></div>
-    </div>
-    <div class="flex justify-end gap-2 mt-6 pt-4 border-t">
-      <button onclick="closeModal()" class="btn btn-secondary">Cancel</button>
-      <button onclick="saveOrg('${type}')" class="btn btn-primary">Save</button>
-    </div>
-  `;
-  openModal();
+  saveDB(); closeModal(); renderOrganization(); toast('✅ Added');
 }
+
 
 
 function openGradeModal() {
@@ -1967,6 +1964,49 @@ function saveNewGrade() {
   DB.jobGrades.push({ id: DB.nextId.grade++, code, name, level, min_salary, max_salary });
   logAudit(currentUser.id, 'CREATE_GRADE', 'organization', null, 'Created ' + name);
   saveDB(); closeModal(); renderPositions(); toast('✅ Added');
+}
+ function editGrade(id) {
+  const g = DB.jobGrades.find(x => x.id === id);
+  if (!g) return;
+  document.getElementById('modalContainer').classList.add('modal-md');
+  document.getElementById('modalContainer').classList.remove('modal-xl', 'modal-lg');
+  document.getElementById('modalTitle').textContent = '✏️ កែ Job Grade';
+  document.getElementById('modalBody').innerHTML = `
+    <div class="grid grid-cols-2 gap-4">
+      <div><label class="text-sm font-medium">Code</label><input id="g_code" class="input" value="${escapeHtml(g.code)}"></div>
+      <div><label class="text-sm font-medium">Name</label><input id="g_name" class="input" value="${escapeHtml(g.name)}"></div>
+      <div><label class="text-sm font-medium">Level</label><input id="g_level" type="number" class="input" value="${g.level}"></div>
+      <div><label class="text-sm font-medium">Min Salary ($)</label><input id="g_min" type="number" class="input" value="${g.min_salary}"></div>
+      <div><label class="text-sm font-medium">Max Salary ($)</label><input id="g_max" type="number" class="input" value="${g.max_salary}"></div>
+    </div>
+    <div class="flex justify-end gap-2 mt-6 pt-4 border-t">
+      <button onclick="closeModal()" class="btn btn-secondary">Cancel</button>
+      <button onclick="saveEditGrade(${id})" class="btn btn-primary">💾 Save</button>
+    </div>
+  `;
+  openModal();
+}
+
+function saveEditGrade(id) {
+  const g = DB.jobGrades.find(x => x.id === id);
+  if (!g) return;
+  g.code = document.getElementById('g_code').value.trim();
+  g.name = document.getElementById('g_name').value.trim();
+  g.level = +document.getElementById('g_level').value || 1;
+  g.min_salary = +document.getElementById('g_min').value || 0;
+  g.max_salary = +document.getElementById('g_max').value || 0;
+  
+  logAudit(currentUser.id, 'UPDATE_GRADE', 'organization', id, 'Updated ' + g.name);
+  saveDB(); closeModal(); renderPositions(); toast('✅ Updated');
+}
+
+function deleteGrade(id) {
+  const g = DB.jobGrades.find(x => x.id === id);
+  if (!g) return;
+  if (!confirm('លុប Grade "' + g.name + '"?')) return;
+  DB.jobGrades = DB.jobGrades.filter(x => x.id !== id);
+  logAudit(currentUser.id, 'DELETE_GRADE', 'organization', id, 'Deleted ' + g.name);
+  saveDB(); renderPositions(); toast('🗑️ Deleted');
 }
 
 function editGrade(id) {
