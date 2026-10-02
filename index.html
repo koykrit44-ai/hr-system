@@ -1,0 +1,3136 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HR & Admin System v5.1</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js"></script>
+<style>
+  * { font-family: 'Khmer OS', 'Noto Sans Khmer', 'Segoe UI', system-ui, sans-serif; }
+  body { background: #f1f5f9; }
+  .sidebar-link.active { background: linear-gradient(90deg, #1e40af, #2563eb); color: white; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
+  .modal { animation: fadeIn 0.2s; }
+  @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
+  .badge { display:inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+  .badge-green { background: #dcfce7; color: #166534; }
+  .badge-yellow { background: #fef3c7; color: #92400e; }
+  .badge-red { background: #fee2e2; color: #991b1b; }
+  .badge-blue { background: #dbeafe; color: #1e40af; }
+  .badge-gray { background: #f1f5f9; color: #475569; }
+  .badge-purple { background: #ede9fe; color: #5b21b6; }
+  .btn { padding: 10px 18px; border-radius: 8px; font-weight: 500; transition: all 0.2s; cursor: pointer; border: none; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; justify-content: center; }
+  .btn-primary { background: #2563eb; color: white; }
+  .btn-primary:hover { background: #1d4ed8; transform: translateY(-1px); }
+  .btn-secondary { background: #e2e8f0; color: #334155; }
+  .btn-secondary:hover { background: #cbd5e1; }
+  .btn-danger { background: #dc2626; color: white; }
+  .btn-danger:hover { background: #b91c1c; }
+  .btn-success { background: #16a34a; color: white; }
+  .btn-success:hover { background: #15803d; }
+  .btn-warning { background: #ea580c; color: white; }
+  .btn-warning:hover { background: #c2410c; }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .input { width: 100%; padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px; transition: all 0.2s; background: white; }
+  .input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+  .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; }
+  .card-click { cursor: pointer; transition: all 0.2s; }
+  .card-click:hover { box-shadow: 0 8px 20px rgba(0,0,0,0.1); transform: translateY(-2px); border-color: #3b82f6; }
+  .toast { position: fixed; bottom: 24px; right: 24px; padding: 14px 20px; border-radius: 10px; color: white; font-weight: 500; z-index: 100; animation: slideIn 0.3s; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+  @keyframes slideIn { from { transform: translateX(400px); } to { transform: translateX(0); } }
+  .tab-btn { padding: 12px 20px; border-bottom: 3px solid transparent; font-weight: 500; color: #64748b; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+  .tab-btn.active { color: #2563eb; border-bottom-color: #2563eb; }
+  .tab-btn:hover { color: #2563eb; background: #f8fafc; }
+  .org-node { background: white; border: 2px solid #3b82f6; border-radius: 12px; padding: 16px; min-width: 180px; text-align: center; box-shadow: 0 4px 12px rgba(59,130,246,0.15); }
+  .section-title { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; padding: 12px 16px 6px; }
+  .login-bg { background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #7c3aed 100%); }
+  .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+  input[type="password"] { letter-spacing: 0.15em; }
+  .file-drop { border: 2px dashed #cbd5e1; border-radius: 12px; padding: 30px; text-align: center; transition: all 0.3s; cursor: pointer; }
+  .file-drop:hover, .file-drop.dragover { border-color: #3b82f6; background: #eff6ff; }
+  .info-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
+  .info-row:last-child { border-bottom: none; }
+  .info-label { color: #64748b; font-size: 13px; }
+  .info-value { color: #1e293b; font-weight: 500; font-size: 13px; text-align: right; }
+  .skill-chip { display: inline-block; padding: 4px 10px; border-radius: 6px; background: #eff6ff; color: #1e40af; font-size: 12px; font-weight: 500; margin: 2px; }
+  .avatar-circle { background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; border-radius: 50%; }
+  .logo-upload { width: 120px; height: 120px; border: 3px dashed #cbd5e1; border-radius: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s; overflow: hidden; }
+  .logo-upload:hover { border-color: #3b82f6; background: #eff6ff; }
+  .modal-xl { max-width: 1200px !important; }
+  .modal-lg { max-width: 900px !important; }
+  .modal-md { max-width: 700px !important; }
+  .pagination { display: flex; gap: 4px; align-items: center; }
+  .pagination button { padding: 6px 12px; border: 1px solid #cbd5e1; background: white; border-radius: 6px; cursor: pointer; font-size: 13px; }
+  .pagination button.active { background: #2563eb; color: white; border-color: #2563eb; }
+  .pagination button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .static-chart { pointer-events: none; }
+  
+  /* ============ NOTIFICATION BADGES (NEW) ============ */
+  .nav-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    background: #ef4444;
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 10px;
+    margin-left: auto;
+    animation: pulse-badge 2s infinite;
+  }
+  .nav-badge.yellow { background: #f59e0b; }
+  .nav-badge.blue { background: #3b82f6; animation: none; }
+  .nav-badge.green { background: #10b981; animation: none; }
+  .nav-badge.gray { background: #94a3b8; animation: none; }
+  .nav-badge.hidden { display: none; }
+  
+  @keyframes pulse-badge {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+    50% { transform: scale(1.08); box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+  }
+  
+  .kpi-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    min-width: 24px;
+    height: 24px;
+    background: #ef4444;
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 8px;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+    animation: pulse-badge 2s infinite;
+  }
+  
+  /* ============ SESSION WARNING (NEW) ============ */
+  .session-warning {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+    padding: 14px 24px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 500;
+    animation: slideDown 0.3s ease-out;
+  }
+  @keyframes slideDown { from { transform: translate(-50%, -100px); } to { transform: translate(-50%, 0); } }
+  .session-warning.hidden { display: none; }
+</style>
+</head>
+<body>
+  <!-- ============ SESSION WARNING ============ -->
+<div id="sessionWarning" class="session-warning hidden">
+  <span>⚠️</span>
+  <span>Session នឹងផុតកំណត់ក្នុង <b id="sessionCountdown">60</b> វិនាទី</span>
+  <button onclick="extendSession()" class="bg-white text-amber-700 px-3 py-1 rounded font-medium text-sm">បន្ត</button>
+</div>
+
+<!-- ============ LOGIN ============ -->
+<div id="loginScreen" class="min-h-screen login-bg flex items-center justify-center p-4">
+  <div class="glass p-8 rounded-2xl shadow-2xl w-full max-w-md modal">
+    <div class="text-center mb-6">
+      <div id="loginLogo" class="w-20 h-20 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl mx-auto flex items-center justify-center mb-3 shadow-lg overflow-hidden">
+        <span class="text-white text-2xl font-bold">HR</span>
+      </div>
+      <h1 class="text-2xl font-bold text-slate-800">HR & Admin System</h1>
+      <p class="text-slate-500 text-sm mt-1">v5.1 Enhanced Edition</p>
+    </div>
+    <div id="loginError" class="hidden bg-red-100 border border-red-300 text-red-700 p-3 rounded-lg mb-4 text-sm"></div>
+    <form onsubmit="doLogin(event)" autocomplete="off">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">👤 ឈ្មោះអ្នកប្រើ</label>
+          <input id="loginUser" type="text" class="input" placeholder="បញ្ចូលឈ្មោះ..." autocomplete="off" required autofocus>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">🔒 លេខសម្ងាត់</label>
+          <input id="loginPass" type="password" class="input" placeholder="បញ្ចូលលេខសម្ងាត់..." autocomplete="new-password" required>
+        </div>
+        <div class="text-xs text-slate-500 bg-blue-50 border border-blue-200 p-3 rounded-lg">
+          <p class="font-semibold text-blue-700 mb-1">🔑 Demo Accounts:</p>
+          <p>• <b>krit</b> / <b>admin123</b> — Super Admin</p>
+          <p>• <b>hr</b> / <b>hr123</b> — HR Manager</p>
+          <p>• <b>staff</b> / <b>staff123</b> — Staff</p>
+        </div>
+        <button type="submit" class="btn btn-primary w-full" style="padding: 14px; font-size: 15px;">🔐 ចូលប្រើប្រាស់</button>
+      </div>
+    </form>
+    <div class="text-center mt-4 text-xs text-slate-400">
+      <p>🔒 bcrypt · Session 30 min · Auto-save</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="appScreen" class="hidden min-h-screen flex">
+  <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col fixed h-full z-20 shadow-2xl">
+    <div class="p-5 border-b border-slate-700 flex items-center gap-3">
+      <div id="sidebarLogo" class="w-11 h-11 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg flex items-center justify-center font-bold text-white overflow-hidden">
+        <span class="text-sm">HR</span>
+      </div>
+      <div><div class="font-bold text-white text-sm">HR & Admin</div><div class="text-xs text-slate-500">v5.1</div></div>
+    </div>
+    <nav class="flex-1 p-3 space-y-0.5 overflow-y-auto" id="sidebarNav">
+      <div class="section-title">MAIN</div>
+      <a href="#" onclick="showPage('dashboard');return false;" data-page="dashboard" class="sidebar-link flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition text-sm">
+        <span>📊</span><span>Dashboard</span>
+        <span class="nav-badge hidden" id="badge-dashboard">0</span>
+      </a>
+      
+      <div class="section-title">HR MANAGEMENT</div>
+      <a href="#" onclick="showPage('employees');return false;" data-page="employees" class="sidebar-link flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition text-sm">
+        <span>👥</span><span>Employee Master</span>
+        <span class="nav-badge blue hidden" id="badge-employees">0</span>
+      </a>
+      <a href="#" onclick="showPage('orgchart');return false;" data-page="orgchart" class="sidebar-link flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition text-sm"><span>🌳</span><span>Organization Chart</span></a>
+      <a href="#" onclick="showPage('organization');return false;" data-page="organization" class="sidebar-link flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition text-sm">
+        <span>🏢</span><span>Organization</span>
+        <span class="nav-badge blue hidden" id="badge-organization">0</span>
+      </a>
+      <a href="#" onclick="showPage('positions');return false;" data-page="positions" class="sidebar-link flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition text-sm"><span>💼</span><span>Positions & Grades</span></a>
+      
+      <div class="section-title">OPERATIONS</div>
+      <a href="#" onclick="showPage('attendance');return false;" data-page="attendance" class="sidebar-link flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition text-sm">
+        <span>⏰</span><span>វត្តមាន</span>
+        <span class="nav-badge yellow hidden" id="badge-attendance">0</span>
+      </a>
+      <a href="#" onclick="showPage('leave');return false;" data-page="leave" class="sidebar-link flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition text-sm">
+        <span>🏖️</span><span>សុំច្បាប់</span>
+        <span class="nav-badge hidden" id="badge-leave">0</span>
+      </a>
+      <a href="#" onclick="showPage('payroll');return false;" data-page="payroll" class="sidebar-link flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition text-sm">
+        <span>💰</span><span>ប្រាក់ខែ</span>
+        <span class="nav-badge yellow hidden" id="badge-payroll">0</span>
+      </a>
+      
+      <div class="section-title">ADMINISTRATION</div>
+      <a href="#" onclick="showPage('documents');return false;" data-page="documents" class="sidebar-link flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition text-sm">
+        <span>📁</span><span>ឯកសារ</span>
+        <span class="nav-badge blue hidden" id="badge-documents">0</span>
+      </a>
+      <a href="#" onclick="showPage('assets');return false;" data-page="assets" class="sidebar-link flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition text-sm">
+        <span>💼</span><span>សម្ភារៈ</span>
+        <span class="nav-badge blue hidden" id="badge-assets">0</span>
+      </a>
+      <a href="#" onclick="showPage('contracts');return false;" data-page="contracts" class="sidebar-link flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition text-sm">
+        <span>📝</span><span>កិច្ចសន្យា</span>
+        <span class="nav-badge yellow hidden" id="badge-contracts">0</span>
+      </a>
+      
+      <div class="section-title">LOGISTICS</div>
+      <a href="#" onclick="showPage('inventory');return false;" data-page="inventory" class="sidebar-link flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition text-sm">
+        <span>📦</span><span>Inventory</span>
+        <span class="nav-badge hidden" id="badge-inventory">0</span>
+      </a>
+      <a href="#" onclick="showPage('suppliers');return false;" data-page="suppliers" class="sidebar-link flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition text-sm">
+        <span>🏭</span><span>អ្នកផ្គត់ផ្គង់</span>
+        <span class="nav-badge blue hidden" id="badge-suppliers">0</span>
+      </a>
+      <a href="#" onclick="showPage('purchase');return false;" data-page="purchase" class="sidebar-link flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition text-sm">
+        <span>🛒</span><span>Purchase Orders</span>
+        <span class="nav-badge hidden" id="badge-purchase">0</span>
+      </a>
+      
+      <div class="section-title">SYSTEM</div>
+      <a href="#" onclick="showPage('reports');return false;" data-page="reports" class="sidebar-link flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition text-sm"><span>📈</span><span>របាយការណ៍</span></a>
+      <a href="#" onclick="showPage('audit');return false;" data-page="audit" class="sidebar-link flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition text-sm">
+        <span>🔒</span><span>Audit Log</span>
+        <span class="nav-badge gray hidden" id="badge-audit">0</span>
+      </a>
+      <a href="#" onclick="showPage('settings');return false;" data-page="settings" class="sidebar-link flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition text-sm"><span>⚙️</span><span>ការកំណត់</span></a>
+    </nav>
+    <div class="p-3 border-t border-slate-700">
+      <div class="flex items-center gap-3 p-2 rounded-lg bg-slate-800">
+        <div class="w-9 h-9 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold" id="userAvatar">K</div>
+        <div class="flex-1 min-w-0">
+          <div class="text-white text-sm font-medium truncate" id="userName">Krit</div>
+          <div class="text-xs text-slate-400 truncate" id="userRole">Super Admin</div>
+        </div>
+        <div class="w-2 h-2 rounded-full bg-green-400" title="Online"></div>
+      </div>
+      <button onclick="doLogout()" class="w-full mt-2 text-sm text-slate-400 hover:text-red-400 p-2 rounded transition">🚪 ចាកចេញ</button>
+    </div>
+  </aside>
+
+  <main class="flex-1 ml-64">
+    <header class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10 shadow-sm">
+      <div>
+        <h1 id="pageTitle" class="text-xl font-bold text-slate-800">Dashboard</h1>
+        <p id="pageSubtitle" class="text-xs text-slate-500 mt-0.5"></p>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="hidden md:block text-right">
+          <div class="text-xs text-slate-500">ថ្ងៃនេះ</div>
+          <div class="text-sm font-medium text-slate-700" id="currentDate"></div>
+        </div>
+        <div class="relative">
+          <button onclick="showNotifications()" class="w-10 h-10 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center relative transition" title="Notifications">
+            🔔
+            <span id="notifBadge" class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center hidden">0</span>
+          </button>
+        </div>
+      </div>
+    </header>
+    <div id="pageContent" class="p-6"></div>
+  </main>
+</div>
+
+<!-- MODAL -->
+<div id="modal" class="hidden fixed inset-0 bg-black/60 z-50 items-center justify-center p-4" onclick="if(event.target===this)closeModal()">
+  <div class="bg-white rounded-2xl w-full max-h-[92vh] overflow-y-auto modal shadow-2xl" id="modalContainer" style="max-width: 900px;">
+    <div class="flex items-center justify-between p-5 border-b sticky top-0 bg-white z-10">
+      <h3 id="modalTitle" class="font-bold text-lg text-slate-800"></h3>
+      <button onclick="closeModal()" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 text-2xl">&times;</button>
+    </div>
+    <div id="modalBody" class="p-6"></div>
+  </div>
+</div>
+<script>
+// =====================================================
+// CONSTANTS
+// =====================================================
+const SESSION_TIMEOUT = 30 * 60 * 1000;
+const SESSION_WARNING = 60 * 1000;
+const ACTIVITY_KEY = 'hr_v5_activity';
+const STORAGE_KEY = 'hr_complete_v5';
+const SESSION_KEY = 'hr_session_v5';
+let sessionTimer = null;
+let warningTimer = null;
+let countdownInterval = null;
+
+// =====================================================
+// DATABASE
+// =====================================================
+const DB = {
+  settings: { companyLogo: null, companyName: 'HR Company Ltd.', companyNameEn: 'HR Company Limited' },
+  users: [], companies: [], branches: [], departments: [], divisions: [], teams: [],
+  positions: [], jobGrades: [], employees: [], attendance: [], leaves: [], leaveTypes: [], payrolls: [],
+  documents: [], assets: [], contracts: [], inventory: [], suppliers: [], purchaseOrders: [], auditLogs: [],
+  insurances: [],
+  nextId: { company: 1, branch: 1, dept: 1, div: 1, team: 1, pos: 1, grade: 1, emp: 1, att: 1, leave: 1, leaveType: 6, pay: 1, doc: 1, asset: 1, contract: 1, inv: 1, sup: 1, po: 1, audit: 1, ins: 1 }
+};
+let currentUser = null;
+let charts = {};
+
+// =====================================================
+// SECURITY - Password Hashing
+// =====================================================
+function hashPassword(password) {
+  try { 
+    if (typeof bcrypt !== 'undefined') return bcrypt.hashSync(password, 10); 
+  } catch(e) {}
+  let hash = 0;
+  for (let i = 0; i < password.length; i++) {
+    hash = ((hash << 5) - hash) + password.charCodeAt(i);
+    hash = hash & hash;
+  }
+  return 'simple$' + Math.abs(hash).toString(36) + '$' + password.length;
+}
+
+function verifyPassword(password, hash) {
+  if (!hash) return false;
+  try { 
+    if (hash.startsWith('simple$')) return hashPassword(password) === hash;
+    if (typeof bcrypt !== 'undefined') return bcrypt.compareSync(password, hash);
+  } catch(e) {}
+  return false;
+}
+
+// =====================================================
+// SECURITY - XSS Prevention
+// =====================================================
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+// =====================================================
+// PERFORMANCE - Debounce
+// =====================================================
+function debounce(fn, wait = 250) {
+  let timeout;
+  return function(...args) {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => fn.apply(this, args), wait);
+  };
+}
+
+// =====================================================
+// INIT DATABASE
+// =====================================================
+function initDB() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) {
+    try { 
+      Object.assign(DB, JSON.parse(saved)); 
+      applyCompanyLogo(); 
+      return; 
+    } catch(e) {}
+  }
+
+  DB.users = [
+    { id: 1, username: 'krit', password: hashPassword('admin123'), name: 'Krit', role: 'super_admin', email: 'krit@company.com' },
+    { id: 2, username: 'hr', password: hashPassword('hr123'), name: 'Sok Dara', role: 'hr_manager', email: 'hr@company.com' },
+    { id: 3, username: 'staff', password: hashPassword('staff123'), name: 'Chan Vuthy', role: 'staff', email: 'staff@company.com' }
+  ];
+
+  DB.companies = [{
+    id: DB.nextId.company++, code: 'HRC', name: 'HR Company Ltd.', nameEn: 'HR Company Limited',
+    tax_id: 'K001-901234567', reg_no: 'Co.1234-2020', phone: '+855 23 999 888',
+    email: 'info@hrcompany.com', website: 'www.hrcompany.com',
+    address: '#123, Street 456, Phnom Penh', established: '2015-01-15', status: 'active'
+  }];
+
+  DB.branches = [
+    { id: DB.nextId.branch++, company_id: 1, code: 'HQ', name: 'Head Office - Phnom Penh', address: 'Phnom Penh', phone: '+855 23 999 888', manager_id: 1, status: 'active' },
+    { id: DB.nextId.branch++, company_id: 1, code: 'SR', name: 'Siem Reap Branch', address: 'Siem Reap', phone: '+855 63 999 888', manager_id: null, status: 'active' }
+  ];
+
+  DB.departments = [
+    { id: DB.nextId.dept++, company_id: 1, branch_id: 1, code: 'HR', name: 'Human Resources', manager_id: 2, cost_center: 'CC-HR-001', status: 'active' },
+    { id: DB.nextId.dept++, company_id: 1, branch_id: 1, code: 'IT', name: 'Information Technology', manager_id: null, cost_center: 'CC-IT-001', status: 'active' },
+    { id: DB.nextId.dept++, company_id: 1, branch_id: 1, code: 'FIN', name: 'Finance & Accounting', manager_id: null, cost_center: 'CC-FIN-001', status: 'active' },
+    { id: DB.nextId.dept++, company_id: 1, branch_id: 1, code: 'ADM', name: 'Administration', manager_id: null, cost_center: 'CC-ADM-001', status: 'active' },
+    { id: DB.nextId.dept++, company_id: 1, branch_id: 1, code: 'LOG', name: 'Logistics', manager_id: null, cost_center: 'CC-LOG-001', status: 'active' }
+  ];
+
+  DB.divisions = [
+    { id: DB.nextId.div++, department_id: 1, code: 'HR-REC', name: 'Recruitment' },
+    { id: DB.nextId.div++, department_id: 2, code: 'IT-DEV', name: 'Development' }
+  ];
+
+  DB.teams = [
+    { id: DB.nextId.team++, division_id: 1, code: 'TEAM-REC1', name: 'Recruitment Team A' }
+  ];
+
+  DB.jobGrades = [
+    { id: DB.nextId.grade++, code: 'G1', name: 'Entry Level', level: 1, min_salary: 250, max_salary: 500 },
+    { id: DB.nextId.grade++, code: 'G2', name: 'Junior', level: 2, min_salary: 400, max_salary: 800 },
+    { id: DB.nextId.grade++, code: 'G3', name: 'Mid-Level', level: 3, min_salary: 700, max_salary: 1500 },
+    { id: DB.nextId.grade++, code: 'G4', name: 'Senior', level: 4, min_salary: 1200, max_salary: 2500 },
+    { id: DB.nextId.grade++, code: 'G5', name: 'Manager', level: 5, min_salary: 2000, max_salary: 4000 },
+    { id: DB.nextId.grade++, code: 'G6', name: 'Director', level: 6, min_salary: 3500, max_salary: 8000 }
+  ];
+
+  DB.positions = [
+    { id: DB.nextId.pos++, code: 'CEO', title: 'Chief Executive Officer', department_id: null, grade_id: 6, level: 6 },
+    { id: DB.nextId.pos++, code: 'HRM', title: 'HR Manager', department_id: 1, grade_id: 5, level: 5 },
+    { id: DB.nextId.pos++, code: 'DEV', title: 'Software Developer', department_id: 2, grade_id: 4, level: 4 },
+    { id: DB.nextId.pos++, code: 'ACC', title: 'Accountant', department_id: 3, grade_id: 3, level: 3 },
+    { id: DB.nextId.pos++, code: 'ADMM', title: 'Admin Manager', department_id: 4, grade_id: 5, level: 5 },
+    { id: DB.nextId.pos++, code: 'LOGSP', title: 'Logistics Officer', department_id: 5, grade_id: 3, level: 3 }
+  ];
+
+  const sampleEmps = [
+    { fn: 'Krit', ln: 'Admin', gender: 'M', nid: '010111111', phone: '012 111 111', email: 'krit@company.com', dept: null, pos: 1, grade: 6, salary: 5000, hire: '2015-01-15', manager: null, empId: 'HR-001' },
+    { fn: 'Sok', ln: 'Dara', gender: 'M', nid: '010234567', phone: '012 345 678', email: 'sok.dara@company.com', dept: 1, pos: 2, grade: 5, salary: 1800, hire: '2020-01-15', manager: 1, empId: 'HR-002' },
+    { fn: 'Chan', ln: 'Vuthy', gender: 'M', nid: '010345678', phone: '011 234 567', email: 'chan.vuthy@company.com', dept: 2, pos: 3, grade: 4, salary: 1200, hire: '2022-03-01', manager: 1, empId: 'IT-001' },
+    { fn: 'Kim', ln: 'Sreyneang', gender: 'F', nid: '010456789', phone: '010 456 789', email: 'kim.sreyneang@company.com', dept: 3, pos: 4, grade: 3, salary: 950, hire: '2023-06-10', manager: 2, empId: 'FIN-001' },
+    { fn: 'Ly', ln: 'Sophea', gender: 'F', nid: '010567890', phone: '017 567 890', email: 'ly.sophea@company.com', dept: 4, pos: 5, grade: 5, salary: 1400, hire: '2021-08-05', manager: 1, empId: 'ADM-001' }
+  ];
+
+  sampleEmps.forEach((e) => {
+    const id = DB.nextId.emp++;
+    DB.employees.push({
+      id, code: 'EMP' + String(id).padStart(4, '0'),
+      employee_id: e.empId,
+      first_name: e.fn, last_name: e.ln, full_name: e.fn + ' ' + e.ln,
+      gender: e.gender, date_of_birth: '1990-01-01',
+      national_id: e.nid, national_id_expiry: '2030-01-01',
+      phone: e.phone, phone2: '', email: e.email, personal_email: e.email,
+      current_address: 'Phnom Penh', permanent_address: 'Phnom Penh',
+      marital_status: 'single', children_son: 0, children_daughter: 0,
+      emergency_name: 'Family', emergency_relationship: 'Spouse', emergency_phone: e.phone,
+      department_id: e.dept, position_id: e.pos, grade_id: e.grade,
+      branch_id: 1, manager_id: e.manager,
+      hire_date: e.hire, employment_type: 'full_time', status: 'active',
+      base_salary: e.salary, salary_currency: 'USD',
+      bank_account: '', bank_name: '',
+      education: [], skills: ['Communication'], employment_history: [],
+      documents: [], photo: null, insurances: [],
+      created_at: new Date().toISOString()
+    });
+  });
+
+  const today = new Date();
+  DB.employees.forEach(emp => {
+    for (let d = 13; d >= 0; d--) {
+      const date = new Date(today); date.setDate(date.getDate() - d);
+      if (date.getDay() === 0 || date.getDay() === 6) continue;
+      const r = Math.random();
+      const late = r < 0.15 ? Math.floor(Math.random() * 30) + 5 : 0;
+      const status = r < 0.05 ? 'absent' : (late > 0 ? 'late' : 'present');
+      DB.attendance.push({
+        id: DB.nextId.att++, employee_id: emp.id,
+        work_date: date.toISOString().split('T')[0],
+        check_in: status !== 'absent' ? `08:${String(late > 0 ? 30 + late : Math.floor(Math.random() * 20)).padStart(2, '0')}` : null,
+        check_out: status !== 'absent' ? `17:${String(Math.floor(Math.random() * 30)).padStart(2, '0')}` : null,
+        status, late_minutes: late, overtime_minutes: 0
+      });
+    }
+  });
+
+  DB.leaveTypes = [
+    { id: 1, code: 'AL', name: 'Annual Leave', max_days: 18, is_paid: true },
+    { id: 2, code: 'SL', name: 'Sick Leave', max_days: 7, is_paid: true },
+    { id: 3, code: 'ML', name: 'Maternity Leave', max_days: 90, is_paid: true },
+    { id: 4, code: 'PL', name: 'Paternity Leave', max_days: 10, is_paid: true },
+    { id: 5, code: 'UL', name: 'Unpaid Leave', max_days: 999, is_paid: false }
+  ];
+
+  DB.leaves = [
+    { id: DB.nextId.leave++, code: 'LV0001', employee_id: 3, leave_type_id: 1, start_date: '2025-01-20', end_date: '2025-01-22', total_days: 3, reason: 'Family', status: 'pending', created_at: '2025-01-15' }
+  ];
+
+  DB.insurances = [
+    { id: DB.nextId.ins++, code: 'NSSF', name: 'ប.ស.ស (NSSF)', rate_employee: 4, rate_employer: 4, base_max: 300000, currency: 'KHR', active: true },
+    { id: DB.nextId.ins++, code: 'HEALTH', name: 'ធានារ៉ាប់រងសុខភាព', rate_employee: 1.5, rate_employer: 1.5, base_max: 999999999, currency: 'USD', active: true },
+    { id: DB.nextId.ins++, code: 'LIFE', name: 'ធានារ៉ាប់រងអាយុជីវិត', rate_employee: 0.5, rate_employer: 1, base_max: 999999999, currency: 'USD', active: true }
+  ];
+
+  DB.documents = [];
+  DB.assets = [];
+  DB.contracts = [];
+  DB.inventory = [
+    { id: DB.nextId.inv++, code: 'INV001', name: 'A4 Paper', category: 'Stationery', unit: 'Ream', quantity: 145, min_stock: 50, unit_price: 5.5, location: 'WH-A', supplier_id: null },
+    { id: DB.nextId.inv++, code: 'INV002', name: 'Toner HP 26A', category: 'Printer', unit: 'Piece', quantity: 8, min_stock: 10, unit_price: 85, location: 'WH-B', supplier_id: null }
+  ];
+  DB.suppliers = [];
+  DB.purchaseOrders = [];
+
+  saveDB();
+  logAudit(1, 'SYSTEM_INIT', 'system', null, 'Database initialized v5.1');
+}
+
+function saveDB() { 
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(DB));
+    if (currentUser) setTimeout(updateBadges, 100);
+  } catch(e) {
+    console.error('Save error', e);
+  }
+}
+
+// =====================================================
+// COMPANY LOGO
+// =====================================================
+function applyCompanyLogo() {
+  const logo = DB.settings.companyLogo;
+  const loginLogo = document.getElementById('loginLogo');
+  const sidebarLogo = document.getElementById('sidebarLogo');
+  if (logo) {
+    if (loginLogo) loginLogo.innerHTML = `<img src="${logo}" class="w-full h-full object-cover">`;
+    if (sidebarLogo) sidebarLogo.innerHTML = `<img src="${logo}" class="w-full h-full object-cover">`;
+  }
+}
+
+function uploadCompanyLogo(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) return toast('❌ រូបភាពធំពេក (max 2MB)', 'error');
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    DB.settings.companyLogo = e.target.result;
+    saveDB();
+    applyCompanyLogo();
+    toast('✅ Logo uploaded');
+    renderSettings();
+  };
+  reader.readAsDataURL(file);
+}
+
+// =====================================================
+// NOTIFICATION BADGES
+// =====================================================
+function updateBadges() {
+  const badges = {
+    'badge-dashboard': getDashboardBadgeCount(),
+    'badge-employees': DB.employees.length,
+    'badge-organization': DB.branches.length + DB.departments.length,
+    'badge-attendance': getTodayAbsentCount(),
+    'badge-leave': DB.leaves.filter(l => l.status === 'pending').length,
+    'badge-payroll': getPendingPayrollCount(),
+    'badge-documents': DB.documents.length,
+    'badge-assets': DB.assets.length,
+    'badge-contracts': DB.contracts.filter(c => c.status === 'active').length,
+    'badge-inventory': DB.inventory.filter(i => i.quantity <= i.min_stock).length,
+    'badge-suppliers': DB.suppliers.length,
+    'badge-purchase': DB.purchaseOrders.filter(p => p.status === 'pending').length,
+    'badge-audit': Math.min(DB.auditLogs.length, 99)
+  };
+
+  Object.entries(badges).forEach(([id, count]) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (count > 0) {
+      el.textContent = count > 99 ? '99+' : count;
+      el.classList.remove('hidden');
+    } else {
+      el.classList.add('hidden');
+    }
+  });
+
+  const urgentCount = 
+    DB.leaves.filter(l => l.status === 'pending').length +
+    DB.purchaseOrders.filter(p => p.status === 'pending').length +
+    DB.inventory.filter(i => i.quantity <= i.min_stock).length +
+    getPendingPayrollCount();
+
+  const notifBadge = document.getElementById('notifBadge');
+  if (notifBadge) {
+    if (urgentCount > 0) {
+      notifBadge.textContent = urgentCount > 99 ? '99+' : urgentCount;
+      notifBadge.classList.remove('hidden');
+    } else {
+      notifBadge.classList.add('hidden');
+    }
+  }
+}
+
+function getDashboardBadgeCount() {
+  return DB.leaves.filter(l => l.status === 'pending').length +
+         DB.purchaseOrders.filter(p => p.status === 'pending').length +
+         DB.inventory.filter(i => i.quantity <= i.min_stock).length;
+}
+
+function getTodayAbsentCount() {
+  const today = new Date().toISOString().split('T')[0];
+  return DB.attendance.filter(a => a.work_date === today && a.status === 'absent').length;
+}
+
+function getPendingPayrollCount() {
+  const now = new Date();
+  return DB.payrolls.filter(p => p.period_month === now.getMonth()+1 && p.period_year === now.getFullYear() && p.status === 'draft').length;
+}
+
+// =====================================================
+// NOTIFICATION PANEL
+// =====================================================
+function showNotifications() {
+  const items = [];
+  
+  DB.leaves.filter(l => l.status === 'pending').forEach(l => {
+    items.push({
+      icon: '🏖️', title: 'សុំច្បាប់រង់ចាំ',
+      desc: `${getEmpName(l.employee_id)} - ${l.total_days} ថ្ងៃ`,
+      action: () => { closeModal(); showPage('leave'); },
+      time: l.created_at, urgent: true
+    });
+  });
+  
+  DB.inventory.filter(i => i.quantity <= i.min_stock).forEach(i => {
+    items.push({
+      icon: '⚠️', title: 'ស្តុកតិច',
+      desc: `${i.name} - នៅសល់ ${i.quantity} (min: ${i.min_stock})`,
+      action: () => { closeModal(); showPage('inventory'); },
+      urgent: true
+    });
+  });
+  
+  DB.purchaseOrders.filter(p => p.status === 'pending').forEach(p => {
+    items.push({
+      icon: '🛒', title: 'PO រង់ចាំ',
+      desc: `${p.code} - ${getSupName(p.supplier_id)} - $${p.total}`,
+      action: () => { closeModal(); showPage('purchase'); },
+      time: p.created_at, urgent: true
+    });
+  });
+  
+  const now = new Date();
+  const pendingPayrolls = DB.payrolls.filter(p => p.period_month === now.getMonth()+1 && p.period_year === now.getFullYear() && p.status === 'draft');
+  if (pendingPayrolls.length > 0) {
+    items.push({
+      icon: '💰', title: 'ប្រាក់ខែរង់ចាំអនុម័ត',
+      desc: `${pendingPayrolls.length} នាក់ - ខែ ${now.getMonth()+1}/${now.getFullYear()}`,
+      action: () => { closeModal(); showPage('payroll'); }, urgent: true
+    });
+  }
+  
+  DB.auditLogs.slice(-5).reverse().forEach(a => {
+    items.push({
+      icon: '📝', title: getUserName(a.user_id) || 'System',
+      desc: a.description || a.action,
+      action: () => { closeModal(); showPage('audit'); },
+      time: a.created_at, urgent: false
+    });
+  });
+
+  document.getElementById('modalContainer').classList.add('modal-md');
+  document.getElementById('modalContainer').classList.remove('modal-xl', 'modal-lg');
+  document.getElementById('modalTitle').textContent = `🔔 Notifications (${items.filter(i => i.urgent).length} ត្រូវការត្រួតពិនិត្យ)`;
+  
+  document.getElementById('modalBody').innerHTML = items.length ? `
+    <div class="space-y-2 max-h-96 overflow-y-auto">
+      ${items.map((item, i) => `
+        <div onclick="runNotificationAction(${i})" class="cursor-pointer p-3 rounded-lg border hover:bg-slate-50 transition ${item.urgent ? 'border-l-4 border-l-red-500 bg-red-50' : 'border-slate-200'}">
+          <div class="flex items-start gap-3">
+            <div class="text-2xl">${item.icon}</div>
+            <div class="flex-1">
+              <div class="font-medium text-sm">${escapeHtml(item.title)}</div>
+              <div class="text-xs text-slate-600">${escapeHtml(item.desc)}</div>
+              ${item.time ? `<div class="text-xs text-slate-400 mt-1">${timeAgo(item.time)}</div>` : ''}
+            </div>
+            ${item.urgent ? '<span class="badge badge-red">ត្រូវការ</span>' : ''}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  ` : '<p class="text-center text-slate-400 py-8">មិនមានការជូនដំណឹង</p>';
+  
+  window._notifItems = items;
+  openModal();
+}
+
+function runNotificationAction(idx) {
+  const item = window._notifItems?.[idx];
+  if (item?.action) item.action();
+}
+
+// =====================================================
+// SESSION MANAGEMENT
+// =====================================================
+function startSessionTimer() {
+  clearTimeout(sessionTimer);
+  clearTimeout(warningTimer);
+  if (countdownInterval) clearInterval(countdownInterval);
+  
+  const lastActivity = parseInt(sessionStorage.getItem(ACTIVITY_KEY) || Date.now());
+  const elapsed = Date.now() - lastActivity;
+  const remaining = SESSION_TIMEOUT - elapsed;
+  
+  if (remaining <= 0) { doLogout(true); return; }
+  
+  warningTimer = setTimeout(() => {
+    document.getElementById('sessionWarning').classList.remove('hidden');
+    let countdown = 60;
+    document.getElementById('sessionCountdown').textContent = countdown;
+    countdownInterval = setInterval(() => {
+      countdown--;
+      document.getElementById('sessionCountdown').textContent = countdown;
+      if (countdown <= 0) { clearInterval(countdownInterval); doLogout(true); }
+    }, 1000);
+  }, Math.max(0, remaining - SESSION_WARNING));
+  
+  sessionTimer = setTimeout(() => doLogout(true), remaining);
+}
+
+function extendSession() {
+  sessionStorage.setItem(ACTIVITY_KEY, Date.now().toString());
+  document.getElementById('sessionWarning').classList.add('hidden');
+  if (countdownInterval) clearInterval(countdownInterval);
+  startSessionTimer();
+  toast('✅ Session ត្រូវបានបន្ត');
+}
+
+function resetActivity() {
+  if (!currentUser) return;
+  sessionStorage.setItem(ACTIVITY_KEY, Date.now().toString());
+  startSessionTimer();
+}
+
+['click', 'keydown', 'mousemove', 'scroll', 'touchstart'].forEach(evt => {
+  document.addEventListener(evt, debounce(resetActivity, 2000), { passive: true });
+});
+
+// =====================================================
+// LOGIN / LOGOUT
+// =====================================================
+function doLogin(e) {
+  e.preventDefault();
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value;
+  const err = document.getElementById('loginError');
+  err.classList.add('hidden');
+  if (!u || !p) { err.textContent = '❌ សូមបំពេញព័ត៌មាន'; err.classList.remove('hidden'); return; }
+  
+  const user = DB.users.find(x => x.username.toLowerCase() === u.toLowerCase());
+  if (!user || !verifyPassword(p, user.password)) {
+    err.textContent = '❌ ឈ្មោះឬលេខសម្ងាត់មិនត្រឹមត្រូវ';
+    err.classList.remove('hidden');
+    logAudit(null, 'LOGIN_FAILED', 'auth', null, `Failed: ${u}`);
+    saveDB();
+    return;
+  }
+  
+  currentUser = { ...user };
+  delete currentUser.password;
+  sessionStorage.setItem(SESSION_KEY, JSON.stringify(currentUser));
+  sessionStorage.setItem(ACTIVITY_KEY, Date.now().toString());
+  
+  logAudit(user.id, 'LOGIN_SUCCESS', 'auth', null, `${user.username} logged in`);
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('appScreen').classList.remove('hidden');
+  document.getElementById('userName').textContent = user.name;
+  document.getElementById('userRole').textContent = user.role.replace('_', ' ').toUpperCase();
+  document.getElementById('userAvatar').textContent = user.name.charAt(0);
+  document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  
+  updateBadges();
+  showPage('dashboard');
+  startSessionTimer();
+  toast('✅ សូមស្វាគមន៍ ' + user.name);
+  saveDB();
+}
+
+function doLogout(auto = false) {
+  if (!auto && !confirm('ចាកចេញ?')) return;
+  if (currentUser) logAudit(currentUser.id, 'LOGOUT', 'auth', null, auto ? 'Auto logout' : 'Logout');
+  currentUser = null;
+  sessionStorage.removeItem(SESSION_KEY);
+  sessionStorage.removeItem(ACTIVITY_KEY);
+  clearTimeout(sessionTimer);
+  clearTimeout(warningTimer);
+  if (countdownInterval) clearInterval(countdownInterval);
+  document.getElementById('sessionWarning').classList.add('hidden');
+  document.getElementById('loginScreen').classList.remove('hidden');
+  document.getElementById('appScreen').classList.add('hidden');
+  saveDB();
+  if (auto) toast('⏱️ Session ផុតកំណត់ - សូមចូលម្តងទៀត', 'error');
+}
+
+// =====================================================
+// NAVIGATION
+// =====================================================
+const PAGE_META = {
+  dashboard: ['📊 Dashboard', 'ផ្ទាំងគ្រប់គ្រងទូទៅ'],
+  employees: ['👥 Employee Master', 'គ្រប់គ្រងបុគ្គលិក'],
+  orgchart: ['🌳 Organization Chart', 'រចនាសម្ព័ន្ធ'],
+  organization: ['🏢 Organization', 'រចនាសម្ព័ន្ធក្រុមហ៊ុន'],
+  positions: ['💼 Positions & Grades', 'មុខតំណែង'],
+  attendance: ['⏰ វត្តមាន', 'តាមដានវត្តមាន'],
+  leave: ['🏖️ សុំច្បាប់', 'គ្រប់គ្រងច្បាប់'],
+  payroll: ['💰 ប្រាក់ខែ', 'គណនាប្រាក់ខែ'],
+  documents: ['📁 ឯកសារ', 'គ្រប់គ្រងឯកសារ'],
+  assets: ['💼 សម្ភារៈ', 'គ្រប់គ្រងទ្រព្យសម្បត្តិ'],
+  contracts: ['📝 កិច្ចសន្យា', 'គ្រប់គ្រងកិច្ចសន្យា'],
+  inventory: ['📦 Inventory', 'គ្រប់គ្រងស្តុក'],
+  suppliers: ['🏭 អ្នកផ្គត់ផ្គង់', 'អ្នកផ្គត់ផ្គង់'],
+  purchase: ['🛒 Purchase Orders', 'ការបញ្ជាទិញ'],
+  reports: ['📈 របាយការណ៍', 'របាយការណ៍'],
+  audit: ['🔒 Audit Log', 'កត់ត្រា'],
+  settings: ['⚙️ ការកំណត់', 'កំណត់ប្រព័ន្ធ']
+};
+
+function showPage(page) {
+  const content = document.getElementById('pageContent');
+  content.style.opacity = '0.5';
+  
+  document.querySelectorAll('.sidebar-link').forEach(el => el.classList.remove('active'));
+  const link = document.querySelector(`[data-page="${page}"]`);
+  if (link) link.classList.add('active');
+  const [t, s] = PAGE_META[page] || [page, ''];
+  document.getElementById('pageTitle').textContent = t;
+  document.getElementById('pageSubtitle').textContent = s;
+  
+  const renderers = {
+    dashboard: renderDashboard, employees: renderEmployees, orgchart: renderOrgChart,
+    organization: renderOrganization, positions: renderPositions,
+    attendance: renderAttendance, leave: renderLeave, payroll: renderPayroll,
+    documents: renderDocuments, assets: renderAssets, contracts: renderContracts,
+    inventory: renderInventory, suppliers: renderSuppliers, purchase: renderPurchase,
+    reports: renderReports, audit: renderAudit, settings: renderSettings
+  };
+  
+  try {
+    if (renderers[page]) renderers[page]();
+    content.style.opacity = '1';
+  } catch(e) {
+    console.error('Render error:', e);
+    content.innerHTML = `<div class="card text-center py-12"><div class="text-4xl mb-3">❌</div><div class="text-red-600">មានបញ្ហា: ${escapeHtml(e.message)}</div></div>`;
+    content.style.opacity = '1';
+  }
+  
+  setTimeout(updateBadges, 50);
+}
+
+// =====================================================
+// DASHBOARD
+// =====================================================
+function renderDashboard() {
+  const totalEmp = DB.employees.length;
+  const activeEmp = DB.employees.filter(e => e.status === 'active').length;
+  const totalSalary = DB.employees.filter(e => e.status === 'active').reduce((s, e) => s + (e.base_salary || 0), 0);
+  const pendingLeaves = DB.leaves.filter(l => l.status === 'pending').length;
+  const lowStock = DB.inventory.filter(i => i.quantity <= i.min_stock).length;
+  const pendingPOs = DB.purchaseOrders.filter(p => p.status === 'pending').length;
+  const pendingPayrolls = getPendingPayrollCount();
+
+  document.getElementById('pageContent').innerHTML = `
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      ${kpiCardWithBadge('👥', 'បុគ្គលិកសរុប', totalEmp, `${activeEmp} សកម្ម`, '#3b82f6', 'employees', 0)}
+      ${kpiCardWithBadge('🏢', 'ផ្នែក', DB.departments.length, `${DB.branches.length} សាខា`, '#10b981', 'organization', 0)}
+      ${kpiCardWithBadge('💰', 'ប្រាក់ខែសរុប', '$'+totalSalary.toLocaleString(), pendingPayrolls > 0 ? `${pendingPayrolls} រង់ចាំ` : 'ប្រចាំខែ', '#8b5cf6', 'payroll', pendingPayrolls)}
+      ${kpiCardWithBadge('⚠️', 'ស្តុកតិច', lowStock, lowStock > 0 ? 'ត្រូវបញ្ជា' : 'គ្រប់គ្រាន់', '#ef4444', 'inventory', lowStock)}
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div onclick="showPage('leave')" class="card card-click flex items-center gap-4 relative">
+        ${pendingLeaves > 0 ? `<div class="kpi-badge">${pendingLeaves}</div>` : ''}
+        <div class="w-14 h-14 text-yellow-600 bg-yellow-50 rounded-xl flex items-center justify-center text-2xl">🏖️</div>
+        <div><div class="text-sm text-slate-500">ច្បាប់រង់ចាំ</div><div class="text-2xl font-bold">${pendingLeaves}</div><div class="text-xs text-blue-500">ចុច →</div></div>
+      </div>
+      <div onclick="showPage('purchase')" class="card card-click flex items-center gap-4 relative">
+        ${pendingPOs > 0 ? `<div class="kpi-badge">${pendingPOs}</div>` : ''}
+        <div class="w-14 h-14 text-blue-600 bg-blue-50 rounded-xl flex items-center justify-center text-2xl">🛒</div>
+        <div><div class="text-sm text-slate-500">PO រង់ចាំ</div><div class="text-2xl font-bold">${pendingPOs}</div><div class="text-xs text-blue-500">ចុច →</div></div>
+      </div>
+      <div onclick="showPage('contracts')" class="card card-click flex items-center gap-4">
+        <div class="w-14 h-14 text-green-600 bg-green-50 rounded-xl flex items-center justify-center text-2xl">📝</div>
+        <div><div class="text-sm text-slate-500">កិច្ចសន្យាសកម្ម</div><div class="text-2xl font-bold">${DB.contracts.filter(c => c.status === 'active').length}</div><div class="text-xs text-blue-500">ចុច →</div></div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div class="card">
+        <h3 class="font-bold mb-4">📊 បុគ្គលិកតាមផ្នែក</h3>
+        <div class="static-chart"><canvas id="chartDept" height="200"></canvas></div>
+      </div>
+      <div class="card">
+        <h3 class="font-bold mb-4">📈 វត្តមានប្រចាំថ្ងៃ (7 ថ្ងៃ)</h3>
+        <div class="static-chart"><canvas id="chartAtt" height="200"></canvas></div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="card">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="font-bold">📋 សុំច្បាប់រង់ចាំ ${pendingLeaves > 0 ? `<span class="badge badge-red">${pendingLeaves}</span>` : ''}</h3>
+          <button onclick="showPage('leave')" class="text-sm text-blue-600 hover:underline">មើលទាំងអស់ →</button>
+        </div>
+        ${DB.leaves.filter(l => l.status === 'pending').slice(0, 5).map(l => `
+          <div class="flex items-center justify-between p-3 border-b last:border-0">
+            <div>
+              <div class="font-medium text-sm">${escapeHtml(getEmpName(l.employee_id))}</div>
+              <div class="text-xs text-slate-500">${escapeHtml(getLeaveType(l.leave_type_id))} · ${l.total_days} ថ្ងៃ</div>
+            </div>
+            <button onclick="event.stopPropagation();approveLeave(${l.id})" class="btn btn-success btn-sm">Approve</button>
+          </div>
+        `).join('') || '<p class="text-center text-slate-400 py-4">មិនមាន</p>'}
+      </div>
+
+      <div class="card">
+        <h3 class="font-bold mb-4">🕒 សកម្មភាពថ្មីៗ</h3>
+        <div class="space-y-2 max-h-80 overflow-y-auto">
+          ${DB.auditLogs.slice(-8).reverse().map(a => `
+            <div class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-lg">
+              <div class="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold">${escapeHtml((getUserName(a.user_id) || 'S')[0])}</div>
+              <div class="flex-1">
+                <div class="text-sm font-medium">${escapeHtml(getUserName(a.user_id) || 'System')}</div>
+                <div class="text-xs text-slate-500">${escapeHtml(a.description || a.action)}</div>
+              </div>
+              <div class="text-xs text-slate-400">${timeAgo(a.created_at)}</div>
+            </div>
+          `).join('') || '<p class="text-center text-slate-400 py-4">មិនមាន</p>'}
+        </div>
+      </div>
+    </div>
+  `;
+  
+  setTimeout(() => {
+    Object.values(charts).forEach(c => c?.destroy());
+    charts = {};
+    const dc = DB.departments.map(d => ({ name: d.code, count: DB.employees.filter(e => e.department_id === d.id).length }));
+    charts.dept = new Chart(document.getElementById('chartDept'), {
+      type: 'doughnut',
+      data: { labels: dc.map(d => d.name), datasets: [{ data: dc.map(d => d.count), backgroundColor: ['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4'] }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, animation: false }
+    });
+    const last7 = [...Array(7)].map((_, i) => { const d = new Date(); d.setDate(d.getDate() - i); return d.toISOString().split('T')[0]; }).reverse();
+    const ad = last7.map(d => { const r = DB.attendance.filter(a => a.work_date === d); return { p: r.filter(x => x.status === 'present').length, l: r.filter(x => x.status === 'late').length, a: r.filter(x => x.status === 'absent').length }; });
+    charts.att = new Chart(document.getElementById('chartAtt'), {
+      type: 'bar',
+      data: { labels: last7.map(d => d.slice(5)), datasets: [
+        { label: 'Present', data: ad.map(a => a.p), backgroundColor: '#10b981' },
+        { label: 'Late', data: ad.map(a => a.l), backgroundColor: '#f59e0b' },
+        { label: 'Absent', data: ad.map(a => a.a), backgroundColor: '#ef4444' }
+      ] },
+      options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } }, animation: false }
+    });
+  }, 50);
+}
+
+function kpiCardWithBadge(icon, label, value, sub, color, page, badgeCount) {
+  return `<div onclick="showPage('${page}')" class="card card-click relative" style="border-left:4px solid ${color};">
+    ${badgeCount > 0 ? `<div class="kpi-badge">${badgeCount > 99 ? '99+' : badgeCount}</div>` : ''}
+    <div class="flex items-center justify-between mb-2">
+      <span class="text-sm text-slate-500">${label}</span>
+      <div class="w-10 h-10 rounded-lg flex items-center justify-center text-xl" style="background:${color}20;">${icon}</div>
+    </div>
+    <div class="text-3xl font-bold text-slate-800">${value}</div>
+    <div class="text-xs text-slate-500 mt-1">${sub} <span class="text-blue-500">→</span></div>
+  </div>`;
+}
+
+// =====================================================
+// EMPLOYEE MASTER
+// =====================================================
+let empPage = 1;
+let empLimit = 10;
+
+function renderEmployees() {
+  document.getElementById('pageContent').innerHTML = `
+    <div class="card">
+      <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
+        <div class="flex gap-2 flex-wrap">
+          <input id="empSearch" oninput="debounceFilterEmployees()" placeholder="🔍 ស្វែងរកឈ្មោះ ឬ អត្តលេខ..." class="input" style="width:280px;">
+          <select id="empStatusF" onchange="empPage=1;filterEmployees()" class="input" style="width:150px;">
+            <option value="">គ្រប់ស្ថានភាព</option>
+            <option value="active">Active</option>
+            <option value="probation">Probation</option>
+            <option value="on_leave">On Leave</option>
+          </select>
+          <select id="empLimit" onchange="empLimit=+this.value;empPage=1;filterEmployees()" class="input" style="width:120px;">
+            <option value="10">10 នាក់</option>
+            <option value="20">20 នាក់</option>
+            <option value="50">50 នាក់</option>
+          </select>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="exportEmployeesExcel()" class="btn btn-secondary">📊 Excel</button>
+          <button onclick="exportEmployeesPDF()" class="btn btn-secondary">📕 PDF</button>
+          <button onclick="openEmpForm()" class="btn btn-primary">+ បន្ថែមបុគ្គលិក</button>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50 border-b-2">
+            <tr>
+              <th class="text-left p-3">Photo</th>
+              <th class="text-left p-3">អត្តលេខ</th>
+              <th class="text-left p-3">Code</th>
+              <th class="text-left p-3">ឈ្មោះ</th>
+              <th class="text-left p-3">ផ្នែក</th>
+              <th class="text-left p-3">មុខតំណែង</th>
+              <th class="text-left p-3">ស្ថានភាព</th>
+              <th class="text-right p-3">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="empTableBody"></tbody>
+        </table>
+      </div>
+      <div class="flex justify-between items-center mt-4" id="empPagination"></div>
+    </div>
+  `;
+  filterEmployees();
+}
+
+const debounceFilterEmployees = debounce(() => { empPage = 1; filterEmployees(); }, 250);
+
+function filterEmployees() {
+  const q = (document.getElementById('empSearch')?.value || '').toLowerCase();
+  const st = document.getElementById('empStatusF')?.value || '';
+  const list = DB.employees.filter(e => {
+    const m = !q || e.full_name.toLowerCase().includes(q) || (e.employee_id || '').toLowerCase().includes(q) || e.code.toLowerCase().includes(q);
+    return m && (!st || e.status === st);
+  });
+  const total = list.length;
+  const totalPages = Math.max(1, Math.ceil(total / empLimit));
+  if (empPage > totalPages) empPage = totalPages;
+  const start = (empPage - 1) * empLimit;
+  const paginated = list.slice(start, start + empLimit);
+
+  document.getElementById('empTableBody').innerHTML = paginated.map(e => `
+    <tr class="border-b table-row hover:bg-slate-50">
+      <td class="p-3">
+        ${e.photo 
+          ? `<img src="${e.photo}" class="w-10 h-10 rounded-full object-cover" loading="lazy">` 
+          : `<div class="avatar-circle w-10 h-10 text-sm">${escapeHtml(e.full_name.charAt(0))}</div>`}
+      </td>
+      <td class="p-3 font-mono text-xs text-green-600">${escapeHtml(e.employee_id || '-')}</td>
+      <td class="p-3 font-mono text-xs text-blue-600">${escapeHtml(e.code)}</td>
+      <td class="p-3">
+        <div class="font-medium cursor-pointer hover:text-blue-600" onclick="viewEmpProfile(${e.id})">${escapeHtml(e.full_name)}</div>
+        <div class="text-xs text-slate-500">${escapeHtml(e.email)}</div>
+      </td>
+      <td class="p-3">${escapeHtml(getDeptName(e.department_id))}</td>
+      <td class="p-3">${escapeHtml(getPosName(e.position_id))}</td>
+      <td class="p-3">${statusBadge(e.status)}</td>
+      <td class="p-3 text-right whitespace-nowrap">
+        <button onclick="viewEmpProfile(${e.id})" class="text-blue-600 hover:bg-blue-50 px-2 py-1 rounded text-xs">👁️</button>
+        <button onclick="openEmpForm(${e.id})" class="text-amber-600 hover:bg-amber-50 px-2 py-1 rounded text-xs">✏️</button>
+        <button onclick="deleteEmp(${e.id})" class="text-red-600 hover:bg-red-50 px-2 py-1 rounded text-xs">🗑️</button>
+      </td>
+    </tr>
+  `).join('') || '<tr><td colspan="8" class="text-center p-8 text-slate-400">មិនមានទិន្នន័យ</td></tr>';
+
+  let pag = '<div class="text-sm text-slate-500">Showing ' + (total ? start+1 : 0) + '-' + Math.min(start+empLimit, total) + ' of ' + total + '</div><div class="pagination">';
+  pag += `<button onclick="empPage=1;filterEmployees()" ${empPage===1?'disabled':''}>«</button>`;
+  pag += `<button onclick="empPage=${empPage-1};filterEmployees()" ${empPage===1?'disabled':''}>‹</button>`;
+  for (let i = 1; i <= totalPages; i++) {
+    if (i === 1 || i === totalPages || Math.abs(i - empPage) <= 1) {
+      pag += `<button onclick="empPage=${i};filterEmployees()" class="${empPage===i?'active':''}">${i}</button>`;
+    } else if (i === empPage - 2 || i === empPage + 2) {
+      pag += `<span>...</span>`;
+    }
+  }
+  pag += `<button onclick="empPage=${empPage+1};filterEmployees()" ${empPage===totalPages?'disabled':''}>›</button>`;
+  pag += `<button onclick="empPage=${totalPages};filterEmployees()" ${empPage===totalPages?'disabled':''}>»</button>`;
+  pag += '</div>';
+  document.getElementById('empPagination').innerHTML = pag;
+}
+
+function deleteEmp(id) {
+  const emp = DB.employees.find(e => e.id === id);
+  if (!emp) return;
+  if (emp.id === 1) return toast('❌ មិនអាចលុប Super Admin', 'error');
+  if (!confirm(`លុប "${emp.full_name}"?`)) return;
+  DB.employees = DB.employees.filter(e => e.id !== id);
+  logAudit(currentUser.id, 'DELETE_EMPLOYEE', 'employee', id, `Deleted ${emp.full_name}`);
+  saveDB(); filterEmployees(); toast('🗑️ លុបរួច');
+}
+
+function openEmpForm(id) {
+  const emp = id ? DB.employees.find(e => e.id === id) : { insurances: [] };
+  document.getElementById('modalContainer').classList.add('modal-xl');
+  document.getElementById('modalContainer').classList.remove('modal-lg', 'modal-md');
+  document.getElementById('modalTitle').textContent = id ? '✏️ កែ: ' + emp.full_name : '➕ បន្ថែមបុគ្គលិកថ្មី';
+
+  document.getElementById('modalBody').innerHTML = `
+    <div class="flex gap-2 border-b mb-4 overflow-x-auto">
+      <button type="button" class="tab-btn active" onclick="switchTab(event, 'tab-personal')">👤 Personal</button>
+      <button type="button" class="tab-btn" onclick="switchTab(event, 'tab-contact')">📞 Contact</button>
+      <button type="button" class="tab-btn" onclick="switchTab(event, 'tab-family')">👨‍👩‍👧 Family</button>
+      <button type="button" class="tab-btn" onclick="switchTab(event, 'tab-education')">🎓 Education</button>
+      <button type="button" class="tab-btn" onclick="switchTab(event, 'tab-skills')">🎯 Skills</button>
+      <button type="button" class="tab-btn" onclick="switchTab(event, 'tab-employment')">💼 Employment</button>
+      <button type="button" class="tab-btn" onclick="switchTab(event, 'tab-insurance')">🛡️ Insurance</button>
+      <button type="button" class="tab-btn" onclick="switchTab(event, 'tab-history')">📜 History</button>
+      <button type="button" class="tab-btn" onclick="switchTab(event, 'tab-documents')">📎 Documents</button>
+    </div>
+
+    <form id="empForm" onsubmit="saveEmpForm(event, ${id || 'null'})">
+      <div id="tab-personal" class="tab-content">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="md:col-span-3 flex items-center gap-4 p-4 bg-slate-50 rounded-lg">
+            <div id="photoPreview" class="w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center text-3xl overflow-hidden">${emp.photo ? `<img src="${emp.photo}" class="w-24 h-24 rounded-full object-cover">` : '📷'}</div>
+            <div>
+              <label class="btn btn-secondary cursor-pointer">📸 Upload Photo<input type="file" id="f_photo" accept="image/*" class="hidden" onchange="previewPhoto(this)"></label>
+              <p class="text-xs text-slate-500 mt-2">JPG, PNG · Max 2MB</p>
+            </div>
+          </div>
+          <div><label class="text-sm font-medium">អត្តលេខ (Employee ID)</label><input id="f_employee_id" class="input" value="${emp.employee_id || ''}" placeholder="HR-001, IT-002..."></div>
+          <div><label class="text-sm font-medium">First Name <span class="text-red-500">*</span></label><input id="f_fn" class="input" value="${emp.first_name || ''}" required></div>
+          <div><label class="text-sm font-medium">Last Name <span class="text-red-500">*</span></label><input id="f_ln" class="input" value="${emp.last_name || ''}" required></div>
+          <div><label class="text-sm font-medium">Gender</label>
+            <select id="f_gender" class="input">
+              <option value="M" ${emp.gender==='M'?'selected':''}>Male</option>
+              <option value="F" ${emp.gender==='F'?'selected':''}>Female</option>
+            </select>
+          </div>
+          <div><label class="text-sm font-medium">Date of Birth</label><input id="f_dob" type="date" class="input" value="${emp.date_of_birth || ''}"></div>
+          <div><label class="text-sm font-medium">Nationality</label><input id="f_nation" class="input" value="${emp.nationality || 'Khmer'}"></div>
+          <div><label class="text-sm font-medium">Marital Status</label>
+            <select id="f_marital" class="input">
+              <option value="single" ${emp.marital_status==='single'?'selected':''}>Single</option>
+              <option value="married" ${emp.marital_status==='married'?'selected':''}>Married</option>
+            </select>
+          </div>
+        </div>
+        <h4 class="font-bold text-slate-700 mt-6 mb-3">🆔 Identification</h4>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div><label class="text-sm font-medium">National ID No.</label><input id="f_nid" class="input" value="${emp.national_id || ''}"></div>
+          <div><label class="text-sm font-medium">ID Expiry</label><input id="f_nid_exp" type="date" class="input" value="${emp.national_id_expiry || ''}"></div>
+          <div><label class="text-sm font-medium">ID Status</label>
+            <select id="f_nid_status" class="input">
+              <option value="valid" ${emp.national_id_status==='valid'?'selected':''}>Valid</option>
+              <option value="expired" ${emp.national_id_status==='expired'?'selected':''}>Expired</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-contact" class="tab-content hidden">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div><label class="text-sm font-medium">Phone 1 <span class="text-red-500">*</span></label><input id="f_phone" class="input" value="${emp.phone || ''}" required></div>
+          <div><label class="text-sm font-medium">Phone 2</label><input id="f_phone2" class="input" value="${emp.phone2 || ''}"></div>
+          <div><label class="text-sm font-medium">Email</label><input id="f_email" type="email" class="input" value="${emp.email || ''}"></div>
+          <div class="md:col-span-2"><label class="text-sm font-medium">Current Address</label><textarea id="f_addr" rows="2" class="input">${emp.current_address || ''}</textarea></div>
+        </div>
+        <h4 class="font-bold text-slate-700 mt-6 mb-3">🚨 Emergency Contact</h4>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div><label class="text-sm font-medium">Name <span class="text-red-500">*</span></label><input id="f_emg_name" class="input" value="${emp.emergency_name || ''}" required></div>
+          <div><label class="text-sm font-medium">Relationship</label>
+            <select id="f_emg_rel" class="input">
+              <option value="Father" ${emp.emergency_relationship==='Father'?'selected':''}>Father</option>
+              <option value="Mother" ${emp.emergency_relationship==='Mother'?'selected':''}>Mother</option>
+              <option value="Spouse" ${emp.emergency_relationship==='Spouse'?'selected':''}>Spouse</option>
+              <option value="Friend" ${emp.emergency_relationship==='Friend'?'selected':''}>Friend</option>
+            </select>
+          </div>
+          <div><label class="text-sm font-medium">Phone <span class="text-red-500">*</span></label><input id="f_emg_phone" class="input" value="${emp.emergency_phone || ''}" required></div>
+        </div>
+      </div>
+
+      <div id="tab-family" class="tab-content hidden">
+        <h4 class="font-bold text-slate-700 mb-3">👨‍👩‍👧‍👦 Family Information</h4>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div><label class="text-sm font-medium">Number of Sons</label><input id="f_son" type="number" class="input" value="${emp.children_son || 0}" min="0"></div>
+          <div><label class="text-sm font-medium">Number of Daughters</label><input id="f_daughter" type="number" class="input" value="${emp.children_daughter || 0}" min="0"></div>
+        </div>
+      </div>
+
+      <div id="tab-education" class="tab-content hidden">
+        <div class="flex justify-between items-center mb-3">
+          <h4 class="font-bold text-slate-700">🎓 Education</h4>
+          <button type="button" onclick="addEducation()" class="btn btn-secondary btn-sm">+ បន្ថែម</button>
+        </div>
+        <div id="educationList" class="space-y-3"></div>
+      </div>
+
+      <div id="tab-skills" class="tab-content hidden">
+        <h4 class="font-bold text-slate-700 mb-3">🎯 Skills</h4>
+        <input id="skillInput" class="input" placeholder="វាយ Skills រួចចុច Enter..." onkeypress="handleSkillInput(event)">
+        <div id="skillsList" class="mt-4 p-4 bg-slate-50 rounded-lg min-h-20"></div>
+      </div>
+
+      <div id="tab-employment" class="tab-content hidden">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div><label class="text-sm font-medium">Branch</label>
+            <select id="f_branch" class="input">${DB.branches.map(b => `<option value="${b.id}" ${emp.branch_id===b.id?'selected':''}>${b.name}</option>`).join('')}</select>
+          </div>
+          <div><label class="text-sm font-medium">Department</label>
+            <select id="f_dept" class="input">
+              <option value="">-- None --</option>
+              ${DB.departments.map(d => `<option value="${d.id}" ${emp.department_id===d.id?'selected':''}>${d.name}</option>`).join('')}
+            </select>
+          </div>
+          <div><label class="text-sm font-medium">Position</label>
+            <select id="f_pos" class="input">${DB.positions.map(p => `<option value="${p.id}" ${emp.position_id===p.id?'selected':''}>${p.title}</option>`).join('')}</select>
+          </div>
+          <div><label class="text-sm font-medium">Grade</label>
+            <select id="f_grade" class="input">${DB.jobGrades.map(g => `<option value="${g.id}" ${emp.grade_id===g.id?'selected':''}>${g.code} - ${g.name}</option>`).join('')}</select>
+          </div>
+          <div><label class="text-sm font-medium">Join Date</label><input id="f_hire" type="date" class="input" value="${emp.hire_date || new Date().toISOString().split('T')[0]}"></div>
+          <div><label class="text-sm font-medium">Status</label>
+            <select id="f_status" class="input">
+              <option value="probation" ${emp.status==='probation'?'selected':''}>Probation</option>
+              <option value="active" ${emp.status==='active'?'selected':''}>Active</option>
+              <option value="on_leave" ${emp.status==='on_leave'?'selected':''}>On Leave</option>
+            </select>
+          </div>
+          <div><label class="text-sm font-medium">Base Salary (USD)</label><input id="f_salary" type="number" class="input" value="${emp.base_salary || 0}"></div>
+        </div>
+      </div>
+
+      <div id="tab-insurance" class="tab-content hidden">
+        <div class="flex justify-between items-center mb-3">
+          <h4 class="font-bold text-slate-700">🛡️ Insurance</h4>
+          <button type="button" onclick="addInsurance()" class="btn btn-secondary btn-sm">+ បន្ថែម</button>
+        </div>
+        <div id="insuranceList" class="space-y-3"></div>
+      </div>
+
+      <div id="tab-history" class="tab-content hidden">
+        <div class="flex justify-between items-center mb-3">
+          <h4 class="font-bold text-slate-700">📜 Employment History</h4>
+          <button type="button" onclick="addHistory()" class="btn btn-secondary btn-sm">+ បន្ថែម</button>
+        </div>
+        <div id="historyList" class="space-y-3"></div>
+      </div>
+
+      <div id="tab-documents" class="tab-content hidden">
+        <div class="flex justify-between items-center mb-3">
+          <h4 class="font-bold text-slate-700">📎 Documents</h4>
+          <label class="btn btn-primary btn-sm cursor-pointer">📤 Upload<input type="file" accept=".pdf,image/*" multiple class="hidden" onchange="handleDocUpload(this)"></label>
+        </div>
+        <div class="file-drop">
+          <div class="text-4xl mb-2">📄</div>
+          <p class="font-medium text-slate-700">ចុច Upload ដើម្បីបន្ថែមឯកសារ</p>
+        </div>
+        <div id="docList" class="mt-4 space-y-2"></div>
+      </div>
+
+      <div class="flex justify-end gap-2 mt-6 pt-4 border-t sticky bottom-0 bg-white">
+        <button type="button" onclick="closeModal()" class="btn btn-secondary">បោះបង់</button>
+        <button type="submit" class="btn btn-primary">💾 រក្សាទុក</button>
+      </div>
+    </form>
+  `;
+
+  window._tempEdu = [...(emp.education || [])];
+  window._tempHist = [...(emp.employment_history || [])];
+  window._tempSkills = [...(emp.skills || [])];
+  window._tempDocs = [...(emp.documents || [])];
+  window._tempPhoto = emp.photo || null;
+  window._tempInsurances = [...(emp.insurances || [])];
+
+  renderEduList();
+  renderHistList();
+  renderSkillList();
+  renderDocList();
+  renderInsuranceList();
+  openModal();
+}
+
+function switchTab(e, tabId) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  e.target.classList.add('active');
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+  document.getElementById(tabId).classList.remove('hidden');
+}
+
+function previewPhoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) return toast('❌ រូបភាពធំពេក', 'error');
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    window._tempPhoto = e.target.result;
+    document.getElementById('photoPreview').innerHTML = `<img src="${e.target.result}" class="w-24 h-24 rounded-full object-cover">`;
+  };
+  reader.readAsDataURL(file);
+}
+
+function insuranceRow(ins = {}, i) {
+  return `<div class="grid grid-cols-1 md:grid-cols-5 gap-2 p-3 bg-slate-50 rounded-lg">
+    <select class="input" onchange="updateInsurance(${i}, 'type', this.value)">
+      ${DB.insurances.map(it => `<option value="${it.code}" ${ins.type===it.code?'selected':''}>${it.name}</option>`).join('')}
+    </select>
+    <input class="input" placeholder="លេខកាត" value="${ins.card_no || ''}" onchange="updateInsurance(${i}, 'card_no', this.value)">
+    <input class="input" type="date" value="${ins.start_date || ''}" onchange="updateInsurance(${i}, 'start_date', this.value)">
+    <select class="input" onchange="updateInsurance(${i}, 'status', this.value)">
+      <option value="active" ${ins.status==='active'?'selected':''}>Active</option>
+      <option value="inactive" ${ins.status==='inactive'?'selected':''}>Inactive</option>
+    </select>
+    <button type="button" onclick="removeInsurance(${i})" class="text-red-500 hover:bg-red-50 px-2 rounded">🗑️</button>
+  </div>`;
+}
+function renderInsuranceList() {
+  document.getElementById('insuranceList').innerHTML = window._tempInsurances.length
+    ? window._tempInsurances.map((i, idx) => insuranceRow(i, idx)).join('')
+    : '<p class="text-center text-slate-400 py-4">មិនមានធានារ៉ាប់រង</p>';
+}
+function addInsurance() {
+  window._tempInsurances.push({ type: 'NSSF', card_no: '', start_date: new Date().toISOString().split('T')[0], status: 'active' });
+  renderInsuranceList();
+}
+function updateInsurance(i, k, v) { window._tempInsurances[i][k] = v; }
+function removeInsurance(i) { window._tempInsurances.splice(i, 1); renderInsuranceList(); }
+
+function educationRow(e = {}, i) {
+  return `<div class="grid grid-cols-1 md:grid-cols-6 gap-2 p-3 bg-slate-50 rounded-lg">
+    <select class="input" onchange="updateEdu(${i}, 'level', this.value)">
+      ${['High School','Associate','Bachelor','Master','PhD'].map(l => `<option ${e.level===l?'selected':''}>${l}</option>`).join('')}
+    </select>
+    <input class="input md:col-span-2" placeholder="School" value="${e.school || ''}" onchange="updateEdu(${i}, 'school', this.value)">
+    <input class="input" placeholder="Degree" value="${e.degree || ''}" onchange="updateEdu(${i}, 'degree', this.value)">
+    <input class="input" placeholder="Field" value="${e.field || ''}" onchange="updateEdu(${i}, 'field', this.value)">
+    <div class="flex gap-1">
+      <input class="input" placeholder="Year" value="${e.year || ''}" onchange="updateEdu(${i}, 'year', this.value)">
+      <button type="button" onclick="removeEducation(${i})" class="text-red-500 hover:bg-red-50 px-2 rounded">🗑️</button>
+    </div>
+  </div>`;
+}
+function renderEduList() {
+  document.getElementById('educationList').innerHTML = window._tempEdu.length
+    ? window._tempEdu.map((e, i) => educationRow(e, i)).join('')
+    : '<p class="text-center text-slate-400 py-4">មិនមាន</p>';
+}
+function addEducation() { window._tempEdu.push({ level: 'Bachelor', school: '', degree: '', field: '', year: '' }); renderEduList(); }
+function updateEdu(i, k, v) { window._tempEdu[i][k] = v; }
+function removeEducation(i) { window._tempEdu.splice(i, 1); renderEduList(); }
+
+function historyRow(h = {}, i) {
+  return `<div class="grid grid-cols-1 md:grid-cols-5 gap-2 p-3 bg-slate-50 rounded-lg">
+    <input class="input" placeholder="Company" value="${h.company || ''}" onchange="updateHist(${i}, 'company', this.value)">
+    <input class="input" placeholder="Position" value="${h.position || ''}" onchange="updateHist(${i}, 'position', this.value)">
+    <input class="input" type="month" value="${h.from || ''}" onchange="updateHist(${i}, 'from', this.value)">
+    <input class="input" type="month" value="${h.to || ''}" onchange="updateHist(${i}, 'to', this.value)">
+    <div class="flex gap-1">
+      <input class="input" type="number" placeholder="Salary" value="${h.salary || 0}" onchange="updateHist(${i}, 'salary', +this.value)">
+      <button type="button" onclick="removeHistory(${i})" class="text-red-500 hover:bg-red-50 px-2 rounded">🗑️</button>
+    </div>
+  </div>`;
+}
+function renderHistList() {
+  document.getElementById('historyList').innerHTML = window._tempHist.length
+    ? window._tempHist.map((h, i) => historyRow(h, i)).join('')
+    : '<p class="text-center text-slate-400 py-4">មិនមាន</p>';
+}
+function addHistory() { window._tempHist.push({ company: '', position: '', from: '', to: '', salary: 0 }); renderHistList(); }
+function updateHist(i, k, v) { window._tempHist[i][k] = v; }
+function removeHistory(i) { window._tempHist.splice(i, 1); renderHistList(); }
+
+function handleSkillInput(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    const v = e.target.value.trim();
+    if (!v) return;
+    if (!window._tempSkills.includes(v)) { window._tempSkills.push(v); renderSkillList(); }
+    e.target.value = '';
+  }
+}
+function renderSkillList() {
+  document.getElementById('skillsList').innerHTML = window._tempSkills.length
+    ? window._tempSkills.map((s, i) => `<span class="skill-chip">${escapeHtml(s)} <button type="button" onclick="removeSkill(${i})" class="text-red-500 ml-1">×</button></span>`).join('')
+    : '<p class="text-slate-400 text-sm">មិនមាន</p>';
+}
+function removeSkill(i) { window._tempSkills.splice(i, 1); renderSkillList(); }
+
+function handleDocUpload(input) {
+  Array.from(input.files).forEach(file => {
+    if (file.size > 10 * 1024 * 1024) { toast(`❌ ${file.name} ធំពេក`, 'error'); return; }
+    const isPDF = file.type === 'application/pdf';
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      window._tempDocs.push({ id: Date.now() + Math.random(), name: file.name, size: (file.size/1024).toFixed(1) + ' KB', type: file.type, isPDF, data: e.target.result });
+      renderDocList();
+      toast(`✅ ${file.name}`);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+function renderDocList() {
+  document.getElementById('docList').innerHTML = window._tempDocs.length
+    ? window._tempDocs.map((d, i) => `
+        <div class="flex items-center gap-3 p-3 border rounded-lg hover:bg-slate-50">
+          <div class="text-3xl">${d.isPDF ? '📕' : '🖼️'}</div>
+          <div class="flex-1 min-w-0">
+            <div class="font-medium text-sm truncate">${escapeHtml(d.name)}</div>
+            <div class="text-xs text-slate-500">${d.size}</div>
+          </div>
+          <button type="button" onclick="previewDoc(${i})" class="text-blue-600 hover:bg-blue-50 px-2 py-1 rounded text-xs">👁️</button>
+          <a href="${d.data}" download="${escapeHtml(d.name)}" class="text-green-600 hover:bg-green-50 px-2 py-1 rounded text-xs">⬇️</a>
+          <button type="button" onclick="removeDoc(${i})" class="text-red-600 hover:bg-red-50 px-2 py-1 rounded text-xs">🗑️</button>
+        </div>
+      `).join('')
+    : '<p class="text-center text-slate-400 py-4">មិនមានឯកសារ</p>';
+}
+function previewDoc(i) {
+  const d = window._tempDocs[i];
+  const w = window.open('', '_blank');
+  if (d.isPDF) w.document.write(`<html><body style="margin:0;background:#1e293b;"><iframe src="${d.data}" style="width:100%;height:100vh;border:none;"></iframe></body></html>`);
+  else w.document.write(`<html><body style="margin:0;background:#1e293b;display:flex;align-items:center;justify-content:center;height:100vh;"><img src="${d.data}" style="max-width:100%;max-height:100vh;"></body></html>`);
+}
+function removeDoc(i) { if (!confirm('លុប?')) return; window._tempDocs.splice(i, 1); renderDocList(); }
+
+function saveEmpForm(e, id) {
+  e.preventDefault();
+  const fn = document.getElementById('f_fn').value.trim();
+  const ln = document.getElementById('f_ln').value.trim();
+  if (!fn || !ln) return toast('❌ សូមបំពេញឈ្មោះ', 'error');
+  if (!document.getElementById('f_phone').value.trim()) return toast('❌ សូមបំពេញទូរស័ព្ទ', 'error');
+
+  const data = {
+    employee_id: document.getElementById('f_employee_id').value,
+    first_name: fn, last_name: ln, full_name: fn + ' ' + ln,
+    gender: document.getElementById('f_gender').value,
+    date_of_birth: document.getElementById('f_dob').value,
+    nationality: document.getElementById('f_nation').value,
+    marital_status: document.getElementById('f_marital').value,
+    children_son: +document.getElementById('f_son').value || 0,
+    children_daughter: +document.getElementById('f_daughter').value || 0,
+    national_id: document.getElementById('f_nid').value,
+    national_id_expiry: document.getElementById('f_nid_exp').value,
+    national_id_status: document.getElementById('f_nid_status').value,
+    phone: document.getElementById('f_phone').value,
+    phone2: document.getElementById('f_phone2').value,
+    email: document.getElementById('f_email').value,
+    current_address: document.getElementById('f_addr').value,
+    emergency_name: document.getElementById('f_emg_name').value,
+    emergency_relationship: document.getElementById('f_emg_rel').value,
+    emergency_phone: document.getElementById('f_emg_phone').value,
+    branch_id: +document.getElementById('f_branch').value || null,
+    department_id: document.getElementById('f_dept').value ? +document.getElementById('f_dept').value : null,
+    position_id: +document.getElementById('f_pos').value,
+    grade_id: +document.getElementById('f_grade').value,
+    hire_date: document.getElementById('f_hire').value,
+    status: document.getElementById('f_status').value,
+    base_salary: +document.getElementById('f_salary').value,
+    education: window._tempEdu,
+    skills: window._tempSkills,
+    employment_history: window._tempHist,
+    documents: window._tempDocs,
+    insurances: window._tempInsurances,
+    photo: window._tempPhoto
+  };
+
+  if (id) {
+    Object.assign(DB.employees.find(x => x.id === id), data);
+    logAudit(currentUser.id, 'UPDATE_EMPLOYEE', 'employee', id, `Updated ${data.full_name}`);
+    toast('✅ កែជោគជ័យ');
+  } else {
+    data.id = DB.nextId.emp++;
+    data.code = 'EMP' + String(data.id).padStart(4, '0');
+    data.created_at = new Date().toISOString();
+    DB.employees.push(data);
+    logAudit(currentUser.id, 'CREATE_EMPLOYEE', 'employee', data.id, `Created ${data.full_name}`);
+    toast('✅ បន្ថែមជោគជ័យ');
+  }
+  saveDB(); closeModal(); filterEmployees();
+}
+
+function viewEmpProfile(id) {
+  const e = DB.employees.find(x => x.id === id);
+  document.getElementById('modalContainer').classList.add('modal-lg');
+  document.getElementById('modalContainer').classList.remove('modal-xl', 'modal-md');
+  document.getElementById('modalTitle').textContent = '👤 Employee Profile';
+  const att = DB.attendance.filter(a => a.employee_id === id).slice(-7).reverse();
+
+  document.getElementById('modalBody').innerHTML = `
+    <div class="flex items-start gap-6 mb-6 p-5 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl">
+      ${e.photo 
+        ? `<img src="${e.photo}" class="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg">`
+        : `<div class="avatar-circle w-24 h-24 text-4xl border-4 border-white shadow-lg">${escapeHtml(e.full_name.charAt(0))}</div>`}
+      <div class="flex-1">
+        <h2 class="text-2xl font-bold text-slate-800">${escapeHtml(e.full_name)}</h2>
+        <p class="text-green-600 font-mono text-sm">អត្តលេខ: ${escapeHtml(e.employee_id || '-')}</p>
+        <p class="text-blue-600 font-mono text-sm">${escapeHtml(e.code)}</p>
+        <div class="mt-2 flex flex-wrap gap-2">
+          ${statusBadge(e.status)}
+          <span class="badge badge-blue">${escapeHtml(getDeptName(e.department_id))}</span>
+          <span class="badge badge-purple">${escapeHtml(getPosName(e.position_id))}</span>
+        </div>
+      </div>
+      <button onclick="printProfilePDF(${e.id})" class="btn btn-primary">📕 Print PDF</button>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="card">
+        <h3 class="font-bold mb-3 pb-2 border-b">👤 Personal</h3>
+        <div class="space-y-1">
+          <div class="info-row"><span class="info-label">Gender</span><span class="info-value">${e.gender === 'M' ? 'Male' : 'Female'}</span></div>
+          <div class="info-row"><span class="info-label">DOB</span><span class="info-value">${e.date_of_birth || '-'}</span></div>
+          <div class="info-row"><span class="info-label">Nationality</span><span class="info-value">${escapeHtml(e.nationality || '-')}</span></div>
+          <div class="info-row"><span class="info-label">Marital</span><span class="info-value">${escapeHtml(e.marital_status || '-')}</span></div>
+          <div class="info-row"><span class="info-label">National ID</span><span class="info-value">${escapeHtml(e.national_id || '-')}</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="font-bold mb-3 pb-2 border-b">📞 Contact</h3>
+        <div class="space-y-1">
+          <div class="info-row"><span class="info-label">Phone</span><span class="info-value">${escapeHtml(e.phone || '-')}</span></div>
+          <div class="info-row"><span class="info-label">Email</span><span class="info-value">${escapeHtml(e.email || '-')}</span></div>
+          <div class="info-row"><span class="info-label">Emergency</span><span class="info-value">${escapeHtml(e.emergency_name || '-')} ${escapeHtml(e.emergency_phone || '')}</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="font-bold mb-3 pb-2 border-b">💼 Employment</h3>
+        <div class="space-y-1">
+          <div class="info-row"><span class="info-label">Department</span><span class="info-value">${escapeHtml(getDeptName(e.department_id))}</span></div>
+          <div class="info-row"><span class="info-label">Position</span><span class="info-value">${escapeHtml(getPosName(e.position_id))}</span></div>
+          <div class="info-row"><span class="info-label">Grade</span><span class="info-value">${escapeHtml(getGradeName(e.grade_id))}</span></div>
+          <div class="info-row"><span class="info-label">Join Date</span><span class="info-value">${e.hire_date || '-'}</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="font-bold mb-3 pb-2 border-b">💰 Salary</h3>
+        <div class="info-row"><span class="info-label">Base Salary</span><span class="info-value text-lg text-green-600">$${e.base_salary}</span></div>
+      </div>
+    </div>
+
+    ${e.insurances?.length ? `
+      <div class="card mt-4">
+        <h3 class="font-bold mb-3 pb-2 border-b">🛡️ Insurance</h3>
+        <div class="grid grid-cols-2 gap-2">
+          ${e.insurances.map(i => `<div class="p-2 border rounded"><div class="font-medium">${escapeHtml(i.type)}</div><div class="text-xs">${escapeHtml(i.card_no || '-')} · ${i.status}</div></div>`).join('')}
+        </div>
+      </div>
+    ` : ''}
+
+    ${e.education?.length ? `
+      <div class="card mt-4">
+        <h3 class="font-bold mb-3 pb-2 border-b">🎓 Education</h3>
+        ${e.education.map(ed => `<div class="p-2 border-l-4 border-blue-500 bg-blue-50 rounded mb-2"><div class="font-medium">${escapeHtml(ed.degree)} - ${escapeHtml(ed.field)}</div><div class="text-sm">${escapeHtml(ed.school)} · ${ed.year}</div></div>`).join('')}
+      </div>
+    ` : ''}
+
+    ${e.skills?.length ? `
+      <div class="card mt-4">
+        <h3 class="font-bold mb-3 pb-2 border-b">🎯 Skills</h3>
+        <div>${e.skills.map(s => `<span class="skill-chip">${escapeHtml(s)}</span>`).join('')}</div>
+      </div>
+    ` : ''}
+
+    <div class="card mt-4">
+      <h3 class="font-bold mb-3 pb-2 border-b">⏰ Recent Attendance</h3>
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50"><tr><th class="p-2 text-left">Date</th><th class="p-2 text-left">In</th><th class="p-2 text-left">Out</th><th class="p-2 text-left">Status</th></tr></thead>
+        <tbody>${att.map(a => `<tr class="border-t"><td class="p-2">${a.work_date}</td><td class="p-2 font-mono">${a.check_in || '-'}</td><td class="p-2 font-mono">${a.check_out || '-'}</td><td class="p-2">${statusBadge(a.status)}</td></tr>`).join('') || '<tr><td colspan="4" class="text-center p-4 text-slate-400">-</td></tr>'}</tbody>
+      </table>
+    </div>
+  `;
+  openModal();
+}
+
+function printProfilePDF(id) {
+  const e = DB.employees.find(x => x.id === id);
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  
+  doc.setFillColor(37, 99, 235);
+  doc.rect(0, 0, 210, 30, 'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(20);
+  doc.text('EMPLOYEE PROFILE', 105, 20, { align: 'center' });
+  
+  doc.setTextColor(0,0,0);
+  doc.setFontSize(12);
+  
+  const rows = [
+    ['Employee ID', e.employee_id || '-'],
+    ['Code', e.code],
+    ['Full Name', e.full_name],
+    ['Gender', e.gender === 'M' ? 'Male' : 'Female'],
+    ['Date of Birth', e.date_of_birth || '-'],
+    ['Nationality', e.nationality || '-'],
+    ['Phone', e.phone || '-'],
+    ['Email', e.email || '-'],
+    ['Department', getDeptName(e.department_id)],
+    ['Position', getPosName(e.position_id)],
+    ['Join Date', e.hire_date || '-'],
+    ['Base Salary', `$${e.base_salary}`],
+    ['Status', e.status]
+  ];
+  
+  doc.autoTable({
+    startY: 45,
+    head: [['Field', 'Value']],
+    body: rows,
+    theme: 'grid',
+    headStyles: { fillColor: [37, 99, 235] }
+  });
+  
+  doc.save(`Employee_${e.code}.pdf`);
+  toast('📕 PDF downloaded');
+}
+
+function exportEmployeesExcel() {
+  const data = DB.employees.map(e => ({
+    'អត្តលេខ': e.employee_id || '', 'Code': e.code, 'Name': e.full_name,
+    'Gender': e.gender, 'Phone': e.phone, 'Email': e.email,
+    'Department': getDeptName(e.department_id),
+    'Position': getPosName(e.position_id),
+    'HireDate': e.hire_date, 'Salary': e.base_salary, 'Status': e.status
+  }));
+  exportXLSX(data, 'employees');
+}
+
+function exportEmployeesPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('l', 'mm', 'a4');
+  
+  doc.setFillColor(37, 99, 235);
+  doc.rect(0, 0, 297, 20, 'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(16);
+  doc.text('EMPLOYEE LIST', 148, 14, { align: 'center' });
+  
+  const rows = DB.employees.map(e => [
+    e.employee_id || '', e.code, e.full_name, e.gender === 'M' ? 'M' : 'F',
+    getDeptName(e.department_id), getPosName(e.position_id),
+    e.phone, `$${e.base_salary}`, e.status
+  ]);
+  
+  doc.autoTable({
+    startY: 25,
+    head: [['អត្តលេខ', 'Code', 'Name', 'Gender', 'Department', 'Position', 'Phone', 'Salary', 'Status']],
+    body: rows,
+    theme: 'grid',
+    headStyles: { fillColor: [37, 99, 235] },
+    styles: { fontSize: 8 }
+  });
+  
+  doc.save('Employees.pdf');
+  toast('📕 PDF downloaded');
+}
+
+// =====================================================
+// ORG CHART
+// =====================================================
+function renderOrgChart() {
+  const ceo = DB.employees.find(e => e.position_id === 1) || DB.employees[0];
+  const managers = DB.employees.filter(e => e.manager_id === ceo?.id);
+
+  function nodeAvatar(emp, size = 'w-16 h-16') {
+    if (emp.photo) return `<img src="${emp.photo}" class="${size} rounded-full object-cover mx-auto" loading="lazy">`;
+    return `<div class="avatar-circle ${size} text-xl mx-auto">${escapeHtml(emp.full_name.charAt(0))}</div>`;
+  }
+
+  document.getElementById('pageContent').innerHTML = `
+    <div class="card">
+      <h3 class="font-bold mb-6 text-center text-xl">🌳 Organization Chart</h3>
+      <div class="overflow-x-auto p-6">
+        <div class="flex flex-col items-center min-w-max">
+          <div class="org-node" style="background: linear-gradient(135deg, #3b82f6, #1e40af); color: white; border-color: #1e40af;">
+            ${nodeAvatar(ceo, 'w-20 h-20')}
+            <div class="font-bold mt-2">${escapeHtml(ceo?.full_name || 'CEO')}</div>
+            <div class="text-xs opacity-90">${escapeHtml(getPosName(ceo?.position_id))}</div>
+          </div>
+          <div style="width:2px;height:30px;background:#3b82f6;"></div>
+          ${managers.length ? `
+            <div class="flex gap-8">
+              ${managers.map(m => {
+                const subs = DB.employees.filter(e => e.manager_id === m.id);
+                return `
+                  <div class="flex flex-col items-center">
+                    <div style="width:2px;height:20px;background:#3b82f6;"></div>
+                    <div class="org-node">
+                      ${nodeAvatar(m, 'w-14 h-14')}
+                      <div class="font-bold text-sm mt-2">${escapeHtml(m.full_name)}</div>
+                      <div class="text-xs text-slate-500">${escapeHtml(getPosName(m.position_id))}</div>
+                    </div>
+                    ${subs.length ? `
+                      <div style="width:2px;height:15px;background:#3b82f6;"></div>
+                      <div class="flex gap-2">
+                        ${subs.slice(0, 3).map(s => `
+                          <div class="org-node" style="min-width: 140px; padding: 10px;">
+                            ${nodeAvatar(s, 'w-10 h-10')}
+                            <div class="text-xs font-medium mt-1">${escapeHtml(s.full_name)}</div>
+                          </div>
+                        `).join('')}
+                      </div>
+                    ` : ''}
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          ` : '<p class="text-slate-400 py-4">មិនមាន Subordinates</p>'}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// =====================================================
+// ORGANIZATION
+// =====================================================
+function renderOrganization() {
+  document.getElementById('pageContent').innerHTML = `
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+      <button onclick="openOrgModal('company')" class="card card-click text-left"><div class="text-3xl mb-2">🏢</div><div class="font-bold">Companies</div><div class="text-xs text-slate-500">${DB.companies.length}</div></button>
+      <button onclick="openOrgModal('branch')" class="card card-click text-left"><div class="text-3xl mb-2">🏬</div><div class="font-bold">Branches</div><div class="text-xs text-slate-500">${DB.branches.length}</div></button>
+      <button onclick="openOrgModal('department')" class="card card-click text-left"><div class="text-3xl mb-2">🏛️</div><div class="font-bold">Departments</div><div class="text-xs text-slate-500">${DB.departments.length}</div></button>
+      <button onclick="openOrgModal('division')" class="card card-click text-left"><div class="text-3xl mb-2">📊</div><div class="font-bold">Divisions</div><div class="text-xs text-slate-500">${DB.divisions.length}</div></button>
+      <button onclick="openOrgModal('team')" class="card card-click text-left"><div class="text-3xl mb-2">👥</div><div class="font-bold">Teams</div><div class="text-xs text-slate-500">${DB.teams.length}</div></button>
+      <button onclick="openOrgModal('position')" class="card card-click text-left"><div class="text-3xl mb-2">💼</div><div class="font-bold">Positions</div><div class="text-xs text-slate-500">${DB.positions.length}</div></button>
+    </div>
+
+    <div class="card mb-4">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="font-bold">🏛️ Departments</h3>
+        <button onclick="exportOrgPDF('department')" class="btn btn-secondary btn-sm">📕 PDF</button>
+      </div>
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50"><tr>
+          <th class="text-left p-3">Code</th><th class="text-left p-3">Name</th>
+          <th class="text-right p-3">Employees</th><th class="text-right p-3">Actions</th>
+        </tr></thead>
+        <tbody>
+          ${DB.departments.map(d => `
+            <tr class="border-b table-row">
+              <td class="p-3 font-mono text-xs text-blue-600">${escapeHtml(d.code)}</td>
+              <td class="p-3 font-medium">${escapeHtml(d.name)}</td>
+              <td class="p-3 text-right font-bold">${DB.employees.filter(e => e.department_id === d.id).length}</td>
+              <td class="p-3 text-right">
+                <button onclick="editOrg('department', ${d.id})" class="text-amber-600 hover:bg-amber-50 px-2 py-1 rounded text-xs">✏️</button>
+                <button onclick="deleteOrg('department', ${d.id})" class="text-red-600 hover:bg-red-50 px-2 py-1 rounded text-xs">🗑️</button>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3 class="font-bold mb-3">🏬 Branches</h3>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        ${DB.branches.map(b => `
+          <div class="p-4 border rounded-lg relative">
+            <div class="absolute top-2 right-2 flex gap-1">
+              <button onclick="editOrg('branch', ${b.id})" class="text-amber-600 hover:bg-amber-50 px-2 py-1 rounded text-xs">✏️</button>
+              <button onclick="deleteOrg('branch', ${b.id})" class="text-red-600 hover:bg-red-50 px-2 py-1 rounded text-xs">🗑️</button>
+            </div>
+            <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center text-white text-xl">🏬</div>
+            <div class="font-bold mt-2">${escapeHtml(b.name)}</div>
+            <div class="text-xs text-slate-500 font-mono">${escapeHtml(b.code)}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function editOrg(type, id) {
+  const map = { company: DB.companies, branch: DB.branches, department: DB.departments, division: DB.divisions, team: DB.teams, position: DB.positions };
+  const item = map[type]?.find(x => x.id === id);
+  if (!item) return;
+  
+  document.getElementById('modalContainer').classList.add('modal-md');
+  document.getElementById('modalContainer').classList.remove('modal-xl', 'modal-lg');
+  document.getElementById('modalTitle').textContent = `✏️ កែ ${type}`;
+  document.getElementById('modalBody').innerHTML = `
+    <div class="space-y-3">
+      <div><label class="text-sm font-medium">Code</label><input id="org_code" class="input" value="${item.code || ''}"></div>
+      <div><label class="text-sm font-medium">Name</label><input id="org_name" class="input" value="${item.name || item.title || ''}"></div>
+    </div>
+    <div class="flex justify-end gap-2 mt-6 pt-4 border-t">
+      <button onclick="closeModal()" class="btn btn-secondary">បោះបង់</button>
+      <button onclick="saveEditOrg('${type}', ${id})" class="btn btn-primary">💾 Save</button>
+    </div>
+  `;
+  openModal();
+}
+
+function saveEditOrg(type, id) {
+  const map = { company: DB.companies, branch: DB.branches, department: DB.departments, division: DB.divisions, team: DB.teams, position: DB.positions };
+  const item = map[type]?.find(x => x.id === id);
+  if (!item) return;
+  
+  item.code = document.getElementById('org_code').value;
+  if (type === 'position') item.title = document.getElementById('org_name').value;
+  else item.name = document.getElementById('org_name').value;
+  
+  logAudit(currentUser.id, 'UPDATE_' + type.toUpperCase(), 'organization', id, item.name || item.title);
+  saveDB(); closeModal(); renderOrganization(); toast('✅ Updated');
+}
+
+function deleteOrg(type, id) {
+  if (!confirm('លុប?')) return;
+  const map = { company: DB.companies, branch: DB.branches, department: DB.departments, division: DB.divisions, team: DB.teams, position: DB.positions };
+  if (map[type]) {
+    map[type].splice(map[type].findIndex(x => x.id === id), 1);
+    logAudit(currentUser.id, 'DELETE_' + type.toUpperCase(), 'organization', id, null);
+    saveDB(); renderOrganization(); toast('🗑️ Deleted');
+  }
+}
+
+function exportOrgPDF(type) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const data = DB.departments.map(d => [d.code, d.name, DB.employees.filter(e => e.department_id === d.id).length]);
+  
+  doc.setFillColor(37, 99, 235);
+  doc.rect(0, 0, 210, 20, 'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(16);
+  doc.text('DEPARTMENTS', 105, 14, { align: 'center' });
+  
+  doc.autoTable({
+    startY: 25,
+    head: [['Code', 'Name', 'Employees']],
+    body: data,
+    theme: 'grid',
+    headStyles: { fillColor: [37, 99, 235] }
+  });
+  doc.save('Departments.pdf');
+  toast('📕 Downloaded');
+}
+
+function openOrgModal(type) {
+  document.getElementById('modalContainer').classList.add('modal-md');
+  document.getElementById('modalContainer').classList.remove('modal-xl', 'modal-lg');
+  document.getElementById('modalTitle').textContent = `➕ បន្ថែម ${type}`;
+
+  document.getElementById('modalBody').innerHTML = `
+    <div class="grid grid-cols-2 gap-4">
+      <div><label class="text-sm font-medium">Code</label><input id="org_code" class="input"></div>
+      <div><label class="text-sm font-medium">Name</label><input id="org_name" class="input"></div>
+    </div>
+    <div class="flex justify-end gap-2 mt-6 pt-4 border-t">
+      <button onclick="closeModal()" class="btn btn-secondary">Cancel</button>
+      <button onclick="saveOrg('${type}')" class="btn btn-primary">Save</button>
+    </div>
+  `;
+  openModal();
+}
+
+function saveOrg(type) {
+  const code = document.getElementById('org_code').value.trim();
+  const name = document.getElementById('org_name').value.trim();
+  if (!code || !name) return toast('❌ សូមបំពេញ', 'error');
+
+  if (type === 'company') DB.companies.push({ id: DB.nextId.company++, code, name, status: 'active' });
+  else if (type === 'branch') DB.branches.push({ id: DB.nextId.branch++, company_id: 1, code, name, status: 'active' });
+  else if (type === 'department') DB.departments.push({ id: DB.nextId.dept++, company_id: 1, branch_id: 1, code, name, manager_id: null, status: 'active' });
+  else if (type === 'division') DB.divisions.push({ id: DB.nextId.div++, code, name });
+  else if (type === 'team') DB.teams.push({ id: DB.nextId.team++, code, name });
+  else if (type === 'position') DB.positions.push({ id: DB.nextId.pos++, code, title: name, department_id: null, grade_id: 3, level: 3 });
+
+  saveDB(); closeModal(); renderOrganization(); toast('✅ Added');
+}
+
+// =====================================================
+// POSITIONS
+// =====================================================
+function renderPositions() {
+  document.getElementById('pageContent').innerHTML = `
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="card">
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="font-bold">💼 Positions</h3>
+          <button onclick="openOrgModal('position')" class="btn btn-primary btn-sm">+ បន្ថែម</button>
+        </div>
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50"><tr>
+            <th class="text-left p-3">Code</th><th class="text-left p-3">Title</th>
+            <th class="text-right p-3">Count</th><th class="text-right p-3">Actions</th>
+          </tr></thead>
+          <tbody>
+            ${DB.positions.map(p => `
+              <tr class="border-b table-row">
+                <td class="p-3 font-mono text-xs">${escapeHtml(p.code)}</td>
+                <td class="p-3">${escapeHtml(p.title)}</td>
+                <td class="p-3 text-right font-bold">${DB.employees.filter(e => e.position_id === p.id).length}</td>
+                <td class="p-3 text-right">
+                  <button onclick="editOrg('position', ${p.id})" class="text-amber-600 hover:bg-amber-50 px-2 py-1 rounded text-xs">✏️</button>
+                  <button onclick="deleteOrg('position', ${p.id})" class="text-red-600 hover:bg-red-50 px-2 py-1 rounded text-xs">🗑️</button>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h3 class="font-bold mb-3">📊 Job Grades</h3>
+        <div class="space-y-2">
+          ${DB.jobGrades.map(g => `
+            <div class="flex items-center justify-between p-3 border rounded-lg">
+              <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-lg flex items-center justify-center font-bold">${escapeHtml(g.code)}</div>
+                <div><div class="font-medium">${escapeHtml(g.name)}</div><div class="text-xs text-slate-500">Level ${g.level}</div></div>
+              </div>
+              <div class="text-right">
+                <div class="font-bold text-green-600">$${g.min_salary} - $${g.max_salary}</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// =====================================================
+// ATTENDANCE
+// =====================================================
+function renderAttendance() {
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('pageContent').innerHTML = `
+    <div class="card">
+      <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
+        <div class="flex gap-2 flex-wrap">
+          <input type="date" id="attDate" value="${today}" onchange="renderAttTable()" class="input" style="width:180px;">
+          <button onclick="bulkCheckIn()" class="btn btn-success">✅ Check In All</button>
+          <button onclick="bulkCheckOut()" class="btn btn-warning">🔴 Check Out All</button>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="exportAttendanceExcel()" class="btn btn-secondary">📊 Excel</button>
+          <button onclick="exportAttendancePDF()" class="btn btn-secondary">📕 PDF</button>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50"><tr>
+            <th class="text-left p-3">Employee</th>
+            <th class="text-left p-3">Department</th>
+            <th class="text-left p-3">Check In</th>
+            <th class="text-left p-3">Check Out</th>
+            <th class="text-left p-3">Late</th>
+            <th class="text-left p-3">OT</th>
+            <th class="text-left p-3">Status</th>
+            <th class="text-right p-3">Actions</th>
+          </tr></thead>
+          <tbody id="attTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  `;
+  renderAttTable();
+}
+
+function renderAttTable() {
+  const date = document.getElementById('attDate').value;
+  document.getElementById('attTableBody').innerHTML = DB.employees.map(e => {
+    const a = DB.attendance.find(x => x.employee_id === e.id && x.work_date === date);
+    return `<tr class="border-b table-row">
+      <td class="p-3">${escapeHtml(e.full_name)} <span class="text-xs text-slate-400">(${escapeHtml(e.employee_id || e.code)})</span></td>
+      <td class="p-3">${escapeHtml(getDeptName(e.department_id))}</td>
+      <td class="p-3 font-mono">${a?.check_in || '-'}</td>
+      <td class="p-3 font-mono">${a?.check_out || '-'}</td>
+      <td class="p-3">${a?.late_minutes || 0}</td>
+      <td class="p-3">${a?.overtime_minutes || 0}</td>
+      <td class="p-3">${a ? statusBadge(a.status) : '<span class="badge badge-gray">-</span>'}</td>
+      <td class="p-3 text-right">
+        <button onclick="editAttendance(${e.id}, '${date}')" class="text-amber-600 hover:bg-amber-50 px-2 py-1 rounded text-xs">✏️</button>
+        <button onclick="manualCheckIn(${e.id}, '${date}')" class="text-green-600 hover:bg-green-50 px-2 py-1 rounded text-xs">In</button>
+        <button onclick="manualCheckOut(${e.id}, '${date}')" class="text-red-600 hover:bg-red-50 px-2 py-1 rounded text-xs">Out</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function editAttendance(empId, date) {
+  const a = DB.attendance.find(x => x.employee_id === empId && x.work_date === date);
+  const emp = DB.employees.find(e => e.id === empId);
+  document.getElementById('modalContainer').classList.add('modal-md');
+  document.getElementById('modalTitle').textContent = `✏️ Edit Attendance - ${emp.full_name}`;
+  document.getElementById('modalBody').innerHTML = `
+    <div class="space-y-3">
+      <div class="text-sm text-slate-500">Date: <b>${date}</b></div>
+      <div><label class="text-sm font-medium">Check In</label><input id="att_in" type="time" class="input" value="${a?.check_in || ''}"></div>
+      <div><label class="text-sm font-medium">Check Out</label><input id="att_out" type="time" class="input" value="${a?.check_out || ''}"></div>
+      <div><label class="text-sm font-medium">Status</label>
+        <select id="att_status" class="input">
+          <option value="present" ${a?.status==='present'?'selected':''}>Present</option>
+          <option value="late" ${a?.status==='late'?'selected':''}>Late</option>
+          <option value="absent" ${a?.status==='absent'?'selected':''}>Absent</option>
+        </select>
+      </div>
+    </div>
+    <div class="flex justify-end gap-2 mt-6 pt-4 border-t">
+      <button onclick="closeModal()" class="btn btn-secondary">Cancel</button>
+      <button onclick="saveAttendance(${empId}, '${date}', ${a?.id || 'null'})" class="btn btn-primary">Save</button>
+    </div>
+  `;
+  openModal();
+}
+
+function saveAttendance(empId, date, id) {
+  const data = {
+    check_in: document.getElementById('att_in').value || null,
+    check_out: document.getElementById('att_out').value || null,
+    status: document.getElementById('att_status').value
+  };
+  
+  if (id) {
+    Object.assign(DB.attendance.find(a => a.id === id), data);
+  } else {
+    DB.attendance.push({ id: DB.nextId.att++, employee_id: empId, work_date: date, ...data, late_minutes: 0, overtime_minutes: 0 });
+  }
+  saveDB(); closeModal(); renderAttTable(); toast('✅ Saved');
+}
+
+function manualCheckIn(empId, date) {
+  const time = new Date().toTimeString().slice(0, 5);
+  let a = DB.attendance.find(x => x.employee_id === empId && x.work_date === date);
+  if (a) { a.check_in = time; a.status = 'present'; }
+  else { DB.attendance.push({ id: DB.nextId.att++, employee_id: empId, work_date: date, check_in: time, check_out: null, status: 'present', late_minutes: 0, overtime_minutes: 0 }); }
+  saveDB(); renderAttTable(); toast('✅ Check In');
+}
+
+function manualCheckOut(empId, date) {
+  const time = new Date().toTimeString().slice(0, 5);
+  const a = DB.attendance.find(x => x.employee_id === empId && x.work_date === date);
+  if (!a) return toast('❌ ត្រូវ Check In មុន', 'error');
+  a.check_out = time;
+  saveDB(); renderAttTable(); toast('✅ Check Out');
+}
+
+function bulkCheckIn() {
+  if (!confirm('Check In ទាំងអស់?')) return;
+  const date = document.getElementById('attDate').value;
+  const time = new Date().toTimeString().slice(0, 5);
+  DB.employees.forEach(emp => {
+    let a = DB.attendance.find(x => x.employee_id === emp.id && x.work_date === date);
+    if (!a) {
+      DB.attendance.push({ id: DB.nextId.att++, employee_id: emp.id, work_date: date, check_in: time, check_out: null, status: 'present', late_minutes: 0, overtime_minutes: 0 });
+    }
+  });
+  saveDB(); renderAttTable(); toast('✅ Bulk Check In');
+}
+
+function bulkCheckOut() {
+  if (!confirm('Check Out ទាំងអស់?')) return;
+  const date = document.getElementById('attDate').value;
+  const time = new Date().toTimeString().slice(0, 5);
+  DB.employees.forEach(emp => {
+    let a = DB.attendance.find(x => x.employee_id === emp.id && x.work_date === date);
+    if (a && a.check_in) a.check_out = time;
+  });
+  saveDB(); renderAttTable(); toast('✅ Bulk Check Out');
+}
+
+function exportAttendanceExcel() {
+  const date = document.getElementById('attDate').value;
+  const data = DB.employees.map(e => {
+    const a = DB.attendance.find(x => x.employee_id === e.id && x.work_date === date);
+    return { Employee: e.full_name, Date: date, In: a?.check_in || '', Out: a?.check_out || '', Status: a?.status || '' };
+  });
+  exportXLSX(data, `attendance_${date}`);
+}
+
+function exportAttendancePDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('l');
+  const date = document.getElementById('attDate').value;
+  const rows = DB.employees.map(e => {
+    const a = DB.attendance.find(x => x.employee_id === e.id && x.work_date === date);
+    return [e.full_name, e.employee_id || '', a?.check_in || '-', a?.check_out || '-', a?.status || '-'];
+  });
+  
+  doc.setFillColor(37, 99, 235);
+  doc.rect(0, 0, 297, 20, 'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(16);
+  doc.text(`ATTENDANCE - ${date}`, 148, 14, { align: 'center' });
+  
+  doc.autoTable({
+    startY: 25,
+    head: [['Employee', 'ID', 'Check In', 'Check Out', 'Status']],
+    body: rows,
+    theme: 'grid',
+    headStyles: { fillColor: [37, 99, 235] }
+  });
+  doc.save(`Attendance_${date}.pdf`);
+  toast('📕 PDF downloaded');
+}
+
+// =====================================================
+// LEAVE
+// =====================================================
+function renderLeave() {
+  document.getElementById('pageContent').innerHTML = `
+    <div class="card">
+      <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
+        <h3 class="font-bold">🏖️ Leaves</h3>
+        <button onclick="openLeaveModal()" class="btn btn-primary">+ ស្នើសុំ</button>
+      </div>
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50"><tr>
+          <th class="text-left p-3">Code</th><th class="text-left p-3">Employee</th>
+          <th class="text-left p-3">Type</th><th class="text-left p-3">Start</th>
+          <th class="text-left p-3">End</th><th class="text-left p-3">Days</th>
+          <th class="text-left p-3">Status</th><th class="text-right p-3">Actions</th>
+        </tr></thead>
+        <tbody>
+          ${DB.leaves.map(l => `
+            <tr class="border-b table-row">
+              <td class="p-3 font-mono text-xs">${escapeHtml(l.code)}</td>
+              <td class="p-3">${escapeHtml(getEmpName(l.employee_id))}</td>
+              <td class="p-3">${escapeHtml(getLeaveType(l.leave_type_id))}</td>
+              <td class="p-3">${l.start_date}</td>
+              <td class="p-3">${l.end_date}</td>
+              <td class="p-3">${l.total_days}</td>
+              <td class="p-3">${statusBadge(l.status)}</td>
+              <td class="p-3 text-right">
+                ${l.status === 'pending' ? `
+                  <button onclick="approveLeave(${l.id})" class="text-green-600 hover:bg-green-50 px-2 py-1 rounded text-xs">✓</button>
+                  <button onclick="rejectLeave(${l.id})" class="text-red-600 hover:bg-red-50 px-2 py-1 rounded text-xs">✗</button>
+                ` : ''}
+                <button onclick="deleteLeave(${l.id})" class="text-red-600 hover:bg-red-50 px-2 py-1 rounded text-xs">🗑️</button>
+              </td>
+            </tr>
+          `).join('') || '<tr><td colspan="8" class="text-center p-8 text-slate-400">មិនមាន</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function deleteLeave(id) {
+  if (!confirm('Delete?')) return;
+  DB.leaves = DB.leaves.filter(l => l.id !== id);
+  saveDB(); renderLeave(); toast('🗑️ Deleted');
+}
+
+function openLeaveModal() {
+  document.getElementById('modalContainer').classList.add('modal-md');
+  document.getElementById('modalTitle').textContent = '🏖️ ស្នើសុំច្បាប់';
+  document.getElementById('modalBody').innerHTML = `
+    <div class="space-y-4">
+      <div><label class="text-sm font-medium">Employee</label>
+        <select id="l_emp" class="input">${DB.employees.map(e => `<option value="${e.id}">${e.full_name}</option>`).join('')}</select>
+      </div>
+      <div><label class="text-sm font-medium">Type</label>
+        <select id="l_type" class="input">${DB.leaveTypes.map(t => `<option value="${t.id}">${t.name}</option>`).join('')}</select>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div><label class="text-sm font-medium">Start</label><input id="l_start" type="date" class="input"></div>
+        <div><label class="text-sm font-medium">End</label><input id="l_end" type="date" class="input"></div>
+      </div>
+      <div><label class="text-sm font-medium">Reason</label><textarea id="l_reason" rows="3" class="input"></textarea></div>
+      <div class="flex justify-end gap-2 pt-4 border-t">
+        <button onclick="closeModal()" class="btn btn-secondary">Cancel</button>
+        <button onclick="saveLeave()" class="btn btn-primary">Submit</button>
+      </div>
+    </div>
+  `;
+  openModal();
+}
+
+function saveLeave() {
+  const start = document.getElementById('l_start').value;
+  const end = document.getElementById('l_end').value;
+  if (!start || !end) return toast('❌ សូមបំពេញកាលបរិច្ឆេទ', 'error');
+  if (new Date(end) < new Date(start)) return toast('❌ Date មិនត្រឹមត្រូវ', 'error');
+  const days = Math.ceil((new Date(end) - new Date(start)) / (1000*60*60*24)) + 1;
+  const l = {
+    id: DB.nextId.leave++,
+    code: 'LV' + String(DB.nextId.leave).padStart(4, '0'),
+    employee_id: +document.getElementById('l_emp').value,
+    leave_type_id: +document.getElementById('l_type').value,
+    start_date: start, end_date: end, total_days: days,
+    reason: document.getElementById('l_reason').value,
+    status: 'pending', created_at: new Date().toISOString()
+  };
+  DB.leaves.push(l);
+  saveDB(); closeModal(); renderLeave(); toast('✅ Submitted');
+}
+
+function approveLeave(id) {
+  DB.leaves.find(l => l.id === id).status = 'approved';
+  logAudit(currentUser.id, 'APPROVE_LEAVE', 'leave', id, null);
+  saveDB(); renderLeave(); toast('✅ Approved');
+}
+
+function rejectLeave(id) {
+  const reason = prompt('Reason:');
+  if (!reason) return;
+  DB.leaves.find(l => l.id === id).status = 'rejected';
+  saveDB(); renderLeave(); toast('❌ Rejected');
+}
+
+// =====================================================
+// PAYROLL
+// =====================================================
+const TAX_BRACKETS = [
+  { min: 0, max: 1500000, rate: 0 },
+  { min: 1500000, max: 2000000, rate: 0.05 },
+  { min: 2000000, max: 8500000, rate: 0.10 },
+  { min: 8500000, max: 12500000, rate: 0.15 },
+  { min: 12500000, max: Infinity, rate: 0.20 }
+];
+const EXCHANGE_RATE = 4100;
+
+function calcTax(khr) {
+  let tax = 0;
+  for (const b of TAX_BRACKETS) if (khr > b.min) tax += (Math.min(khr, b.max) - b.min) * b.rate;
+  return tax;
+}
+
+function renderPayroll() {
+  const now = new Date();
+  document.getElementById('pageContent').innerHTML = `
+    <div class="card mb-4">
+      <div class="flex flex-wrap justify-between items-center gap-3">
+        <h3 class="font-bold">💰 Payroll</h3>
+        <div class="flex gap-2 flex-wrap">
+          <select id="payMonth" class="input" style="width:140px;">
+            ${[...Array(12)].map((_, i) => `<option value="${i+1}" ${i+1===now.getMonth()+1?'selected':''}>ខែ ${i+1}</option>`).join('')}
+          </select>
+          <select id="payYear" class="input" style="width:120px;">
+            ${[2023,2024,2025,2026].map(y => `<option value="${y}" ${y===now.getFullYear()?'selected':''}>${y}</option>`).join('')}
+          </select>
+          <button onclick="generatePayroll()" class="btn btn-primary">⚡ គណនា</button>
+          <button onclick="exportPayrollPDF()" class="btn btn-secondary">📕 PDF</button>
+        </div>
+      </div>
+    </div>
+    <div class="card overflow-x-auto">
+      <table class="w-full text-xs">
+        <thead class="bg-slate-50"><tr>
+          <th class="p-2 text-left">ល.រ</th>
+          <th class="p-2 text-left">អត្តលេខ</th>
+          <th class="p-2 text-left">ឈ្មោះ</th>
+          <th class="p-2 text-right">ប្រាក់ខែគោល</th>
+          <th class="p-2 text-right">NSSF</th>
+          <th class="p-2 text-right">Tax</th>
+          <th class="p-2 text-right">ប្រាក់ខែសុទ្ធ</th>
+        </tr></thead>
+        <tbody id="payTableBody"></tbody>
+      </table>
+    </div>
+  `;
+  renderPayTable();
+}
+
+function renderPayTable() {
+  const m = +document.getElementById('payMonth').value;
+  const y = +document.getElementById('payYear').value;
+  const list = DB.payrolls.filter(p => p.period_month === m && p.period_year === y);
+  document.getElementById('payTableBody').innerHTML = list.map((p, idx) => {
+    const e = DB.employees.find(x => x.id === p.employee_id);
+    return `<tr class="border-b table-row">
+      <td class="p-2">${idx + 1}</td>
+      <td class="p-2 font-mono text-xs">${escapeHtml(e?.employee_id || '')}</td>
+      <td class="p-2">${escapeHtml(e?.full_name || '')}</td>
+      <td class="p-2 text-right">$${p.base_salary.toFixed(2)}</td>
+      <td class="p-2 text-right text-orange-600">-$${p.nssf_employee.toFixed(2)}</td>
+      <td class="p-2 text-right text-red-600">-$${p.tax_amount.toFixed(2)}</td>
+      <td class="p-2 text-right font-bold text-green-600">$${p.net_salary.toFixed(2)}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="7" class="text-center p-8 text-slate-400">ចុច "គណនា"</td></tr>';
+}
+
+function generatePayroll() {
+  if (!confirm('គណនាប្រាក់ខែ?')) return;
+  const m = +document.getElementById('payMonth').value;
+  const y = +document.getElementById('payYear').value;
+  DB.payrolls = DB.payrolls.filter(p => !(p.period_month === m && p.period_year === y));
+  let count = 0;
+  DB.employees.filter(e => ['active','on_leave'].includes(e.status)).forEach(emp => {
+    const base = emp.base_salary || 0;
+    const nssfBase = Math.min(base * EXCHANGE_RATE, 300000 * EXCHANGE_RATE);
+    const nssfEmp = (nssfBase * 0.04) / EXCHANGE_RATE;
+    const taxableKHR = (base - nssfEmp) * EXCHANGE_RATE;
+    const taxUSD = calcTax(taxableKHR) / EXCHANGE_RATE;
+    const net = base - nssfEmp - taxUSD;
+    DB.payrolls.push({
+      id: DB.nextId.pay++, employee_id: emp.id,
+      period_month: m, period_year: y,
+      base_salary: base, gross_salary: base,
+      nssf_employee: nssfEmp, tax_amount: taxUSD,
+      total_deduction: nssfEmp + taxUSD, net_salary: net,
+      status: 'draft', created_at: new Date().toISOString()
+    });
+    count++;
+  });
+  saveDB(); renderPayTable(); toast(`✅ ${count} នាក់`);
+}
+
+function exportPayrollPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('l');
+  const m = +document.getElementById('payMonth').value;
+  const y = +document.getElementById('payYear').value;
+  const list = DB.payrolls.filter(p => p.period_month === m && p.period_year === y);
+  if (!list.length) return toast('❌ គ្មានទិន្នន័យ', 'error');
+  
+  doc.setFillColor(37, 99, 235);
+  doc.rect(0, 0, 297, 20, 'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(16);
+  doc.text(`PAYROLL - ${m}/${y}`, 148, 14, { align: 'center' });
+  
+  const rows = list.map((p, idx) => {
+    const e = DB.employees.find(x => x.id === p.employee_id);
+    return [idx+1, e?.employee_id || '', e?.full_name || '', `$${p.base_salary.toFixed(2)}`, `-$${p.nssf_employee.toFixed(2)}`, `-$${p.tax_amount.toFixed(2)}`, `$${p.net_salary.toFixed(2)}`];
+  });
+  
+  doc.autoTable({
+    startY: 25,
+    head: [['#', 'ID', 'Name', 'Base', 'NSSF', 'Tax', 'Net']],
+    body: rows,
+    theme: 'grid',
+    headStyles: { fillColor: [37, 99, 235] }
+  });
+  doc.save(`Payroll_${y}_${m}.pdf`);
+  toast('📕 PDF downloaded');
+}
+
+// =====================================================
+// DOCUMENTS
+// =====================================================
+function renderDocuments() {
+  document.getElementById('pageContent').innerHTML = `
+    <div class="card">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-bold">📁 Documents</h3>
+        <label class="btn btn-primary cursor-pointer">📤 Upload<input type="file" accept=".pdf,.doc,.docx,image/*" multiple class="hidden" onchange="uploadDocument(this)"></label>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        ${DB.documents.map(d => `
+          <div class="border rounded-xl p-4 hover:shadow-md">
+            <div class="text-3xl mb-2">${d.isPDF ? '📕' : '📄'}</div>
+            <div class="font-bold">${escapeHtml(d.title)}</div>
+            <div class="text-xs text-slate-500">${escapeHtml(d.type)} · ${d.size || ''}</div>
+            <div class="flex gap-2 mt-3">
+              <button onclick="previewDocument(${d.id})" class="btn btn-secondary btn-sm flex-1">👁️</button>
+              <button onclick="deleteDocument(${d.id})" class="btn btn-danger btn-sm">🗑️</button>
+            </div>
+          </div>
+        `).join('') || '<p class="col-span-full text-center text-slate-400 py-8">មិនមានឯកសារ</p>'}
+      </div>
+    </div>
+  `;
+}
+
+function uploadDocument(input) {
+  Array.from(input.files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      DB.documents.push({
+        id: DB.nextId.doc++,
+        code: 'DOC' + String(DB.nextId.doc).padStart(3, '0'),
+        title: file.name.replace(/\.[^.]+$/, ''),
+        type: file.type.split('/')[1] || 'file',
+        size: (file.size/1024).toFixed(1) + ' KB',
+        isPDF: file.type === 'application/pdf',
+        data: e.target.result,
+        file_name: file.name,
+        created_at: new Date().toISOString()
+      });
+      saveDB(); renderDocuments();
+      toast(`✅ ${file.name}`);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function previewDocument(id) {
+  const d = DB.documents.find(x => x.id === id);
+  const w = window.open('', '_blank');
+  if (d.isPDF) w.document.write(`<html><body style="margin:0;background:#1e293b;"><iframe src="${d.data}" style="width:100%;height:100vh;border:none;"></iframe></body></html>`);
+  else w.document.write(`<html><body style="margin:0;background:#1e293b;display:flex;align-items:center;justify-content:center;height:100vh;"><img src="${d.data}" style="max-width:100%;max-height:100vh;"></body></html>`);
+}
+
+function deleteDocument(id) {
+  if (!confirm('Delete?')) return;
+  DB.documents = DB.documents.filter(d => d.id !== id);
+  saveDB(); renderDocuments(); toast('🗑️ Deleted');
+}
+
+// =====================================================
+// ASSETS
+// =====================================================
+function renderAssets() {
+  document.getElementById('pageContent').innerHTML = `
+    <div class="card">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-bold">💼 Assets</h3>
+        <button onclick="openAssetModal()" class="btn btn-primary">+ បន្ថែម</button>
+      </div>
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50"><tr>
+          <th class="text-left p-3">Code</th><th class="text-left p-3">Name</th>
+          <th class="text-right p-3">Value</th><th class="text-center p-3">Status</th>
+          <th class="text-right p-3">Actions</th>
+        </tr></thead>
+        <tbody>
+          ${DB.assets.map(a => `
+            <tr class="border-b table-row">
+              <td class="p-3 font-mono text-xs">${escapeHtml(a.code)}</td>
+              <td class="p-3">${escapeHtml(a.name)}</td>
+              <td class="p-3 text-right">$${a.value}</td>
+              <td class="p-3 text-center">${statusBadge(a.status)}</td>
+              <td class="p-3 text-right">
+                <button onclick="deleteAsset(${a.id})" class="text-red-600 hover:bg-red-50 px-2 py-1 rounded text-xs">🗑️</button>
+              </td>
+            </tr>
+          `).join('') || '<tr><td colspan="5" class="text-center p-8 text-slate-400">មិនមាន</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function openAssetModal() {
+  document.getElementById('modalContainer').classList.add('modal-md');
+  document.getElementById('modalTitle').textContent = '💼 បន្ថែមសម្ភារៈ';
+  document.getElementById('modalBody').innerHTML = `
+    <div class="grid grid-cols-2 gap-4">
+      <div class="col-span-2"><label class="text-sm font-medium">Name</label><input id="a_name" class="input"></div>
+      <div><label class="text-sm font-medium">Category</label><input id="a_cat" class="input" value="IT Equipment"></div>
+      <div><label class="text-sm font-medium">Value ($)</label><input id="a_value" type="number" class="input" value="0"></div>
+    </div>
+    <div class="flex justify-end gap-2 mt-6 pt-4 border-t">
+      <button onclick="closeModal()" class="btn btn-secondary">Cancel</button>
+      <button onclick="saveAsset()" class="btn btn-primary">Save</button>
+    </div>
+  `;
+  openModal();
+}
+
+function saveAsset() {
+  const name = document.getElementById('a_name').value.trim();
+  if (!name) return toast('❌ សូមបំពេញ Name', 'error');
+  DB.assets.push({
+    id: DB.nextId.asset++,
+    code: 'AST' + String(DB.nextId.asset).padStart(3, '0'),
+    name, category: document.getElementById('a_cat').value,
+    value: +document.getElementById('a_value').value,
+    status: 'in_stock',
+    purchase_date: new Date().toISOString().split('T')[0]
+  });
+  saveDB(); closeModal(); renderAssets(); toast('✅ Added');
+}
+
+function deleteAsset(id) {
+  if (!confirm('Delete?')) return;
+  DB.assets = DB.assets.filter(a => a.id !== id);
+  saveDB(); renderAssets(); toast('🗑️ Deleted');
+}
+
+// =====================================================
+// CONTRACTS
+// =====================================================
+function renderContracts() {
+  document.getElementById('pageContent').innerHTML = `
+    <div class="card">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-bold">📝 Contracts</h3>
+        <button onclick="openContractModal()" class="btn btn-primary">+ បន្ថែម</button>
+      </div>
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50"><tr>
+          <th class="text-left p-3">Code</th><th class="text-left p-3">Title</th>
+          <th class="text-right p-3">Value</th><th class="text-center p-3">Status</th>
+          <th class="text-right p-3">Actions</th>
+        </tr></thead>
+        <tbody>
+          ${DB.contracts.map(c => `
+            <tr class="border-b table-row">
+              <td class="p-3 font-mono text-xs">${escapeHtml(c.code)}</td>
+              <td class="p-3">${escapeHtml(c.title)}</td>
+              <td class="p-3 text-right">$${c.value.toLocaleString()}</td>
+              <td class="p-3 text-center">${statusBadge(c.status)}</td>
+              <td class="p-3 text-right">
+                <button onclick="deleteContract(${c.id})" class="text-red-600 hover:bg-red-50 px-2 py-1 rounded text-xs">🗑️</button>
+              </td>
+            </tr>
+          `).join('') || '<tr><td colspan="5" class="text-center p-8 text-slate-400">មិនមាន</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function openContractModal() {
+  document.getElementById('modalContainer').classList.add('modal-md');
+  document.getElementById('modalTitle').textContent = '📝 បន្ថែមកិច្ចសន្យា';
+  document.getElementById('modalBody').innerHTML = `
+    <div class="grid grid-cols-2 gap-4">
+      <div class="col-span-2"><label class="text-sm font-medium">Title</label><input id="c_title" class="input"></div>
+      <div><label class="text-sm font-medium">Type</label>
+        <select id="c_type" class="input"><option>Employment</option><option>Supply</option><option>Lease</option></select>
+      </div>
+      <div><label class="text-sm font-medium">Value ($)</label><input id="c_value" type="number" class="input" value="0"></div>
+    </div>
+    <div class="flex justify-end gap-2 mt-6 pt-4 border-t">
+      <button onclick="closeModal()" class="btn btn-secondary">Cancel</button>
+      <button onclick="saveContract()" class="btn btn-primary">Save</button>
+    </div>
+  `;
+  openModal();
+}
+
+function saveContract() {
+  const title = document.getElementById('c_title').value.trim();
+  if (!title) return toast('❌ សូមបំពេញ Title', 'error');
+  DB.contracts.push({
+    id: DB.nextId.contract++,
+    code: 'CT' + String(DB.nextId.contract).padStart(3, '0'),
+    title, type: document.getElementById('c_type').value,
+    value: +document.getElementById('c_value').value,
+    status: 'active', created_at: new Date().toISOString()
+  });
+  saveDB(); closeModal(); renderContracts(); toast('✅ Added');
+}
+
+function deleteContract(id) {
+  if (!confirm('Delete?')) return;
+  DB.contracts = DB.contracts.filter(c => c.id !== id);
+  saveDB(); renderContracts(); toast('🗑️ Deleted');
+}
+
+// =====================================================
+// INVENTORY
+// =====================================================
+function renderInventory() {
+  const lowStock = DB.inventory.filter(i => i.quantity <= i.min_stock).length;
+  document.getElementById('pageContent').innerHTML = `
+    <div class="grid grid-cols-3 gap-4 mb-4">
+      <div class="card"><div class="text-3xl mb-2">📦</div><div class="text-sm text-slate-500">Total Items</div><div class="text-2xl font-bold">${DB.inventory.length}</div></div>
+      <div class="card"><div class="text-3xl mb-2">⚠️</div><div class="text-sm text-slate-500">Low Stock</div><div class="text-2xl font-bold text-red-600">${lowStock}</div></div>
+      <div class="card"><div class="text-3xl mb-2">💰</div><div class="text-sm text-slate-500">Value</div><div class="text-2xl font-bold text-green-600">$${DB.inventory.reduce((s,i)=>s+i.quantity*i.unit_price,0).toFixed(0)}</div></div>
+    </div>
+    <div class="card">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-bold">📦 Inventory</h3>
+        <button onclick="openInvModal()" class="btn btn-primary">+ បន្ថែម</button>
+      </div>
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50"><tr>
+          <th class="text-left p-3">Code</th><th class="text-left p-3">Name</th>
+          <th class="text-right p-3">Qty</th><th class="text-right p-3">Min</th>
+          <th class="text-right p-3">Price</th><th class="text-right p-3">Actions</th>
+        </tr></thead>
+        <tbody>
+          ${DB.inventory.map(i => `
+            <tr class="border-b table-row ${i.quantity <= i.min_stock ? 'bg-red-50' : ''}">
+              <td class="p-3 font-mono text-xs">${escapeHtml(i.code)}</td>
+              <td class="p-3">${escapeHtml(i.name)}</td>
+              <td class="p-3 text-right font-bold ${i.quantity <= i.min_stock ? 'text-red-600' : ''}">${i.quantity}</td>
+              <td class="p-3 text-right text-slate-400">${i.min_stock}</td>
+              <td class="p-3 text-right">$${i.unit_price}</td>
+              <td class="p-3 text-right">
+                <button onclick="editInventory(${i.id})" class="text-amber-600 hover:bg-amber-50 px-2 py-1 rounded text-xs">✏️</button>
+                <button onclick="deleteInv(${i.id})" class="text-red-600 hover:bg-red-50 px-2 py-1 rounded text-xs">🗑️</button>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function openInvModal() {
+  document.getElementById('modalContainer').classList.add('modal-md');
+  document.getElementById('modalTitle').textContent = '📦 បន្ថែមទំនិញ';
+  document.getElementById('modalBody').innerHTML = `
+    <div class="grid grid-cols-2 gap-4">
+      <div class="col-span-2"><label class="text-sm font-medium">Name</label><input id="i_name" class="input"></div>
+      <div><label class="text-sm font-medium">Quantity</label><input id="i_qty" type="number" class="input" value="0"></div>
+      <div><label class="text-sm font-medium">Min Stock</label><input id="i_min" type="number" class="input" value="10"></div>
+      <div><label class="text-sm font-medium">Price ($)</label><input id="i_price" type="number" class="input" value="0"></div>
+    </div>
+    <div class="flex justify-end gap-2 mt-6 pt-4 border-t">
+      <button onclick="closeModal()" class="btn btn-secondary">Cancel</button>
+      <button onclick="saveInv()" class="btn btn-primary">Save</button>
+    </div>
+  `;
+  openModal();
+}
+
+function saveInv() {
+  const name = document.getElementById('i_name').value.trim();
+  if (!name) return toast('❌ សូមបំពេញ Name', 'error');
+  DB.inventory.push({
+    id: DB.nextId.inv++,
+    code: 'INV' + String(DB.nextId.inv).padStart(3, '0'),
+    name,
+    quantity: +document.getElementById('i_qty').value,
+    min_stock: +document.getElementById('i_min').value,
+    unit_price: +document.getElementById('i_price').value,
+    category: 'General', unit: 'Piece', location: 'Warehouse'
+  });
+  saveDB(); closeModal(); renderInventory(); toast('✅ Added');
+}
+
+function editInventory(id) {
+  const i = DB.inventory.find(x => x.id === id);
+  const q = prompt(`Quantity for "${i.name}":`, i.quantity);
+  if (q === null) return;
+  i.quantity = +q;
+  saveDB(); renderInventory(); toast('✅ Updated');
+}
+
+function deleteInv(id) {
+  if (!confirm('Delete?')) return;
+  DB.inventory = DB.inventory.filter(i => i.id !== id);
+  saveDB(); renderInventory(); toast('🗑️ Deleted');
+}
+
+// =====================================================
+// SUPPLIERS
+// =====================================================
+function renderSuppliers() {
+  document.getElementById('pageContent').innerHTML = `
+    <div class="card">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-bold">🏭 Suppliers</h3>
+        <button onclick="openSupModal()" class="btn btn-primary">+ បន្ថែម</button>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        ${DB.suppliers.map(s => `
+          <div class="border rounded-xl p-4">
+            <div class="w-12 h-12 bg-gradient-to-br from-orange-400 to-red-500 rounded-lg flex items-center justify-center text-white font-bold mb-2">${escapeHtml(s.name.charAt(0))}</div>
+            <div class="font-bold">${escapeHtml(s.name)}</div>
+            <div class="text-xs text-slate-500">${escapeHtml(s.code)}</div>
+            <div class="mt-2 text-xs space-y-1">
+              <div>📞 ${escapeHtml(s.phone || '-')}</div>
+              <div>📧 ${escapeHtml(s.email || '-')}</div>
+            </div>
+            <button onclick="deleteSupplier(${s.id})" class="text-red-600 text-xs mt-2">🗑️ Delete</button>
+          </div>
+        `).join('') || '<p class="col-span-full text-center text-slate-400 py-8">មិនមាន</p>'}
+      </div>
+    </div>
+  `;
+}
+
+function openSupModal() {
+  document.getElementById('modalContainer').classList.add('modal-md');
+  document.getElementById('modalTitle').textContent = '🏭 បន្ថែមអ្នកផ្គត់ផ្គង់';
+  document.getElementById('modalBody').innerHTML = `
+    <div class="grid grid-cols-2 gap-4">
+      <div class="col-span-2"><label class="text-sm font-medium">Company Name</label><input id="s_name" class="input"></div>
+      <div><label class="text-sm font-medium">Phone</label><input id="s_phone" class="input"></div>
+      <div><label class="text-sm font-medium">Email</label><input id="s_email" class="input"></div>
+    </div>
+    <div class="flex justify-end gap-2 mt-6 pt-4 border-t">
+      <button onclick="closeModal()" class="btn btn-secondary">Cancel</button>
+      <button onclick="saveSup()" class="btn btn-primary">Save</button>
+    </div>
+  `;
+  openModal();
+}
+
+function saveSup() {
+  const name = document.getElementById('s_name').value.trim();
+  if (!name) return toast('❌ សូមបំពេញ Name', 'error');
+  DB.suppliers.push({
+    id: DB.nextId.sup++,
+    code: 'SUP' + String(DB.nextId.sup).padStart(3, '0'),
+    name,
+    phone: document.getElementById('s_phone').value,
+    email: document.getElementById('s_email').value,
+    status: 'active'
+  });
+  saveDB(); closeModal(); renderSuppliers(); toast('✅ Added');
+}
+
+function deleteSupplier(id) {
+  if (!confirm('Delete?')) return;
+  DB.suppliers = DB.suppliers.filter(s => s.id !== id);
+  saveDB(); renderSuppliers(); toast('🗑️ Deleted');
+}
+
+// =====================================================
+// PURCHASE ORDERS
+// =====================================================
+function renderPurchase() {
+  document.getElementById('pageContent').innerHTML = `
+    <div class="card">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-bold">🛒 Purchase Orders</h3>
+        <button onclick="openPOModal()" class="btn btn-primary">+ បង្កើត PO</button>
+      </div>
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50"><tr>
+          <th class="text-left p-3">Code</th><th class="text-left p-3">Supplier</th>
+          <th class="text-right p-3">Total</th><th class="text-center p-3">Status</th>
+          <th class="text-right p-3">Actions</th>
+        </tr></thead>
+        <tbody>
+          ${DB.purchaseOrders.map(p => `
+            <tr class="border-b table-row">
+              <td class="p-3 font-mono text-xs">${escapeHtml(p.code)}</td>
+              <td class="p-3">${escapeHtml(getSupName(p.supplier_id))}</td>
+              <td class="p-3 text-right font-medium">$${p.total.toFixed(2)}</td>
+              <td class="p-3 text-center">
+                <select onchange="updatePOStatus(${p.id}, this.value)" class="input" style="padding:4px;font-size:12px;width:auto;">
+                  <option value="pending" ${p.status==='pending'?'selected':''}>Pending</option>
+                  <option value="approved" ${p.status==='approved'?'selected':''}>Approved</option>
+                  <option value="received" ${p.status==='received'?'selected':''}>Received</option>
+                </select>
+              </td>
+              <td class="p-3 text-right">
+                <button onclick="deletePO(${p.id})" class="text-red-600 hover:bg-red-50 px-2 py-1 rounded text-xs">🗑️</button>
+              </td>
+            </tr>
+          `).join('') || '<tr><td colspan="5" class="text-center p-8 text-slate-400">មិនមាន</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function updatePOStatus(id, status) {
+  const p = DB.purchaseOrders.find(x => x.id === id);
+  p.status = status;
+  saveDB(); toast('✅ Status updated');
+}
+
+function deletePO(id) {
+  if (!confirm('Delete?')) return;
+  DB.purchaseOrders = DB.purchaseOrders.filter(p => p.id !== id);
+  saveDB(); renderPurchase(); toast('🗑️ Deleted');
+}
+
+function openPOModal() {
+  document.getElementById('modalContainer').classList.add('modal-md');
+  document.getElementById('modalTitle').textContent = '🛒 បង្កើត PO';
+  document.getElementById('modalBody').innerHTML = `
+    <div class="grid grid-cols-2 gap-4">
+      <div class="col-span-2"><label class="text-sm font-medium">Supplier</label>
+        <select id="po_sup" class="input">${DB.suppliers.map(s => `<option value="${s.id}">${s.name}</option>`).join('') || '<option value="">-- None --</option>'}</select>
+      </div>
+      <div><label class="text-sm font-medium">Items</label><input id="po_items" type="number" class="input" value="1"></div>
+      <div><label class="text-sm font-medium">Total ($)</label><input id="po_total" type="number" class="input" value="0"></div>
+    </div>
+    <div class="flex justify-end gap-2 mt-6 pt-4 border-t">
+      <button onclick="closeModal()" class="btn btn-secondary">Cancel</button>
+      <button onclick="savePO()" class="btn btn-primary">Save</button>
+    </div>
+  `;
+  openModal();
+}
+
+function savePO() {
+  DB.purchaseOrders.push({
+    id: DB.nextId.po++,
+    code: 'PO-' + new Date().getFullYear() + '-' + String(DB.nextId.po).padStart(3, '0'),
+    supplier_id: +document.getElementById('po_sup').value,
+    items: +document.getElementById('po_items').value,
+    total: +document.getElementById('po_total').value,
+    status: 'pending',
+    created_at: new Date().toISOString()
+  });
+  saveDB(); closeModal(); renderPurchase(); toast('✅ Created');
+}
+
+// =====================================================
+// REPORTS
+// =====================================================
+function renderReports() {
+  document.getElementById('pageContent').innerHTML = `
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <button onclick="exportReport('employees')" class="card card-click text-left">
+        <div class="text-4xl mb-2">👥</div><div class="font-bold">Employees</div>
+      </button>
+      <button onclick="exportReport('attendance')" class="card card-click text-left">
+        <div class="text-4xl mb-2">⏰</div><div class="font-bold">Attendance</div>
+      </button>
+      <button onclick="exportReport('leave')" class="card card-click text-left">
+        <div class="text-4xl mb-2">🏖️</div><div class="font-bold">Leave</div>
+      </button>
+      <button onclick="exportReport('payroll')" class="card card-click text-left">
+        <div class="text-4xl mb-2">💰</div><div class="font-bold">Payroll</div>
+      </button>
+    </div>
+    <div class="card">
+      <h3 class="font-bold mb-3">📊 Statistics</h3>
+      <div class="grid grid-cols-5 gap-3">
+        <div class="p-3 bg-blue-50 rounded-lg"><div class="text-xs">Total Employees</div><div class="text-2xl font-bold text-blue-600">${DB.employees.length}</div></div>
+        <div class="p-3 bg-green-50 rounded-lg"><div class="text-xs">Active</div><div class="text-2xl font-bold text-green-600">${DB.employees.filter(e=>e.status==='active').length}</div></div>
+        <div class="p-3 bg-yellow-50 rounded-lg"><div class="text-xs">Pending Leaves</div><div class="text-2xl font-bold text-yellow-600">${DB.leaves.filter(l=>l.status==='pending').length}</div></div>
+        <div class="p-3 bg-purple-50 rounded-lg"><div class="text-xs">Departments</div><div class="text-2xl font-bold text-purple-600">${DB.departments.length}</div></div>
+        <div class="p-3 bg-red-50 rounded-lg"><div class="text-xs">Total Payrolls</div><div class="text-2xl font-bold text-red-600">${DB.payrolls.length}</div></div>
+      </div>
+    </div>
+  `;
+}
+
+function exportReport(type) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('l');
+  let title = '', head = [], body = [];
+
+  if (type === 'employees') {
+    title = 'EMPLOYEES';
+    head = [['ID', 'Code', 'Name', 'Gender', 'Dept', 'Phone', 'Salary', 'Status']];
+    body = DB.employees.map(e => [e.employee_id || '', e.code, e.full_name, e.gender, getDeptName(e.department_id), e.phone, `$${e.base_salary}`, e.status]);
+  } else if (type === 'attendance') {
+    title = 'ATTENDANCE';
+    head = [['Employee', 'Date', 'In', 'Out', 'Status']];
+    body = DB.attendance.slice(0, 500).map(a => [getEmpName(a.employee_id), a.work_date, a.check_in || '-', a.check_out || '-', a.status]);
+  } else if (type === 'leave') {
+    title = 'LEAVE';
+    head = [['Code', 'Employee', 'Type', 'Start', 'End', 'Days', 'Status']];
+    body = DB.leaves.map(l => [l.code, getEmpName(l.employee_id), getLeaveType(l.leave_type_id), l.start_date, l.end_date, l.total_days, l.status]);
+  } else if (type === 'payroll') {
+    title = 'PAYROLL';
+    head = [['#', 'ID', 'Name', 'Base', 'NSSF', 'Tax', 'Net']];
+    body = DB.payrolls.map((p, idx) => {
+      const e = DB.employees.find(x => x.id === p.employee_id);
+      return [idx+1, e?.employee_id || '', e?.full_name || '', `$${p.base_salary.toFixed(2)}`, `-$${p.nssf_employee.toFixed(2)}`, `-$${p.tax_amount.toFixed(2)}`, `$${p.net_salary.toFixed(2)}`];
+    });
+  }
+
+  doc.setFillColor(37, 99, 235);
+  doc.rect(0, 0, 297, 20, 'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(16);
+  doc.text(title, 148, 14, { align: 'center' });
+  doc.autoTable({
+    startY: 25, head, body, theme: 'grid',
+    headStyles: { fillColor: [37, 99, 235] },
+    styles: { fontSize: 8 }
+  });
+  doc.save(`${title}.pdf`);
+  toast('📕 Downloaded');
+}
+
+// =====================================================
+// AUDIT
+// =====================================================
+function renderAudit() {
+  document.getElementById('pageContent').innerHTML = `
+    <div class="card">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-bold">🔒 Audit Log</h3>
+        <button onclick="clearAudit()" class="btn btn-danger btn-sm">🗑️ Clear</button>
+      </div>
+      <div class="overflow-x-auto max-h-[70vh]">
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50 sticky top-0"><tr>
+            <th class="text-left p-3">Date</th><th class="text-left p-3">User</th>
+            <th class="text-left p-3">Action</th><th class="text-left p-3">Module</th>
+            <th class="text-left p-3">Details</th>
+          </tr></thead>
+          <tbody>
+            ${DB.auditLogs.slice().reverse().slice(0, 500).map(a => `
+              <tr class="border-b table-row">
+                <td class="p-3 text-xs whitespace-nowrap">${new Date(a.created_at).toLocaleString()}</td>
+                <td class="p-3 font-medium">${escapeHtml(getUserName(a.user_id) || 'System')}</td>
+                <td class="p-3"><span class="badge badge-blue">${escapeHtml(a.action)}</span></td>
+                <td class="p-3 text-xs">${escapeHtml(a.module || '-')}</td>
+                <td class="p-3 text-xs text-slate-600">${escapeHtml(a.description || '-')}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function clearAudit() {
+  if (!confirm('Clear all?')) return;
+  DB.auditLogs = [];
+  logAudit(currentUser.id, 'CLEAR_AUDIT', 'system', null, 'Cleared');
+  saveDB(); renderAudit(); toast('🗑️ Cleared');
+}
+
+// =====================================================
+// SETTINGS
+// =====================================================
+function renderSettings() {
+  document.getElementById('pageContent').innerHTML = `
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="card">
+        <h3 class="font-bold mb-4">🏢 Company Information & Logo</h3>
+        <div class="flex items-center gap-4 mb-4 p-4 bg-slate-50 rounded-lg">
+          <div class="logo-upload" onclick="document.getElementById('logoInput').click()">
+            ${DB.settings.companyLogo 
+              ? `<img src="${DB.settings.companyLogo}" class="w-full h-full object-cover">`
+              : '<div class="text-center text-slate-400"><div class="text-3xl">🏢</div><div class="text-xs mt-1">Upload Logo</div></div>'}
+          </div>
+          <input type="file" id="logoInput" accept="image/*" class="hidden" onchange="uploadCompanyLogo(this)">
+          <div class="flex-1">
+            <p class="font-medium">Company Logo</p>
+            <p class="text-xs text-slate-500 mt-1">PNG, JPG · Max 2MB</p>
+          </div>
+        </div>
+        <div class="space-y-2 text-sm">
+          <div><label class="text-xs text-slate-500">Company Name</label><input id="set_companyName" class="input" value="${DB.settings.companyName || ''}"></div>
+          <button onclick="saveCompanyInfo()" class="btn btn-primary w-full">💾 Save</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="font-bold">👥 Users Management</h3>
+          <button onclick="openUserModal()" class="btn btn-primary btn-sm">+ បន្ថែម User</button>
+        </div>
+        <div class="space-y-2">
+          ${DB.users.map(u => `
+            <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+              <div class="w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold">${escapeHtml(u.name.charAt(0))}</div>
+              <div class="flex-1">
+                <div class="font-medium text-sm">${escapeHtml(u.name)}</div>
+                <div class="text-xs text-slate-500">${escapeHtml(u.username)} · ${escapeHtml(u.role)}</div>
+              </div>
+              ${u.id !== 1 ? `<button onclick="deleteUser(${u.id})" class="text-red-600 hover:bg-red-50 px-2 py-1 rounded text-xs">🗑️</button>` : '<span class="badge badge-gray text-xs">Protected</span>'}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="font-bold mb-4">💾 Backup & Restore</h3>
+        <button onclick="exportBackup()" class="btn btn-success w-full mb-2">📥 Export Backup</button>
+        <label class="block mb-2">
+          <input type="file" accept=".json" onchange="importBackup(event)" class="hidden">
+          <span class="btn btn-primary w-full block text-center cursor-pointer">📤 Import Backup</span>
+        </label>
+        <button onclick="resetDB()" class="btn btn-danger w-full">🔄 Reset All Data</button>
+      </div>
+    </div>
+  `;
+}
+
+function saveCompanyInfo() {
+  DB.settings.companyName = document.getElementById('set_companyName').value;
+  saveDB();
+  toast('✅ Saved');
+}
+
+function openUserModal() {
+  document.getElementById('modalContainer').classList.add('modal-md');
+  document.getElementById('modalTitle').textContent = '➕ បន្ថែម User';
+  document.getElementById('modalBody').innerHTML = `
+    <div class="space-y-3">
+      <div><label class="text-sm font-medium">Username</label><input id="u_username" class="input"></div>
+      <div><label class="text-sm font-medium">Name</label><input id="u_name" class="input"></div>
+      <div><label class="text-sm font-medium">Email</label><input id="u_email" type="email" class="input"></div>
+      <div><label class="text-sm font-medium">Password</label><input id="u_password" type="password" class="input"></div>
+      <div><label class="text-sm font-medium">Role</label>
+        <select id="u_role" class="input">
+          <option value="super_admin">Super Admin</option>
+          <option value="hr_manager">HR Manager</option>
+          <option value="staff">Staff</option>
+        </select>
+      </div>
+    </div>
+    <div class="flex justify-end gap-2 mt-6 pt-4 border-t">
+      <button onclick="closeModal()" class="btn btn-secondary">Cancel</button>
+      <button onclick="saveUser()" class="btn btn-primary">💾 Save</button>
+    </div>
+  `;
+  openModal();
+}
+
+function saveUser() {
+  const username = document.getElementById('u_username').value.trim();
+  const name = document.getElementById('u_name').value.trim();
+  const email = document.getElementById('u_email').value.trim();
+  const password = document.getElementById('u_password').value;
+  const role = document.getElementById('u_role').value;
+  if (!username || !name || !password) return toast('❌ សូមបំពេញព័ត៌មាន', 'error');
+
+  DB.users.push({ id: Date.now(), username, name, email, password: hashPassword(password), role });
+  saveDB(); closeModal(); renderSettings(); toast('✅ User added');
+}
+
+function deleteUser(id) {
+  if (id === 1) return toast('❌ មិនអាចលុប Super Admin', 'error');
+  if (!confirm('Delete user?')) return;
+  DB.users = DB.users.filter(u => u.id !== id);
+  saveDB(); renderSettings(); toast('🗑️ Deleted');
+}
+
+function exportBackup() {
+  const data = JSON.stringify(DB, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `hr_backup_${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  toast('📥 Downloaded');
+}
+
+function importBackup(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!data.employees) throw new Error('Invalid');
+      if (!confirm('Restore?')) return;
+      Object.assign(DB, data);
+      saveDB(); applyCompanyLogo();
+      toast('✅ Restored');
+      showPage('dashboard');
+    } catch (err) { toast('❌ Invalid', 'error'); }
+  };
+  reader.readAsText(file);
+}
+
+function resetDB() {
+  if (!confirm('⚠️ Delete ALL data?')) return;
+  if (!confirm('⚠️ Final warning!')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  sessionStorage.removeItem(SESSION_KEY);
+  sessionStorage.removeItem(ACTIVITY_KEY);
+  location.reload();
+}
+
+// =====================================================
+// UTILITIES
+// =====================================================
+function logAudit(userId, action, module, refId, description) {
+  DB.auditLogs.push({ id: DB.nextId.audit++, user_id: userId, action, module, reference_id: refId, description, created_at: new Date().toISOString() });
+  if (DB.auditLogs.length > 5000) DB.auditLogs = DB.auditLogs.slice(-5000);
+}
+
+function getUserName(id) { return DB.users.find(u => u.id === id)?.name; }
+function getEmpName(id) { return DB.employees.find(e => e.id === id)?.full_name || 'N/A'; }
+function getDeptName(id) { return DB.departments.find(d => d.id === id)?.name || '-'; }
+function getPosName(id) { return DB.positions.find(p => p.id === id)?.title || '-'; }
+function getGradeName(id) { return DB.jobGrades.find(g => g.id === id)?.code || '-'; }
+function getLeaveType(id) { return DB.leaveTypes.find(t => t.id === id)?.name || '-'; }
+function getSupName(id) { return DB.suppliers.find(s => s.id === id)?.name || '-'; }
+
+function statusBadge(status) {
+  const m = { active:'badge-green', present:'badge-green', approved:'badge-green', paid:'badge-green', received:'badge-green',
+    probation:'badge-yellow', pending:'badge-yellow', late:'badge-yellow',
+    on_leave:'badge-blue', in_use:'badge-blue', in_stock:'badge-blue',
+    absent:'badge-red', rejected:'badge-red', terminated:'badge-red', maintenance:'badge-red', damaged:'badge-red', cancelled:'badge-red',
+    resigned:'badge-gray' };
+  return `<span class="badge ${m[status] || 'badge-gray'}">${escapeHtml(status)}</span>`;
+}
+
+function timeAgo(date) {
+  const s = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
+  if (s < 60) return 'just now';
+  if (s < 3600) return Math.floor(s/60) + 'm ago';
+  if (s < 86400) return Math.floor(s/3600) + 'h ago';
+  return Math.floor(s/86400) + 'd ago';
+}
+
+function openModal() { const m = document.getElementById('modal'); m.classList.remove('hidden'); m.classList.add('flex'); }
+function closeModal() { const m = document.getElementById('modal'); m.classList.add('hidden'); m.classList.remove('flex'); }
+
+function toast(msg, type = 'success') {
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.style.background = type === 'error' ? 'linear-gradient(135deg,#dc2626,#991b1b)' : 'linear-gradient(135deg,#16a34a,#15803d)';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => { el.style.transform = 'translateX(400px)'; el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 2800);
+}
+
+function exportXLSX(data, filename) {
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Report');
+  XLSX.writeFile(wb, `${filename}_${new Date().toISOString().split('T')[0]}.xlsx`);
+  toast('📥 Downloaded');
+}
+
+// =====================================================
+// BOOT
+// =====================================================
+document.addEventListener('DOMContentLoaded', () => {
+  initDB();
+  applyCompanyLogo();
+  
+  const savedSession = sessionStorage.getItem(SESSION_KEY);
+  const lastActivity = parseInt(sessionStorage.getItem(ACTIVITY_KEY) || 0);
+  const elapsed = Date.now() - lastActivity;
+  
+  if (savedSession && elapsed < SESSION_TIMEOUT) {
+    try {
+      currentUser = JSON.parse(savedSession);
+      document.getElementById('loginScreen').classList.add('hidden');
+      document.getElementById('appScreen').classList.remove('hidden');
+      document.getElementById('userName').textContent = currentUser.name;
+      document.getElementById('userRole').textContent = currentUser.role.replace('_',' ').toUpperCase();
+      document.getElementById('userAvatar').textContent = currentUser.name.charAt(0);
+      document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      updateBadges();
+      showPage('dashboard');
+      startSessionTimer();
+    } catch(e) { 
+      sessionStorage.removeItem(SESSION_KEY);
+      sessionStorage.removeItem(ACTIVITY_KEY);
+    }
+  } else if (savedSession) {
+    sessionStorage.removeItem(SESSION_KEY);
+    sessionStorage.removeItem(ACTIVITY_KEY);
+  }
+  
+  setInterval(() => { if (currentUser) saveDB(); }, 5 * 60 * 1000);
+  window.addEventListener('beforeunload', () => { if (currentUser) saveDB(); });
+  setInterval(() => { if (currentUser) updateBadges(); }, 30000);
+});
+</script>
+</body>
+</html>
