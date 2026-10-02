@@ -1894,7 +1894,6 @@ function deleteOrg(type, id) {
     saveDB(); renderOrganization(); toast('🗑️ Deleted');
   }
 }
-
 function exportOrgPDF(type) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
@@ -1915,6 +1914,86 @@ function exportOrgPDF(type) {
   });
   doc.save('Departments.pdf');
   toast('📕 Downloaded');
+}
+
+function exportAssetsPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('l', 'mm', 'a4');
+  doc.setFillColor(37, 99, 235);
+  doc.rect(0, 0, 297, 20, 'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(16);
+  doc.text('ASSETS LIST', 148, 14, { align: 'center' });
+  const rows = DB.assets.map(a => [a.code, a.name, a.category || '-', a.value, a.status]);
+  doc.autoTable({
+    startY: 25,
+    head: [['Code', 'Name', 'Category', 'Value ($)', 'Status']],
+    body: rows,
+    theme: 'grid',
+    headStyles: { fillColor: [37, 99, 235] }
+  });
+  doc.save('Assets.pdf');
+  toast('📕 PDF downloaded');
+}
+
+function exportContractsPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('l', 'mm', 'a4');
+  doc.setFillColor(37, 99, 235);
+  doc.rect(0, 0, 297, 20, 'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(16);
+  doc.text('CONTRACTS LIST', 148, 14, { align: 'center' });
+  const rows = DB.contracts.map(c => [c.code, c.title, c.type || '-', c.value, c.status]);
+  doc.autoTable({
+    startY: 25,
+    head: [['Code', 'Title', 'Type', 'Value ($)', 'Status']],
+    body: rows,
+    theme: 'grid',
+    headStyles: { fillColor: [37, 99, 235] }
+  });
+  doc.save('Contracts.pdf');
+  toast('📕 PDF downloaded');
+}
+
+function exportInventoryPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('l', 'mm', 'a4');
+  doc.setFillColor(37, 99, 235);
+  doc.rect(0, 0, 297, 20, 'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(16);
+  doc.text('INVENTORY LIST', 148, 14, { align: 'center' });
+  const rows = DB.inventory.map(i => [i.code, i.name, i.quantity, i.min_stock, i.unit_price, (i.quantity * i.unit_price).toFixed(2)]);
+  doc.autoTable({
+    startY: 25,
+    head: [['Code', 'Name', 'Qty', 'Min', 'Price ($)', 'Total ($)']],
+    body: rows,
+    theme: 'grid',
+    headStyles: { fillColor: [37, 99, 235] }
+  });
+  doc.save('Inventory.pdf');
+  toast('📕 PDF downloaded');
+}
+
+function exportSuppliersPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('l', 'mm', 'a4');
+  doc.setFillColor(37, 99, 235);
+  doc.rect(0, 0, 297, 20, 'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(16);
+  doc.text('SUPPLIERS LIST', 148, 14, { align: 'center' });
+  const rows = DB.suppliers.map(s => [s.code, s.name, s.phone || '-', s.email || '-', s.status]);
+  doc.autoTable({
+    startY: 25,
+    head: [['Code', 'Name', 'Phone', 'Email', 'Status']],
+    body: rows,
+    theme: 'grid',
+    headStyles: { fillColor: [37, 99, 235] }
+  });
+  doc.save('Suppliers.pdf');
+  toast('📕 PDF downloaded');
 }
 function saveOrg(type) {
   const code = document.getElementById('org_code').value.trim();
@@ -2587,9 +2666,12 @@ function deleteDocument(id) {
 function renderAssets() {
   document.getElementById('pageContent').innerHTML = `
     <div class="card">
-      <div class="flex justify-between items-center mb-4">
+           <div class="flex justify-between items-center mb-4">
         <h3 class="font-bold">💼 Assets</h3>
-        <button onclick="openAssetModal()" class="btn btn-primary">+ បន្ថែម</button>
+        <div class="flex gap-2">
+          <button onclick="exportAssetsPDF()" class="btn btn-secondary">📕 PDF</button>
+          <button onclick="openAssetModal()" class="btn btn-primary">+ បន្ថែម</button>
+        </div>
       </div>
       <table class="w-full text-sm">
         <thead class="bg-slate-50"><tr>
@@ -2658,9 +2740,12 @@ function deleteAsset(id) {
 function renderContracts() {
   document.getElementById('pageContent').innerHTML = `
     <div class="card">
-      <div class="flex justify-between items-center mb-4">
+            <div class="flex justify-between items-center mb-4">
         <h3 class="font-bold">📝 Contracts</h3>
-        <button onclick="openContractModal()" class="btn btn-primary">+ បន្ថែម</button>
+        <div class="flex gap-2">
+          <button onclick="exportContractsPDF()" class="btn btn-secondary">📕 PDF</button>
+          <button onclick="openContractModal()" class="btn btn-primary">+ បន្ថែម</button>
+        </div>
       </div>
       <table class="w-full text-sm">
         <thead class="bg-slate-50"><tr>
@@ -2736,9 +2821,12 @@ function renderInventory() {
       <div class="card"><div class="text-3xl mb-2">💰</div><div class="text-sm text-slate-500">Value</div><div class="text-2xl font-bold text-green-600">$${DB.inventory.reduce((s,i)=>s+i.quantity*i.unit_price,0).toFixed(0)}</div></div>
     </div>
     <div class="card">
-      <div class="flex justify-between items-center mb-4">
+            <div class="flex justify-between items-center mb-4">
         <h3 class="font-bold">📦 Inventory</h3>
-        <button onclick="openInvModal()" class="btn btn-primary">+ បន្ថែម</button>
+        <div class="flex gap-2">
+          <button onclick="exportInventoryPDF()" class="btn btn-secondary">📕 PDF</button>
+          <button onclick="openInvModal()" class="btn btn-primary">+ បន្ថែម</button>
+        </div>
       </div>
       <table class="w-full text-sm">
         <thead class="bg-slate-50"><tr>
@@ -2819,9 +2907,12 @@ function deleteInv(id) {
 function renderSuppliers() {
   document.getElementById('pageContent').innerHTML = `
     <div class="card">
-      <div class="flex justify-between items-center mb-4">
+            <div class="flex justify-between items-center mb-4">
         <h3 class="font-bold">🏭 Suppliers</h3>
-        <button onclick="openSupModal()" class="btn btn-primary">+ បន្ថែម</button>
+        <div class="flex gap-2">
+          <button onclick="exportSuppliersPDF()" class="btn btn-secondary">📕 PDF</button>
+          <button onclick="openSupModal()" class="btn btn-primary">+ បន្ថែម</button>
+        </div>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         ${DB.suppliers.map(s => `
