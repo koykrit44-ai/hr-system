@@ -1225,17 +1225,29 @@ function openEmpForm(id) {
 
       <div id="tab-employment" class="tab-content hidden">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div><label class="text-sm font-medium">Branch</label>
-            <select id="f_branch" class="input">${DB.branches.map(b => `<option value="${b.id}" ${emp.branch_id===b.id?'selected':''}>${b.name}</option>`).join('')}</select>
+                    <div>
+            <label class="text-sm font-medium">Branch</label>
+            <div class="flex gap-1">
+              <select id="f_branch" class="input">${DB.branches.map(b => `<option value="${b.id}" ${emp.branch_id===b.id?'selected':''}>${b.name}</option>`).join('')}</select>
+              <button type="button" onclick="quickAddOrg('branch')" class="btn btn-primary btn-sm" title="Add Branch">+</button>
+            </div>
           </div>
-          <div><label class="text-sm font-medium">Department</label>
-            <select id="f_dept" class="input">
-              <option value="">-- None --</option>
-              ${DB.departments.map(d => `<option value="${d.id}" ${emp.department_id===d.id?'selected':''}>${d.name}</option>`).join('')}
-            </select>
+          <div>
+            <label class="text-sm font-medium">Department</label>
+            <div class="flex gap-1">
+              <select id="f_dept" class="input">
+                <option value="">-- None --</option>
+                ${DB.departments.map(d => `<option value="${d.id}" ${emp.department_id===d.id?'selected':''}>${d.name}</option>`).join('')}
+              </select>
+              <button type="button" onclick="quickAddOrg('department')" class="btn btn-primary btn-sm" title="Add Department">+</button>
+            </div>
           </div>
-          <div><label class="text-sm font-medium">Position</label>
-            <select id="f_pos" class="input">${DB.positions.map(p => `<option value="${p.id}" ${emp.position_id===p.id?'selected':''}>${p.title}</option>`).join('')}</select>
+          <div>
+            <label class="text-sm font-medium">Position</label>
+            <div class="flex gap-1">
+              <select id="f_pos" class="input">${DB.positions.map(p => `<option value="${p.id}" ${emp.position_id===p.id?'selected':''}>${p.title}</option>`).join('')}</select>
+              <button type="button" onclick="quickAddOrg('position')" class="btn btn-primary btn-sm" title="Add Position">+</button>
+            </div>
           </div>
           <div><label class="text-sm font-medium">Grade</label>
             <select id="f_grade" class="input">${DB.jobGrades.map(g => `<option value="${g.id}" ${emp.grade_id===g.id?'selected':''}>${g.code} - ${g.name}</option>`).join('')}</select>
@@ -1307,6 +1319,48 @@ function switchTab(e, tabId) {
   e.target.classList.add('active');
   document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
   document.getElementById(tabId).classList.remove('hidden');
+}
+ 
+function quickAddOrg(type) {
+  const labels = { branch: 'សាខា', department: 'ផ្នែក', position: 'មុខតំណែង' };
+  const name = prompt(`ឈ្មោះ ${labels[type]}:`);
+  if (!name) return;
+  const code = prompt(`កូដ ${type}:`, name.substring(0,3).toUpperCase());
+  if (!code) return;
+
+  if (type === 'branch') {
+    DB.branches.push({ id: DB.nextId.branch++, company_id: 1, code, name, status: 'active' });
+  } else if (type === 'department') {
+    DB.departments.push({ id: DB.nextId.dept++, company_id: 1, branch_id: 1, code, name, manager_id: null, status: 'active' });
+  } else if (type === 'position') {
+    DB.positions.push({ id: DB.nextId.pos++, code, title: name, department_id: null, grade_id: 3, level: 3 });
+  }
+  
+  saveDB();
+  toast(`✅ បន្ថែម ${labels[type]}ជោគជ័យ`);
+  
+  if (type === 'branch') {
+    const sel = document.getElementById('f_branch');
+    const opt = document.createElement('option');
+    opt.value = DB.branches[DB.branches.length-1].id;
+    opt.textContent = name;
+    opt.selected = true;
+    sel.appendChild(opt);
+  } else if (type === 'department') {
+    const sel = document.getElementById('f_dept');
+    const opt = document.createElement('option');
+    opt.value = DB.departments[DB.departments.length-1].id;
+    opt.textContent = name;
+    opt.selected = true;
+    sel.appendChild(opt);
+  } else if (type === 'position') {
+    const sel = document.getElementById('f_pos');
+    const opt = document.createElement('option');
+    opt.value = DB.positions[DB.positions.length-1].id;
+    opt.textContent = name;
+    opt.selected = true;
+    sel.appendChild(opt);
+  }
 }
 
 function previewPhoto(input) {
