@@ -2567,16 +2567,23 @@ function renderPayroll() {
         </div>
       </div>
     </div>
-    <div class="card overflow-x-auto">
+        <div class="card overflow-x-auto">
       <table class="w-full text-xs">
         <thead class="bg-slate-50"><tr>
           <th class="p-2 text-left">ល.រ</th>
           <th class="p-2 text-left">អត្តលេខ</th>
           <th class="p-2 text-left">ឈ្មោះ</th>
+          <th class="p-2 text-left">ភេទ</th>
+          <th class="p-2 text-left">ថ្ងៃចូល</th>
+          <th class="p-2 text-left">មុខតំណែង</th>
           <th class="p-2 text-right">ប្រាក់ខែគោល</th>
+          <th class="p-2 text-right">ការកាត់ប្រាក់</th>
+          <th class="p-2 text-right">ប្រាក់ខែសរុប</th>
           <th class="p-2 text-right">NSSF</th>
           <th class="p-2 text-right">Tax</th>
+          <th class="p-2 text-right">ចំណាយសរុប</th>
           <th class="p-2 text-right">ប្រាក់ខែសុទ្ធ</th>
+          <th class="p-2 text-center">ស្នាមមេដៃ</th>
         </tr></thead>
         <tbody id="payTableBody"></tbody>
       </table>
@@ -2591,16 +2598,26 @@ function renderPayTable() {
   const list = DB.payrolls.filter(p => p.period_month === m && p.period_year === y);
   document.getElementById('payTableBody').innerHTML = list.map((p, idx) => {
     const e = DB.employees.find(x => x.id === p.employee_id);
+    const deduction = (p.unpaid_deduction || 0);
+    const gross = p.gross_salary || p.base_salary || 0;
+    const totalDeduction = p.total_deduction || (p.nssf_employee + p.tax_amount);
     return `<tr class="border-b table-row">
       <td class="p-2">${idx + 1}</td>
       <td class="p-2 font-mono text-xs">${escapeHtml(e?.employee_id || '')}</td>
       <td class="p-2">${escapeHtml(e?.full_name || '')}</td>
-      <td class="p-2 text-right">$${p.base_salary.toFixed(2)}</td>
-      <td class="p-2 text-right text-orange-600">-$${p.nssf_employee.toFixed(2)}</td>
-      <td class="p-2 text-right text-red-600">-$${p.tax_amount.toFixed(2)}</td>
-      <td class="p-2 text-right font-bold text-green-600">$${p.net_salary.toFixed(2)}</td>
+      <td class="p-2">${e?.gender === 'M' ? 'ប្រុស' : 'ស្រី'}</td>
+      <td class="p-2 text-xs">${e?.hire_date || '-'}</td>
+      <td class="p-2 text-xs">${escapeHtml(getPosName(e?.position_id))}</td>
+      <td class="p-2 text-right">$${parseFloat(p.base_salary).toFixed(2)}</td>
+      <td class="p-2 text-right text-red-600">-$${deduction.toFixed(2)}</td>
+      <td class="p-2 text-right font-medium">$${parseFloat(gross).toFixed(2)}</td>
+      <td class="p-2 text-right text-orange-600">-$${parseFloat(p.nssf_employee).toFixed(2)}</td>
+      <td class="p-2 text-right text-red-600">-$${parseFloat(p.tax_amount).toFixed(2)}</td>
+      <td class="p-2 text-right font-bold text-red-700">-$${parseFloat(totalDeduction).toFixed(2)}</td>
+      <td class="p-2 text-right font-bold text-green-600">$${parseFloat(p.net_salary).toFixed(2)}</td>
+      <td class="p-2 text-center text-2xl">✋</td>
     </tr>`;
-  }).join('') || '<tr><td colspan="7" class="text-center p-8 text-slate-400">ចុច "គណនា"</td></tr>';
+  }).join('') || '<tr><td colspan="14" class="text-center p-8 text-slate-400">ចុច "គណនា" ដើម្បីបង្កើត</td></tr>';
 }
 
 function generatePayroll() {
