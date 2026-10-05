@@ -968,8 +968,8 @@ function showPage(page) {
 // =====================================================
 function renderDashboard() {
   const totalEmp = DB.employees.length;
-  const activeEmp = DB.employees.filter(e => e.status === 'active').length;
-  const totalSalary = DB.employees.filter(e => e.status === 'active').reduce((s, e) => s + (e.base_salary || 0), 0);
+  const activeEmp = DB.employees.filter(e => ['active','probation','on_leave'].includes(e.status)).length;  // ✅
+  const totalSalary = DB.employees.filter(e => ['active','probation','on_leave'].includes(e.status)).reduce((s, e) => s + (e.base_salary || 0), 0);  // ✅
   const pendingLeaves = DB.leaves.filter(l => l.status === 'pending').length;
   const lowStock = DB.inventory.filter(i => i.quantity <= i.min_stock).length;
   const pendingPOs = DB.purchaseOrders.filter(p => p.status === 'pending').length;
@@ -2480,7 +2480,9 @@ function renderAttendance() {
 
 function renderAttTable() {
   const date = document.getElementById('attDate').value;
-  document.getElementById('attTableBody').innerHTML = DB.employees.map(e => {
+  document.getElementById('attTableBody').innerHTML = DB.employees
+  .filter(e => ['active','probation','on_leave'].includes(e.status))
+  .map(e => {
     const a = DB.attendance.find(x => x.employee_id === e.id && x.work_date === date);
     return `<tr class="border-b table-row">
       <td class="p-3">${escapeHtml(e.full_name)} <span class="text-xs text-slate-400">(${escapeHtml(e.employee_id || e.code)})</span></td>
@@ -2899,7 +2901,7 @@ function generatePayroll() {
     const y = +document.getElementById('payYear').value;
     DB.payrolls = DB.payrolls.filter(p => !(p.period_month === m && p.period_year === y));
     let count = 0;
-    DB.employees.filter(e => ['active','on_leave'].includes(e.status)).forEach(emp => {
+    DB.employees.filter(e => ['active','on_leave','probation'].includes(e.status)).forEach(emp => {  // ✅ បន្ថែម probation
       const base = emp.base_salary || 0;
       const nssfBase = Math.min(base * EXCHANGE_RATE, 300000 * EXCHANGE_RATE);
       const nssfEmp = (nssfBase * 0.04) / EXCHANGE_RATE;
@@ -2919,7 +2921,6 @@ function generatePayroll() {
     saveDB(); renderPayTable(); toast(`✅ ${count} នាក់`);
   });
 }
-
 // =====================================================
 // PRINT PAYSLIP (moved outside generatePayroll)
 // =====================================================
