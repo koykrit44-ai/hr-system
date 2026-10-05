@@ -1540,7 +1540,7 @@ function showPage(page) {
   const content = document.getElementById('pageContent');
   content.style.opacity = '0.5';
   
-  // ✅ Destroy charts when leaving dashboard
+  // Destroy charts when leaving dashboard
   if (page !== 'dashboard' && Object.keys(charts).length > 0) {
     Object.values(charts).forEach(c => { try { c?.destroy(); } catch(e) {} });
     charts = {};
@@ -1550,7 +1550,7 @@ function showPage(page) {
   const link = document.querySelector(`[data-page="${page}"]`);
   if (link) link.classList.add('active');
   
-  // ✅ Use i18n for page title (PAGE_META is now an object)
+  // Use i18n for page title
   const meta = PAGE_META[page];
   if (meta) {
     document.getElementById('pageTitle').textContent = t(meta.titleKey);
@@ -1574,7 +1574,7 @@ function showPage(page) {
     content.style.opacity = '1';
   } catch(e) {
     console.error('Render error:', e);
-    content.innerHTML = `<div class="card text-center py-12"><div class="text-4xl mb-3">❌</div><div class="text-red-600">មានបញ្ហា: ${escapeHtml(e.message)}</div></div>`;
+    content.innerHTML = '<div class="card text-center py-12"><div class="text-4xl mb-3">❌</div><div class="text-red-600">Error: ' + escapeHtml(e.message) + '</div></div>';
     content.style.opacity = '1';
   }
   
@@ -1667,22 +1667,28 @@ function renderDashboard() {
     Object.values(charts).forEach(c => c?.destroy());
     charts = {};
     const dc = DB.departments.map(d => ({ name: d.code, count: DB.employees.filter(e => e.department_id === d.id).length }));
-    charts.dept = new Chart(document.getElementById('chartDept'), {
-      type: 'doughnut',
-      data: { labels: dc.map(d => d.name), datasets: [{ data: dc.map(d => d.count), backgroundColor: ['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4'] }] },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, animation: false }
-    });
+    const chartDeptEl = document.getElementById('chartDept');
+    if (chartDeptEl) {
+      charts.dept = new Chart(chartDeptEl, {
+        type: 'doughnut',
+        data: { labels: dc.map(d => d.name), datasets: [{ data: dc.map(d => d.count), backgroundColor: ['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4'] }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, animation: false }
+      });
+    }
     const last7 = [...Array(7)].map((_, i) => { const d = new Date(); d.setDate(d.getDate() - i); return d.toISOString().split('T')[0]; }).reverse();
     const ad = last7.map(d => { const r = DB.attendance.filter(a => a.work_date === d); return { p: r.filter(x => x.status === 'present').length, l: r.filter(x => x.status === 'late').length, a: r.filter(x => x.status === 'absent').length }; });
-    charts.att = new Chart(document.getElementById('chartAtt'), {
-      type: 'bar',
-      data: { labels: last7.map(d => d.slice(5)), datasets: [
-        { label: t('stPresent'), data: ad.map(a => a.p), backgroundColor: '#10b981' },
-        { label: t('stLate'), data: ad.map(a => a.l), backgroundColor: '#f59e0b' },
-        { label: t('stAbsent'), data: ad.map(a => a.a), backgroundColor: '#ef4444' }
-      ] },
-      options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } }, animation: false }
-    });
+    const chartAttEl = document.getElementById('chartAtt');
+    if (chartAttEl) {
+      charts.att = new Chart(chartAttEl, {
+        type: 'bar',
+        data: { labels: last7.map(d => d.slice(5)), datasets: [
+          { label: t('stPresent'), data: ad.map(a => a.p), backgroundColor: '#10b981' },
+          { label: t('stLate'), data: ad.map(a => a.l), backgroundColor: '#f59e0b' },
+          { label: t('stAbsent'), data: ad.map(a => a.a), backgroundColor: '#ef4444' }
+        ] },
+        options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } }, animation: false }
+      });
+    }
   }, 50);
 }
 function kpiCardWithBadge(icon, label, value, sub, color, page, badgeCount) {
