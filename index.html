@@ -1040,6 +1040,47 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
+ 
+// =====================================================
+// TOAST NOTIFICATION
+// =====================================================
+function toast(message, type) {
+  type = type || 'success';
+  
+  // លុប toast ចាស់ៗ ចេញ
+  var oldToasts = document.querySelectorAll('.toast');
+  for (var i = 0; i < oldToasts.length; i++) {
+    oldToasts[i].remove();
+  }
+  
+  var colors = {
+    success: 'linear-gradient(135deg, #16a34a, #15803d)',
+    error:   'linear-gradient(135deg, #dc2626, #b91c1c)',
+    warning: 'linear-gradient(135deg, #f59e0b, #d97706)',
+    info:    'linear-gradient(135deg, #3b82f6, #1d4ed8)'
+  };
+  
+  var icons = {
+    success: '✅',
+    error:   '❌',
+    warning: '⚠️',
+    info:    'ℹ️'
+  };
+  
+  var el = document.createElement('div');
+  el.className = 'toast';
+  el.style.background = colors[type] || colors.success;
+  el.innerHTML = '<span style="margin-right:8px;">' + (icons[type] || '✅') + '</span>' + escapeHtml(message);
+  
+  document.body.appendChild(el);
+  
+  setTimeout(function() {
+    el.style.transition = 'opacity 0.3s, transform 0.3s';
+    el.style.opacity = '0';
+    el.style.transform = 'translateX(400px)';
+    setTimeout(function() { el.remove(); }, 300);
+  }, 3000);
+}
 
 // =====================================================
 // PERFORMANCE - Debounce
@@ -1538,11 +1579,11 @@ const PAGE_META = {
   settings: ['⚙️ ការកំណត់', 'កំណត់ប្រព័ន្ធ']
 };
 
-function showPage(page) {
+ function showPage(page) {
   const content = document.getElementById('pageContent');
   content.style.opacity = '0.5';
   
-  // Destroy charts when leaving dashboard
+  // ✅ FIX: Destroy charts when leaving dashboard
   if (page !== 'dashboard' && Object.keys(charts).length > 0) {
     Object.values(charts).forEach(c => { try { c?.destroy(); } catch(e) {} });
     charts = {};
@@ -1551,16 +1592,9 @@ function showPage(page) {
   document.querySelectorAll('.sidebar-link').forEach(el => el.classList.remove('active'));
   const link = document.querySelector(`[data-page="${page}"]`);
   if (link) link.classList.add('active');
-  
-  // ✅ FIX: Use object property (not array destructuring)
-  const meta = PAGE_META[page];
-  if (meta && meta.titleKey) {
-    document.getElementById('pageTitle').textContent = t(meta.titleKey);
-    document.getElementById('pageSubtitle').textContent = t(meta.subKey);
-  } else {
-    document.getElementById('pageTitle').textContent = page;
-    document.getElementById('pageSubtitle').textContent = '';
-  }
+  const [t, s] = PAGE_META[page] || [page, ''];
+  document.getElementById('pageTitle').textContent = t;
+  document.getElementById('pageSubtitle').textContent = s;
   
   const renderers = {
     dashboard: renderDashboard, employees: renderEmployees, orgchart: renderOrgChart,
@@ -1576,7 +1610,7 @@ function showPage(page) {
     content.style.opacity = '1';
   } catch(e) {
     console.error('Render error:', e);
-    content.innerHTML = '<div class="card text-center py-12"><div class="text-4xl mb-3">❌</div><div class="text-red-600">Error: ' + escapeHtml(e.message) + '</div></div>';
+    content.innerHTML = `<div class="card text-center py-12"><div class="text-4xl mb-3">❌</div><div class="text-red-600">មានបញ្ហា: ${escapeHtml(e.message)}</div></div>`;
     content.style.opacity = '1';
   }
   
@@ -1978,7 +2012,7 @@ function openEmpForm(id) {
         </div>
         <h4 class="font-bold text-slate-700 mt-6 mb-3">🚨 Emergency Contact</h4>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div><label class="text-sm font-medium">Name <span class="text-red-500">*</span></label><input id="f_emg_name" class="input" value="${emp.emergency_name || ''}" required></div>
+          <div><label class="text-sm font-medium">Name <span class="text-red-500">*</span></label><input id="f_emg_name" class="input" value="${emp.emergency_name || ''}"></div>
           <div><label class="text-sm font-medium">Relationship</label>
             <select id="f_emg_rel" class="input">
               <option value="Father" ${emp.emergency_relationship==='Father'?'selected':''}>Father</option>
@@ -2410,8 +2444,6 @@ function clearFieldErrors() {
     i.style.borderColor = '';
   });
 }
-function removeDoc(i) { if (!confirm('លុប?')) return; window._tempDocs.splice(i, 1); renderDocList(); }
-
 function saveEmpForm(e, id) {
   e.preventDefault();
   clearFieldErrors();
