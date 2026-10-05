@@ -70,6 +70,63 @@
   .pagination button.active { background: #2563eb; color: white; border-color: #2563eb; }
   .pagination button:disabled { opacity: 0.5; cursor: not-allowed; }
   .static-chart { pointer-events: none; }
+ /* ============ LOADING INDICATOR ============ */
+#loadingOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+#loadingOverlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+.spinner {
+  width: 60px;
+  height: 60px;
+  border: 5px solid rgba(255,255,255,0.2);
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text {
+  color: white;
+  margin-top: 16px;
+  font-weight: 500;
+  font-size: 14px;
+}
+ /* ============ DARK MODE ============ */
+body.dark-mode {
+  background: #0f172a;
+  color: #cbd5e1;
+}
+body.dark-mode .card { background: #1e293b; border-color: #334155; color: #cbd5e1; }
+body.dark-mode .card h3, body.dark-mode .card .text-slate-800 { color: #e2e8f0 !important; }
+body.dark-mode .input { background: #0f172a; color: #e2e8f0; border-color: #334155; }
+body.dark-mode .input:focus { border-color: #3b82f6; }
+body.dark-mode main { background: #0f172a; }
+body.dark-mode header { background: #1e293b !important; border-color: #334155 !important; }
+body.dark-mode header h1, body.dark-mode header .text-slate-800 { color: #e2e8f0 !important; }
+body.dark-mode .bg-slate-50 { background: #1e293b !important; }
+body.dark-mode .bg-slate-100 { background: #334155 !important; }
+body.dark-mode .text-slate-500 { color: #94a3b8 !important; }
+body.dark-mode .text-slate-600 { color: #94a3b8 !important; }
+body.dark-mode .text-slate-700 { color: #cbd5e1 !important; }
+body.dark-mode table thead { background: #334155 !important; }
+body.dark-mode tr:hover { background: #334155 !important; }
+body.dark-mode .border-slate-200, body.dark-mode .border-b, body.dark-mode .border-t { border-color: #334155 !important; }
+body.dark-mode .modal > div { background: #1e293b; color: #e2e8f0; }
+body.dark-mode .info-value { color: #e2e8f0; }
+body.dark-mode .file-drop { border-color: #334155; }
   
   /* ============ NOTIFICATION BADGES (NEW) ============ */
   .nav-badge {
@@ -140,6 +197,10 @@
 </style>
 </head>
 <body>
+ <div id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loadingText">កំពុងដំណើរការ...</div>
+</div>
   <!-- ============ SESSION WARNING ============ -->
 <div id="sessionWarning" class="session-warning hidden">
   <span>⚠️</span>
@@ -285,13 +346,15 @@
           <div class="text-xs text-slate-500">ថ្ងៃនេះ</div>
           <div class="text-sm font-medium text-slate-700" id="currentDate"></div>
         </div>
-        <div class="relative">
-          <button onclick="showNotifications()" class="w-10 h-10 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center relative transition" title="Notifications">
-            🔔
-            <span id="notifBadge" class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center hidden">0</span>
-          </button>
-        </div>
-      </div>
+        <div class="flex items-center gap-2">
+  <button onclick="toggleDarkMode()" id="darkModeBtn" class="w-10 h-10 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center transition" title="Dark Mode">🌙</button>
+  <div class="relative">
+    <button onclick="showNotifications()" class="w-10 h-10 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center relative transition" title="Notifications">
+      🔔
+      <span id="notifBadge" class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center hidden">0</span>
+    </button>
+  </div>
+</div>
     </header>
     <div id="pageContent" class="p-6"></div>
   </main>
@@ -727,17 +790,7 @@ function startSessionTimer() {
   
   if (remaining <= 0) { doLogout(true); return; }
   
-  warningTimer = setTimeout(() => {
-    document.getElementById('sessionWarning').classList.remove('hidden');
-    let countdown = 60;
-    document.getElementById('sessionCountdown').textContent = countdown;
-    countdownInterval = setInterval(() => {
-      countdown--;
-      document.getElementById('sessionCountdown').textContent = countdown;
-      if (countdown <= 0) { clearInterval(countdownInterval); doLogout(true); }
-    }, 1000);
-  }, Math.max(0, remaining - SESSION_WARNING));
-  
+  warningTimer = setTimeout(showSessionWarning, Math.max(0, remaining - SESSION_WARNING));
   sessionTimer = setTimeout(() => doLogout(true), remaining);
 }
 
@@ -749,14 +802,52 @@ function extendSession() {
   toast('✅ Session ត្រូវបានបន្ត');
 }
 
+// =====================================================
+// SESSION MANAGEMENT (FIXED)
+// =====================================================
+let activityThrottle = null;
+
 function resetActivity() {
   if (!currentUser) return;
   sessionStorage.setItem(ACTIVITY_KEY, Date.now().toString());
-  startSessionTimer();
+  
+  // ✅ FIX: Throttle — only restart timer max once per 30 seconds
+  if (activityThrottle) return;
+  activityThrottle = setTimeout(() => { activityThrottle = null; }, 30000);
+  
+  // Reset timers without creating memory leaks
+  clearTimeout(sessionTimer);
+  clearTimeout(warningTimer);
+  if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+  
+  // Hide warning if visible
+  document.getElementById('sessionWarning')?.classList.add('hidden');
+  
+  // Restart with fresh 30 min
+  warningTimer = setTimeout(showSessionWarning, SESSION_TIMEOUT - SESSION_WARNING);
+  sessionTimer = setTimeout(() => doLogout(true), SESSION_TIMEOUT);
 }
 
-['click', 'keydown', 'mousemove', 'scroll', 'touchstart'].forEach(evt => {
-  document.addEventListener(evt, debounce(resetActivity, 2000), { passive: true });
+function showSessionWarning() {
+  const w = document.getElementById('sessionWarning');
+  if (!w) return;
+  w.classList.remove('hidden');
+  let countdown = 60;
+  document.getElementById('sessionCountdown').textContent = countdown;
+  countdownInterval = setInterval(() => {
+    countdown--;
+    document.getElementById('sessionCountdown').textContent = countdown;
+    if (countdown <= 0) { 
+      clearInterval(countdownInterval); 
+      countdownInterval = null;
+      doLogout(true); 
+    }
+  }, 1000);
+}
+
+// ✅ FIX: Only listen to meaningful events, passive
+['click', 'keydown', 'touchstart'].forEach(evt => {
+  document.addEventListener(evt, debounce(resetActivity, 3000), { passive: true });
 });
 
 // =====================================================
@@ -868,6 +959,18 @@ function showPage(page) {
     content.innerHTML = `<div class="card text-center py-12"><div class="text-4xl mb-3">❌</div><div class="text-red-600">មានបញ្ហា: ${escapeHtml(e.message)}</div></div>`;
     content.style.opacity = '1';
   }
+ function showPage(page) {
+  const content = document.getElementById('pageContent');
+  content.style.opacity = '0.5';
+  
+  // ✅ FIX: Destroy charts when leaving dashboard
+  if (page !== 'dashboard') {
+    Object.values(charts).forEach(c => { try { c?.destroy(); } catch(e) {} });
+    charts = {};
+  }
+  
+  // ... rest of code
+}
   
   setTimeout(updateBadges, 50);
 }
@@ -989,7 +1092,79 @@ function kpiCardWithBadge(icon, label, value, sub, color, page, badgeCount) {
     <div class="text-xs text-slate-500 mt-1">${sub} <span class="text-blue-500">→</span></div>
   </div>`;
 }
-
+// =====================================================
+// BULK IMPORT EMPLOYEES
+// =====================================================
+function importEmployeesExcel(input) {
+  const file = input.files[0];
+  if (!file) return;
+  
+  withLoading('កំពុងនាំចូល...', () => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet);
+        
+        if (!rows.length) return toast('❌ ឯកសារទទេ', 'error');
+        
+        let added = 0, skipped = 0;
+        rows.forEach(row => {
+          const fn = String(row['FirstName'] || row['first_name'] || '').trim();
+          const ln = String(row['LastName'] || row['last_name'] || '').trim();
+          if (!fn || !ln) { skipped++; return; }
+          
+          const empId = String(row['EmployeeID'] || row['employee_id'] || '').trim();
+          if (empId && DB.employees.find(x => x.employee_id === empId)) { skipped++; return; }
+          
+          const newId = DB.nextId.emp++;
+          DB.employees.push({
+            id: newId,
+            code: 'EMP' + String(newId).padStart(4, '0'),
+            employee_id: empId,
+            first_name: fn, last_name: ln, full_name: fn + ' ' + ln,
+            gender: String(row['Gender'] || 'M').toUpperCase().startsWith('F') ? 'F' : 'M',
+            date_of_birth: row['DOB'] || '',
+            nationality: row['Nationality'] || 'Khmer',
+            marital_status: row['MaritalStatus'] || 'single',
+            national_id: String(row['NationalID'] || ''),
+            phone: String(row['Phone'] || ''),
+            email: String(row['Email'] || ''),
+            current_address: String(row['Address'] || ''),
+            emergency_name: String(row['EmergencyName'] || 'Family'),
+            emergency_relationship: 'Spouse',
+            emergency_phone: String(row['EmergencyPhone'] || row['Phone'] || ''),
+            branch_id: 1,
+            department_id: null,
+            position_id: DB.positions[0]?.id || null,
+            grade_id: DB.jobGrades[0]?.id || null,
+            hire_date: row['HireDate'] || new Date().toISOString().split('T')[0],
+            employment_type: 'full_time',
+            status: 'active',
+            base_salary: +row['Salary'] || 0,
+            salary_currency: 'USD',
+            education: [], skills: [], employment_history: [],
+            documents: [], photo: null, insurances: [],
+            created_at: new Date().toISOString()
+          });
+          added++;
+        });
+        
+        logAudit(currentUser.id, 'BULK_IMPORT', 'employee', null, `Imported ${added}, skipped ${skipped}`);
+        saveDB(); filterEmployees();
+        toast(`✅ នាំចូលបាន ${added} នាក់ (រំលង ${skipped})`);
+      } catch(err) {
+        console.error(err);
+        toast('❌ ឯកសារមិនត្រឹមត្រូវ', 'error');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  });
+  
+  input.value = '';
+}
 // =====================================================
 // EMPLOYEE MASTER
 // =====================================================
@@ -1014,7 +1189,11 @@ function renderEmployees() {
             <option value="50">50 នាក់</option>
           </select>
         </div>
-        <div class="flex gap-2">
+        <div class="flex gap-2 flex-wrap">
+          <label class="btn btn-secondary cursor-pointer">
+            📤 Import
+            <input type="file" accept=".xlsx,.xls,.csv" class="hidden" onchange="importEmployeesExcel(this)">
+          </label>
           <button onclick="exportEmployeesExcel()" class="btn btn-secondary">📊 Excel</button>
           <button onclick="exportEmployeesPDF()" class="btn btn-secondary">📕 PDF</button>
           <button onclick="openEmpForm()" class="btn btn-primary">+ បន្ថែមបុគ្គលិក</button>
@@ -1042,7 +1221,6 @@ function renderEmployees() {
   `;
   filterEmployees();
 }
-
 const debounceFilterEmployees = debounce(() => { empPage = 1; filterEmployees(); }, 250);
 
 function filterEmployees() {
@@ -1496,17 +1674,88 @@ function previewDoc(i) {
   if (d.isPDF) w.document.write(`<html><body style="margin:0;background:#1e293b;"><iframe src="${d.data}" style="width:100%;height:100vh;border:none;"></iframe></body></html>`);
   else w.document.write(`<html><body style="margin:0;background:#1e293b;display:flex;align-items:center;justify-content:center;height:100vh;"><img src="${d.data}" style="max-width:100%;max-height:100vh;"></body></html>`);
 }
+ // =====================================================
+// FORM VALIDATION HELPERS
+// =====================================================
+function validateEmail(email) {
+  if (!email) return true;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function validatePhone(phone) {
+  if (!phone) return false;
+  const cleaned = phone.replace(/[\s\-()]/g, '');
+  return /^(0\d{8,9}|\+855\d{8,9})$/.test(cleaned);
+}
+
+function validateNationalId(nid) {
+  if (!nid) return true;
+  return /^\d{9,12}$/.test(nid.replace(/\s/g, ''));
+}
+
+function showFieldError(fieldId, message) {
+  const field = document.getElementById(fieldId);
+  if (!field) return;
+  field.style.borderColor = '#ef4444';
+  
+  const oldErr = field.parentElement.querySelector('.field-error');
+  if (oldErr) oldErr.remove();
+  
+  const err = document.createElement('p');
+  err.className = 'field-error text-xs text-red-600 mt-1';
+  err.textContent = '❌ ' + message;
+  field.parentElement.appendChild(err);
+}
+
+function clearFieldErrors() {
+  document.querySelectorAll('.field-error').forEach(e => e.remove());
+  document.querySelectorAll('.input').forEach(i => {
+    i.style.borderColor = '';
+  });
+}
 function removeDoc(i) { if (!confirm('លុប?')) return; window._tempDocs.splice(i, 1); renderDocList(); }
 
 function saveEmpForm(e, id) {
   e.preventDefault();
+  clearFieldErrors();
+  
   const fn = document.getElementById('f_fn').value.trim();
   const ln = document.getElementById('f_ln').value.trim();
-  if (!fn || !ln) return toast('❌ សូមបំពេញឈ្មោះ', 'error');
-  if (!document.getElementById('f_phone').value.trim()) return toast('❌ សូមបំពេញទូរស័ព្ទ', 'error');
-
+  const phone = document.getElementById('f_phone').value.trim();
+  const email = document.getElementById('f_email').value.trim();
+  const nid = document.getElementById('f_nid').value.trim();
+  const emgName = document.getElementById('f_emg_name').value.trim();
+  const emgPhone = document.getElementById('f_emg_phone').value.trim();
+  const salary = +document.getElementById('f_salary').value;
+  
+  let hasError = false;
+  
+  if (!fn) { showFieldError('f_fn', 'សូមបំពេញ First Name'); hasError = true; }
+  if (!ln) { showFieldError('f_ln', 'សូមបំពេញ Last Name'); hasError = true; }
+  if (!phone) { showFieldError('f_phone', 'សូមបំពេញទូរស័ព្ទ'); hasError = true; }
+  else if (!validatePhone(phone)) { showFieldError('f_phone', 'ទូរស័ព្ទមិនត្រឹមត្រូវ'); hasError = true; }
+  
+  if (!emgName) { showFieldError('f_emg_name', 'សូមបំពេញ Emergency Name'); hasError = true; }
+  if (!emgPhone) { showFieldError('f_emg_phone', 'សូមបំពេញ Emergency Phone'); hasError = true; }
+  else if (!validatePhone(emgPhone)) { showFieldError('f_emg_phone', 'ទូរស័ព្ទមិនត្រឹមត្រូវ'); hasError = true; }
+  
+  if (email && !validateEmail(email)) { showFieldError('f_email', 'អ៊ីមែលមិនត្រឹមត្រូវ'); hasError = true; }
+  if (nid && !validateNationalId(nid)) { showFieldError('f_nid', 'អត្តសញ្ញាណប័ណ្ណត្រូវមាន 9-12 ខ្ទង់'); hasError = true; }
+  if (salary < 0) { showFieldError('f_salary', 'ប្រាក់ខែមិនអាចអវិជ្ជមាន'); hasError = true; }
+  
+  const empIdInput = document.getElementById('f_employee_id').value.trim();
+  if (empIdInput) {
+    const dup = DB.employees.find(x => x.employee_id === empIdInput && x.id !== id);
+    if (dup) { showFieldError('f_employee_id', 'អត្តលេខនេះមានរួចហើយ'); hasError = true; }
+  }
+  
+  if (hasError) {
+    toast('❌ សូមពិនិត្យព័ត៌មានម្តងទៀត', 'error');
+    return;
+  }
+  
   const data = {
-    employee_id: document.getElementById('f_employee_id').value,
+    employee_id: empIdInput,
     first_name: fn, last_name: ln, full_name: fn + ' ' + ln,
     gender: document.getElementById('f_gender').value,
     date_of_birth: document.getElementById('f_dob').value,
@@ -1514,26 +1763,26 @@ function saveEmpForm(e, id) {
     marital_status: document.getElementById('f_marital').value,
     children_son: +document.getElementById('f_son').value || 0,
     children_daughter: +document.getElementById('f_daughter').value || 0,
-    national_id: document.getElementById('f_nid').value,
+    national_id: nid,
     national_id_expiry: document.getElementById('f_nid_exp').value,
     national_id_status: document.getElementById('f_nid_status').value,
     driving_license_no: document.getElementById('f_dl_no').value,
     driving_license_expiry: document.getElementById('f_dl_exp').value,
     driving_license_status: document.getElementById('f_dl_status').value,
-    phone: document.getElementById('f_phone').value,
+    phone: phone,
     phone2: document.getElementById('f_phone2').value,
-    email: document.getElementById('f_email').value,
+    email: email,
     current_address: document.getElementById('f_addr').value,
-    emergency_name: document.getElementById('f_emg_name').value,
+    emergency_name: emgName,
     emergency_relationship: document.getElementById('f_emg_rel').value,
-    emergency_phone: document.getElementById('f_emg_phone').value,
+    emergency_phone: emgPhone,
     branch_id: +document.getElementById('f_branch').value || null,
     department_id: document.getElementById('f_dept').value ? +document.getElementById('f_dept').value : null,
     position_id: +document.getElementById('f_pos').value,
     grade_id: +document.getElementById('f_grade').value,
     hire_date: document.getElementById('f_hire').value,
     status: document.getElementById('f_status').value,
-    base_salary: +document.getElementById('f_salary').value,
+    base_salary: salary,
     education: window._tempEdu,
     skills: window._tempSkills,
     employment_history: window._tempHist,
@@ -1541,7 +1790,7 @@ function saveEmpForm(e, id) {
     insurances: window._tempInsurances,
     photo: window._tempPhoto
   };
-
+  
   if (id) {
     Object.assign(DB.employees.find(x => x.id === id), data);
     logAudit(currentUser.id, 'UPDATE_EMPLOYEE', 'employee', id, `Updated ${data.full_name}`);
@@ -1555,6 +1804,47 @@ function saveEmpForm(e, id) {
     toast('✅ បន្ថែមជោគជ័យ');
   }
   saveDB(); closeModal(); filterEmployees();
+}
+
+// =====================================================
+// LOADING INDICATOR (moved OUTSIDE saveEmpForm)
+// =====================================================
+function showLoading(text = 'កំពុងដំណើរការ...') {
+  const overlay = document.getElementById('loadingOverlay');
+  const textEl = document.getElementById('loadingText');
+  if (textEl) textEl.textContent = text;
+  if (overlay) overlay.classList.add('active');
+}
+
+function hideLoading() {
+  const overlay = document.getElementById('loadingOverlay');
+  if (overlay) overlay.classList.remove('active');
+}
+
+function withLoading(text, fn) {
+  showLoading(text);
+  setTimeout(() => {
+    try { fn(); } finally { hideLoading(); }
+  }, 50);
+}
+
+// =====================================================
+// DARK MODE (moved OUTSIDE saveEmpForm)
+// =====================================================
+function toggleDarkMode() {
+  document.body.classList.toggle('dark-mode');
+  const isDark = document.body.classList.contains('dark-mode');
+  localStorage.setItem('hr_dark_mode', isDark ? '1' : '0');
+  const btn = document.getElementById('darkModeBtn');
+  if (btn) btn.textContent = isDark ? '☀️' : '🌙';
+}
+
+function initDarkMode() {
+  if (localStorage.getItem('hr_dark_mode') === '1') {
+    document.body.classList.add('dark-mode');
+    const btn = document.getElementById('darkModeBtn');
+    if (btn) btn.textContent = '☀️';
+  }
 }
 
 function viewEmpProfile(id) {
@@ -1871,6 +2161,42 @@ function editOrg(type, id) {
   `;
   openModal();
 }
+ // =====================================================
+// ORGANIZATION MODAL (NEW - replaces missing openOrgModal)
+// =====================================================
+function openOrgModal(type) {
+  const labels = {
+    company: { name: 'ក្រុមហ៊ុន', icon: '🏢', placeholder: 'HR Company Ltd.' },
+    branch: { name: 'សាខា', icon: '🏬', placeholder: 'Phnom Penh Branch' },
+    department: { name: 'ផ្នែក', icon: '🏛️', placeholder: 'Human Resources' },
+    division: { name: 'ផ្នែករង', icon: '📊', placeholder: 'Recruitment' },
+    team: { name: 'ក្រុម', icon: '👥', placeholder: 'Team A' },
+    position: { name: 'មុខតំណែង', icon: '💼', placeholder: 'HR Manager' }
+  };
+  const cfg = labels[type] || { name: type, icon: '📁', placeholder: '' };
+  
+  document.getElementById('modalContainer').classList.add('modal-md');
+  document.getElementById('modalContainer').classList.remove('modal-xl', 'modal-lg');
+  document.getElementById('modalTitle').textContent = `➕ បន្ថែម ${cfg.name}`;
+  document.getElementById('modalBody').innerHTML = `
+    <div class="space-y-3">
+      <div>
+        <label class="text-sm font-medium">Code <span class="text-red-500">*</span></label>
+        <input id="org_code" class="input" placeholder="ឧ: ${type.toUpperCase()}-001" maxlength="20">
+      </div>
+      <div>
+        <label class="text-sm font-medium">Name <span class="text-red-500">*</span></label>
+        <input id="org_name" class="input" placeholder="${cfg.placeholder}" maxlength="100">
+      </div>
+    </div>
+    <div class="flex justify-end gap-2 mt-6 pt-4 border-t">
+      <button onclick="closeModal()" class="btn btn-secondary">បោះបង់</button>
+      <button onclick="saveOrg('${type}')" class="btn btn-primary">💾 រក្សាទុក</button>
+    </div>
+  `;
+  openModal();
+  setTimeout(() => document.getElementById('org_code')?.focus(), 100);
+}
 
 function saveEditOrg(type, id) {
   const map = { company: DB.companies, branch: DB.branches, department: DB.departments, division: DB.divisions, team: DB.teams, position: DB.positions };
@@ -2007,133 +2333,69 @@ function saveOrg(type) {
   else if (type === 'team') DB.teams.push({ id: DB.nextId.team++, code, name });
   else if (type === 'position') DB.positions.push({ id: DB.nextId.pos++, code, title: name, department_id: null, grade_id: 3, level: 3 });
 
-  saveDB(); closeModal(); renderOrganization(); toast('✅ Added');
+  saveDB(); closeModal();
+  if (type === 'position') renderPositions();
+  else renderOrganization();
+  toast('✅ Added');
 }
 
 
 
-function openGradeModal() {
+// =====================================================
+// JOB GRADE - Single Clean Version
+// =====================================================
+function openGradeModal(id = null) {
+  const g = id ? DB.jobGrades.find(x => x.id === id) : null;
   document.getElementById('modalContainer').classList.add('modal-md');
   document.getElementById('modalContainer').classList.remove('modal-xl', 'modal-lg');
-  document.getElementById('modalTitle').textContent = '➕ បន្ថែម Job Grade';
+  document.getElementById('modalTitle').textContent = g ? '✏️ កែ Job Grade' : '➕ បន្ថែម Job Grade';
   document.getElementById('modalBody').innerHTML = `
     <div class="grid grid-cols-2 gap-4">
-      <div><label class="text-sm font-medium">Code</label><input id="g_code" class="input" placeholder="G7"></div>
-      <div><label class="text-sm font-medium">Name</label><input id="g_name" class="input" placeholder="Executive"></div>
-      <div><label class="text-sm font-medium">Level</label><input id="g_level" type="number" class="input" value="7"></div>
-      <div><label class="text-sm font-medium">Min Salary ($)</label><input id="g_min" type="number" class="input" value="0"></div>
-      <div><label class="text-sm font-medium">Max Salary ($)</label><input id="g_max" type="number" class="input" value="0"></div>
+      <div><label class="text-sm font-medium">Code <span class="text-red-500">*</span></label><input id="g_code" class="input" value="${g ? escapeHtml(g.code) : ''}" placeholder="G7"></div>
+      <div><label class="text-sm font-medium">Name <span class="text-red-500">*</span></label><input id="g_name" class="input" value="${g ? escapeHtml(g.name) : ''}" placeholder="Executive"></div>
+      <div><label class="text-sm font-medium">Level</label><input id="g_level" type="number" class="input" value="${g ? g.level : 7}" min="1"></div>
+      <div><label class="text-sm font-medium">Min Salary ($)</label><input id="g_min" type="number" class="input" value="${g ? g.min_salary : 0}" min="0"></div>
+      <div><label class="text-sm font-medium">Max Salary ($)</label><input id="g_max" type="number" class="input" value="${g ? g.max_salary : 0}" min="0"></div>
     </div>
     <div class="flex justify-end gap-2 mt-6 pt-4 border-t">
-      <button onclick="closeModal()" class="btn btn-secondary">Cancel</button>
-      <button onclick="saveNewGrade()" class="btn btn-primary">💾 Save</button>
+      <button onclick="closeModal()" class="btn btn-secondary">បោះបង់</button>
+      <button onclick="saveGrade(${id || 'null'})" class="btn btn-primary">💾 រក្សាទុក</button>
     </div>
   `;
   openModal();
 }
 
-function saveNewGrade() {
+function saveGrade(id) {
   const code = document.getElementById('g_code').value.trim();
   const name = document.getElementById('g_name').value.trim();
   const level = +document.getElementById('g_level').value || 1;
   const min_salary = +document.getElementById('g_min').value || 0;
   const max_salary = +document.getElementById('g_max').value || 0;
+  
   if (!code || !name) return toast('❌ សូមបំពេញ Code និង Name', 'error');
+  if (max_salary < min_salary) return toast('❌ Max Salary ត្រូវ ≥ Min Salary', 'error');
   
-  DB.jobGrades.push({ id: DB.nextId.grade++, code, name, level, min_salary, max_salary });
-  logAudit(currentUser.id, 'CREATE_GRADE', 'organization', null, 'Created ' + name);
-  saveDB(); closeModal(); renderPositions(); toast('✅ Added');
+  if (id) {
+    const g = DB.jobGrades.find(x => x.id === id);
+    Object.assign(g, { code, name, level, min_salary, max_salary });
+    logAudit(currentUser.id, 'UPDATE_GRADE', 'organization', id, 'Updated ' + name);
+    toast('✅ កែជោគជ័យ');
+  } else {
+    DB.jobGrades.push({ id: DB.nextId.grade++, code, name, level, min_salary, max_salary });
+    logAudit(currentUser.id, 'CREATE_GRADE', 'organization', null, 'Created ' + name);
+    toast('✅ បន្ថែមជោគជ័យ');
+  }
+  saveDB(); closeModal(); renderPositions();
 }
- function editGrade(id) {
-  const g = DB.jobGrades.find(x => x.id === id);
-  if (!g) return;
-  document.getElementById('modalContainer').classList.add('modal-md');
-  document.getElementById('modalContainer').classList.remove('modal-xl', 'modal-lg');
-  document.getElementById('modalTitle').textContent = '✏️ កែ Job Grade';
-  document.getElementById('modalBody').innerHTML = `
-    <div class="grid grid-cols-2 gap-4">
-      <div><label class="text-sm font-medium">Code</label><input id="g_code" class="input" value="${escapeHtml(g.code)}"></div>
-      <div><label class="text-sm font-medium">Name</label><input id="g_name" class="input" value="${escapeHtml(g.name)}"></div>
-      <div><label class="text-sm font-medium">Level</label><input id="g_level" type="number" class="input" value="${g.level}"></div>
-      <div><label class="text-sm font-medium">Min Salary ($)</label><input id="g_min" type="number" class="input" value="${g.min_salary}"></div>
-      <div><label class="text-sm font-medium">Max Salary ($)</label><input id="g_max" type="number" class="input" value="${g.max_salary}"></div>
-    </div>
-    <div class="flex justify-end gap-2 mt-6 pt-4 border-t">
-      <button onclick="closeModal()" class="btn btn-secondary">Cancel</button>
-      <button onclick="saveEditGrade(${id})" class="btn btn-primary">💾 Save</button>
-    </div>
-  `;
-  openModal();
-}
-
-function saveEditGrade(id) {
-  const g = DB.jobGrades.find(x => x.id === id);
-  if (!g) return;
-  g.code = document.getElementById('g_code').value.trim();
-  g.name = document.getElementById('g_name').value.trim();
-  g.level = +document.getElementById('g_level').value || 1;
-  g.min_salary = +document.getElementById('g_min').value || 0;
-  g.max_salary = +document.getElementById('g_max').value || 0;
-  
-  logAudit(currentUser.id, 'UPDATE_GRADE', 'organization', id, 'Updated ' + g.name);
-  saveDB(); closeModal(); renderPositions(); toast('✅ Updated');
-}
-
+function editGrade(id) { openGradeModal(id); }
 function deleteGrade(id) {
   const g = DB.jobGrades.find(x => x.id === id);
   if (!g) return;
-  if (!confirm('លុប Grade "' + g.name + '"?')) return;
+  if (!confirm(`លុប Grade "${g.name}"?`)) return;
   DB.jobGrades = DB.jobGrades.filter(x => x.id !== id);
   logAudit(currentUser.id, 'DELETE_GRADE', 'organization', id, 'Deleted ' + g.name);
-  saveDB(); renderPositions(); toast('🗑️ Deleted');
+  saveDB(); renderPositions(); toast('🗑️ លុបរួច');
 }
-
-function editGrade(id) {
-  const g = DB.jobGrades.find(x => x.id === id);
-  if (!g) return;
-  document.getElementById('modalContainer').classList.add('modal-md');
-  document.getElementById('modalContainer').classList.remove('modal-xl', 'modal-lg');
-  document.getElementById('modalTitle').textContent = '✏️ កែ Job Grade';
-  document.getElementById('modalBody').innerHTML = `
-    <div class="grid grid-cols-2 gap-4">
-      <div><label class="text-sm font-medium">Code</label><input id="g_code" class="input" value="${escapeHtml(g.code)}"></div>
-      <div><label class="text-sm font-medium">Name</label><input id="g_name" class="input" value="${escapeHtml(g.name)}"></div>
-      <div><label class="text-sm font-medium">Level</label><input id="g_level" type="number" class="input" value="${g.level}"></div>
-      <div><label class="text-sm font-medium">Min Salary ($)</label><input id="g_min" type="number" class="input" value="${g.min_salary}"></div>
-      <div><label class="text-sm font-medium">Max Salary ($)</label><input id="g_max" type="number" class="input" value="${g.max_salary}"></div>
-    </div>
-    <div class="flex justify-end gap-2 mt-6 pt-4 border-t">
-      <button onclick="closeModal()" class="btn btn-secondary">Cancel</button>
-      <button onclick="saveEditGrade(${id})" class="btn btn-primary">💾 Save</button>
-    </div>
-  `;
-  openModal();
-}
-
-function saveEditGrade(id) {
-  const g = DB.jobGrades.find(x => x.id === id);
-  if (!g) return;
-  g.code = document.getElementById('g_code').value.trim();
-  g.name = document.getElementById('g_name').value.trim();
-  g.level = +document.getElementById('g_level').value || 1;
-  g.min_salary = +document.getElementById('g_min').value || 0;
-  g.max_salary = +document.getElementById('g_max').value || 0;
-  
-  logAudit(currentUser.id, 'UPDATE_GRADE', 'organization', id, 'Updated ' + g.name);
-  saveDB(); closeModal(); renderPositions(); toast('✅ Updated');
-}
-
-function deleteGrade(id) {
-  const g = DB.jobGrades.find(x => x.id === id);
-  if (!g) return;
-  if (!confirm('លុប Grade "' + g.name + '"?')) return;
-  DB.jobGrades = DB.jobGrades.filter(x => x.id !== id);
-  logAudit(currentUser.id, 'DELETE_GRADE', 'organization', id, 'Deleted ' + g.name);
-  saveDB(); renderPositions(); toast('🗑️ Deleted');
-}
-
-
-
 // =====================================================
 // POSITIONS
 // =====================================================
@@ -2502,20 +2764,39 @@ function openLeaveModal() {
 function saveLeave() {
   const start = document.getElementById('l_start').value;
   const end = document.getElementById('l_end').value;
+  const empId = +document.getElementById('l_emp').value;
+  const typeId = +document.getElementById('l_type').value;
+  
   if (!start || !end) return toast('❌ សូមបំពេញកាលបរិច្ឆេទ', 'error');
   if (new Date(end) < new Date(start)) return toast('❌ Date មិនត្រឹមត្រូវ', 'error');
+  
+  // Validate leave type max days
+  const leaveType = DB.leaveTypes.find(t => t.id === typeId);
   const days = Math.ceil((new Date(end) - new Date(start)) / (1000*60*60*24)) + 1;
-  const l = {
-    id: DB.nextId.leave++,
-    code: 'LV' + String(DB.nextId.leave).padStart(4, '0'),
-    employee_id: +document.getElementById('l_emp').value,
-    leave_type_id: +document.getElementById('l_type').value,
-    start_date: start, end_date: end, total_days: days,
+  if (leaveType && days > leaveType.max_days) {
+    return toast(`❌ ${leaveType.name} អនុញ្ញាតត្រឹម ${leaveType.max_days} ថ្ងៃ`, 'error');
+  }
+  
+  // ✅ FIX: Use single ID increment
+  const newId = DB.nextId.leave++;
+  const code = 'LV' + String(newId).padStart(4, '0');
+  
+  DB.leaves.push({
+    id: newId,
+    code: code,
+    employee_id: empId,
+    leave_type_id: typeId,
+    start_date: start,
+    end_date: end,
+    total_days: days,
     reason: document.getElementById('l_reason').value,
-    status: 'pending', created_at: new Date().toISOString()
-  };
-  DB.leaves.push(l);
-  saveDB(); closeModal(); renderLeave(); toast('✅ Submitted');
+    status: 'pending',
+    created_at: new Date().toISOString()
+  });
+  
+  logAudit(currentUser.id, 'CREATE_LEAVE', 'leave', newId, `Leave for ${getEmpName(empId)}`);
+  saveDB(); closeModal(); renderLeave();
+  toast(`✅ ស្នើសុំជោគជ័យ (${code})`);
 }
 
 function approveLeave(id) {
@@ -2616,35 +2897,140 @@ function renderPayTable() {
       <td class="p-2 text-right text-red-600">-$${parseFloat(p.tax_amount).toFixed(2)}</td>
       <td class="p-2 text-right font-bold text-red-700">-$${parseFloat(totalDeduction).toFixed(2)}</td>
       <td class="p-2 text-right font-bold text-green-600">$${parseFloat(p.net_salary).toFixed(2)}</td>
-      <td class="p-2 text-center text-2xl">✋</td>
+      <td class="p-2 text-center">
+  <button onclick="printPayslip(${p.id})" class="text-blue-600 hover:bg-blue-50 px-2 py-1 rounded text-xs" title="Print Payslip">🖨️</button>
+</td>
     </tr>`;
   }).join('') || '<tr><td colspan="14" class="text-center p-8 text-slate-400">ចុច "គណនា" ដើម្បីបង្កើត</td></tr>';
 }
 
 function generatePayroll() {
   if (!confirm('គណនាប្រាក់ខែ?')) return;
-  const m = +document.getElementById('payMonth').value;
-  const y = +document.getElementById('payYear').value;
-  DB.payrolls = DB.payrolls.filter(p => !(p.period_month === m && p.period_year === y));
-  let count = 0;
-  DB.employees.filter(e => ['active','on_leave'].includes(e.status)).forEach(emp => {
-    const base = emp.base_salary || 0;
-    const nssfBase = Math.min(base * EXCHANGE_RATE, 300000 * EXCHANGE_RATE);
-    const nssfEmp = (nssfBase * 0.04) / EXCHANGE_RATE;
-    const taxableKHR = (base - nssfEmp) * EXCHANGE_RATE;
-    const taxUSD = calcTax(taxableKHR) / EXCHANGE_RATE;
-    const net = base - nssfEmp - taxUSD;
-    DB.payrolls.push({
-      id: DB.nextId.pay++, employee_id: emp.id,
-      period_month: m, period_year: y,
-      base_salary: base, gross_salary: base,
-      nssf_employee: nssfEmp, tax_amount: taxUSD,
-      total_deduction: nssfEmp + taxUSD, net_salary: net,
-      status: 'draft', created_at: new Date().toISOString()
+  withLoading('កំពុងគណនាប្រាក់ខែ...', () => {
+    const m = +document.getElementById('payMonth').value;
+    const y = +document.getElementById('payYear').value;
+    DB.payrolls = DB.payrolls.filter(p => !(p.period_month === m && p.period_year === y));
+    let count = 0;
+    DB.employees.filter(e => ['active','on_leave'].includes(e.status)).forEach(emp => {
+      const base = emp.base_salary || 0;
+      const nssfBase = Math.min(base * EXCHANGE_RATE, 300000 * EXCHANGE_RATE);
+      const nssfEmp = (nssfBase * 0.04) / EXCHANGE_RATE;
+      const taxableKHR = (base - nssfEmp) * EXCHANGE_RATE;
+      const taxUSD = calcTax(taxableKHR) / EXCHANGE_RATE;
+      const net = base - nssfEmp - taxUSD;
+      DB.payrolls.push({
+        id: DB.nextId.pay++, employee_id: emp.id,
+        period_month: m, period_year: y,
+        base_salary: base, gross_salary: base,
+        nssf_employee: nssfEmp, tax_amount: taxUSD,
+        total_deduction: nssfEmp + taxUSD, net_salary: net,
+        status: 'draft', created_at: new Date().toISOString()
+      });
+      count++;
     });
-    count++;
+    saveDB(); renderPayTable(); toast(`✅ ${count} នាក់`);
   });
-  saveDB(); renderPayTable(); toast(`✅ ${count} នាក់`);
+}
+
+// =====================================================
+// PRINT PAYSLIP (moved outside generatePayroll)
+// =====================================================
+function printPayslip(payrollId) {
+  const p = DB.payrolls.find(x => x.id === payrollId);
+  if (!p) return toast('❌ រកមិនឃើញ', 'error');
+  const e = DB.employees.find(x => x.id === p.employee_id);
+  if (!e) return;
+  
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('p', 'mm', 'a4');
+  
+  // Header
+  doc.setFillColor(37, 99, 235);
+  doc.rect(0, 0, 210, 35, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(20);
+  doc.text('PAYSLIP', 105, 18, { align: 'center' });
+  doc.setFontSize(11);
+  doc.text(`ខែ ${p.period_month}/${p.period_year}`, 105, 28, { align: 'center' });
+  
+  // Company Info
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(12);
+  doc.setFont(undefined, 'bold');
+  doc.text(DB.settings.companyName || 'HR Company', 14, 50);
+  doc.setFont(undefined, 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(100, 100, 100);
+  doc.text('Phnom Penh, Cambodia', 14, 55);
+  
+  // Employee Info
+  doc.setDrawColor(200, 200, 200);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, 62, 182, 40, 3, 3, 'FD');
+  
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(10);
+  doc.setFont(undefined, 'bold');
+  doc.text('ព័ត៌មានបុគ្គលិក', 18, 70);
+  doc.setFont(undefined, 'normal');
+  doc.setFontSize(9);
+  
+  const infoRows = [
+    ['ឈ្មោះ:', e.full_name, 'អត្តលេខ:', e.employee_id || e.code],
+    ['មុខតំណែង:', getPosName(e.position_id), 'ផ្នែក:', getDeptName(e.department_id)],
+    ['ថ្ងៃចូល:', e.hire_date || '-', 'ភេទ:', e.gender === 'M' ? 'ប្រុស' : 'ស្រី']
+  ];
+  
+  let y = 78;
+  infoRows.forEach(row => {
+    doc.text(row[0], 18, y);
+    doc.setFont(undefined, 'bold');
+    doc.text(String(row[1] || '-'), 45, y);
+    doc.setFont(undefined, 'normal');
+    doc.text(row[2], 110, y);
+    doc.setFont(undefined, 'bold');
+    doc.text(String(row[3] || '-'), 140, y);
+    doc.setFont(undefined, 'normal');
+    y += 7;
+  });
+  
+  // Earnings & Deductions
+  const deduction = p.unpaid_deduction || 0;
+  const gross = p.gross_salary || p.base_salary;
+  
+  doc.autoTable({
+    startY: 110,
+    head: [['ពិពណ៌នា', 'ចំនួន ($)']],
+    body: [
+      ['ប្រាក់ខែគោល', parseFloat(p.base_salary).toFixed(2)],
+      ...(deduction > 0 ? [['ការកាត់ប្រាក់', `-${deduction.toFixed(2)}`]] : []),
+      ['ប្រាក់ខែសរុប', parseFloat(gross).toFixed(2)],
+      ['NSSF (បុគ្គលិក 4%)', `-${parseFloat(p.nssf_employee).toFixed(2)}`],
+      ['ពន្ធលើប្រាក់ខែ', `-${parseFloat(p.tax_amount).toFixed(2)}`],
+      [{ content: 'ប្រាក់ខែសុទ្ធ', styles: { fontStyle: 'bold', fontSize: 12 } }, 
+       { content: `$${parseFloat(p.net_salary).toFixed(2)}`, styles: { fontStyle: 'bold', fontSize: 12, textColor: [22, 163, 74] } }]
+    ],
+    theme: 'grid',
+    headStyles: { fillColor: [37, 99, 235], textColor: 255, fontStyle: 'bold' },
+    styles: { fontSize: 10, cellPadding: 4 },
+    columnStyles: { 0: { cellWidth: 140 }, 1: { cellWidth: 42, halign: 'right' } }
+  });
+  
+  // Signature
+  const finalY = doc.lastAutoTable.finalY + 20;
+  doc.setFontSize(10);
+  doc.text('ហត្ថលេខាបុគ្គលិក', 40, finalY, { align: 'center' });
+  doc.text('ហត្ថលេខានាយក', 170, finalY, { align: 'center' });
+  doc.line(20, finalY + 15, 60, finalY + 15);
+  doc.line(150, finalY + 15, 190, finalY + 15);
+  
+  // Footer
+  doc.setFontSize(8);
+  doc.setTextColor(150, 150, 150);
+  doc.text(`Generated: ${new Date().toLocaleString()}`, 105, 290, { align: 'center' });
+  
+  doc.save(`Payslip_${e.code}_${p.period_year}_${p.period_month}.pdf`);
+  toast('📕 Payslip downloaded');
 }
 
 function exportPayrollPDF() {
@@ -3272,23 +3658,24 @@ function renderSettings() {
       </div>
 
       <div class="card">
-        <div class="flex justify-between items-center mb-4">
-          <h3 class="font-bold">👥 Users Management</h3>
-          <button onclick="openUserModal()" class="btn btn-primary btn-sm">+ បន្ថែម User</button>
+  <div class="flex justify-between items-center mb-4">
+    <h3 class="font-bold">👥 Users Management</h3>
+    <button onclick="openUserModal()" class="btn btn-primary btn-sm">+ បន្ថែម User</button>
+  </div>
+  <div class="space-y-2">
+    ${DB.users.map(u => `
+      <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+        <div class="w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold">${escapeHtml(u.name.charAt(0))}</div>
+        <div class="flex-1">
+          <div class="font-medium text-sm">${escapeHtml(u.name)}</div>
+          <div class="text-xs text-slate-500">${escapeHtml(u.username)} · ${escapeHtml(u.role)}</div>
         </div>
-        <div class="space-y-2">
-          ${DB.users.map(u => `
-            <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
-              <div class="w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold">${escapeHtml(u.name.charAt(0))}</div>
-              <div class="flex-1">
-                <div class="font-medium text-sm">${escapeHtml(u.name)}</div>
-                <div class="text-xs text-slate-500">${escapeHtml(u.username)} · ${escapeHtml(u.role)}</div>
-              </div>
-              ${u.id !== 1 ? `<button onclick="deleteUser(${u.id})" class="text-red-600 hover:bg-red-50 px-2 py-1 rounded text-xs">🗑️</button>` : '<span class="badge badge-gray text-xs">Protected</span>'}
-            </div>
-          `).join('')}
-        </div>
+        <button onclick="openChangePasswordModal(${u.id})" class="text-blue-600 hover:bg-blue-50 px-2 py-1 rounded text-xs" title="ប្តូរពាក្យសម្ងាត់">🔑</button>
+        ${u.id !== 1 ? `<button onclick="deleteUser(${u.id})" class="text-red-600 hover:bg-red-50 px-2 py-1 rounded text-xs">🗑️</button>` : '<span class="badge badge-gray text-xs">Protected</span>'}
       </div>
+    `).join('')}
+  </div>
+</div>
 
       <div class="card">
         <h3 class="font-bold mb-4">💾 Backup & Restore</h3>
@@ -3332,6 +3719,133 @@ function openUserModal() {
     </div>
   `;
   openModal();
+}
+ // =====================================================
+// CHANGE PASSWORD
+// =====================================================
+function openChangePasswordModal(userId) {
+  const user = DB.users.find(u => u.id === userId);
+  if (!user) return;
+  
+  document.getElementById('modalContainer').classList.add('modal-md');
+  document.getElementById('modalContainer').classList.remove('modal-xl', 'modal-lg');
+  document.getElementById('modalTitle').textContent = `🔑 ប្តូរពាក្យសម្ងាត់ - ${user.name}`;
+  
+  document.getElementById('modalBody').innerHTML = `
+    <div class="space-y-4">
+      <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm">
+        <div class="font-medium text-blue-700">👤 ${escapeHtml(user.name)}</div>
+        <div class="text-xs text-blue-600">@${escapeHtml(user.username)} · ${escapeHtml(user.role)}</div>
+      </div>
+      
+      <div>
+        <label class="text-sm font-medium">ពាក្យសម្ងាត់ចាស់ <span class="text-red-500">*</span></label>
+        <input id="pwd_old" type="password" class="input" placeholder="បញ្ចូលពាក្យសម្ងាត់ចាស់...">
+        <p id="pwd_old_error" class="text-xs text-red-600 mt-1 hidden">❌ ពាក្យសម្ងាត់ចាស់មិនត្រឹមត្រូវ</p>
+      </div>
+      
+      <div>
+        <label class="text-sm font-medium">ពាក្យសម្ងាត់ថ្មី <span class="text-red-500">*</span></label>
+        <input id="pwd_new" type="password" class="input" placeholder="យ៉ាងតិច 6 តួអក្សរ..." oninput="checkPasswordStrength()">
+        <div class="mt-2">
+          <div class="flex gap-1 h-1.5">
+            <div id="strength_bar_1" class="flex-1 bg-slate-200 rounded"></div>
+            <div id="strength_bar_2" class="flex-1 bg-slate-200 rounded"></div>
+            <div id="strength_bar_3" class="flex-1 bg-slate-200 rounded"></div>
+            <div id="strength_bar_4" class="flex-1 bg-slate-200 rounded"></div>
+          </div>
+          <p id="strength_text" class="text-xs text-slate-500 mt-1">កម្រិតសុវត្ថិភាព</p>
+        </div>
+      </div>
+      
+      <div>
+        <label class="text-sm font-medium">បញ្ជាក់ពាក្យសម្ងាត់ថ្មី <span class="text-red-500">*</span></label>
+        <input id="pwd_confirm" type="password" class="input" placeholder="បញ្ចូលម្តងទៀត...">
+        <p id="pwd_match_error" class="text-xs text-red-600 mt-1 hidden">❌ ពាក្យសម្ងាត់មិនត្រូវគ្នា</p>
+      </div>
+      
+      <div class="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">
+        <p class="font-semibold mb-1">💡 ដំបូន្មានពាក្យសម្ងាត់ខ្លាំង៖</p>
+        <ul class="list-disc list-inside space-y-0.5">
+          <li>យ៉ាងតិច 8 តួអក្សរ</li>
+          <li>មានអក្សរធំ និងអក្សរតូច (A-Z, a-z)</li>
+          <li>មានលេខ (0-9)</li>
+          <li>មានសញ្ញាពិសេស (!@#$%^&*)</li>
+        </ul>
+      </div>
+    </div>
+    
+    <div class="flex justify-end gap-2 mt-6 pt-4 border-t">
+      <button onclick="closeModal()" class="btn btn-secondary">បោះបង់</button>
+      <button onclick="saveNewPassword(${userId})" class="btn btn-primary">💾 ប្តូរពាក្យសម្ងាត់</button>
+    </div>
+  `;
+  openModal();
+  setTimeout(() => document.getElementById('pwd_old')?.focus(), 100);
+}
+
+function checkPasswordStrength() {
+  const pwd = document.getElementById('pwd_new').value;
+  let strength = 0;
+  if (pwd.length >= 6) strength++;
+  if (pwd.length >= 10) strength++;
+  if (/[A-Z]/.test(pwd) && /[a-z]/.test(pwd)) strength++;
+  if (/[0-9]/.test(pwd) && /[^A-Za-z0-9]/.test(pwd)) strength++;
+  
+  const colors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-green-500'];
+  const labels = ['ខ្សោយខ្លាំង', 'ខ្សោយ', 'មធ្យម', 'ខ្លាំង'];
+  const textColors = ['text-red-600', 'text-orange-600', 'text-yellow-600', 'text-green-600'];
+  
+  for (let i = 1; i <= 4; i++) {
+    const bar = document.getElementById(`strength_bar_${i}`);
+    if (!bar) continue;
+    bar.className = `flex-1 rounded ${i <= strength ? colors[strength - 1] : 'bg-slate-200'}`;
+  }
+  
+  const text = document.getElementById('strength_text');
+  if (text) {
+    if (pwd.length === 0) {
+      text.textContent = 'កម្រិតសុវត្ថិភាព';
+      text.className = 'text-xs text-slate-500 mt-1';
+    } else {
+      text.textContent = `កម្រិត: ${labels[strength - 1] || labels[0]}`;
+      text.className = `text-xs ${textColors[strength - 1] || textColors[0]} mt-1 font-medium`;
+    }
+  }
+}
+
+function saveNewPassword(userId) {
+  const oldPwd = document.getElementById('pwd_old').value;
+  const newPwd = document.getElementById('pwd_new').value;
+  const confirmPwd = document.getElementById('pwd_confirm').value;
+  
+  document.getElementById('pwd_old_error').classList.add('hidden');
+  document.getElementById('pwd_match_error').classList.add('hidden');
+  
+  if (!oldPwd || !newPwd || !confirmPwd) return toast('❌ សូមបំពេញគ្រប់ប្រអប់', 'error');
+  
+  const user = DB.users.find(u => u.id === userId);
+  if (!user) return toast('❌ រកមិនឃើញ User', 'error');
+  
+  if (!verifyPassword(oldPwd, user.password)) {
+    document.getElementById('pwd_old_error').classList.remove('hidden');
+    return toast('❌ ពាក្យសម្ងាត់ចាស់មិនត្រឹមត្រូវ', 'error');
+  }
+  
+  if (newPwd.length < 6) return toast('❌ ពាក្យសម្ងាត់ថ្មីត្រូវមានយ៉ាងតិច 6 តួអក្សរ', 'error');
+  if (newPwd !== confirmPwd) {
+    document.getElementById('pwd_match_error').classList.remove('hidden');
+    return toast('❌ ពាក្យសម្ងាត់មិនត្រូវគ្នា', 'error');
+  }
+  if (oldPwd === newPwd) return toast('❌ ពាក្យសម្ងាត់ថ្មីត្រូវខុសពីចាស់', 'error');
+  
+  user.password = hashPassword(newPwd);
+  logAudit(currentUser.id, 'CHANGE_PASSWORD', 'auth', userId, `Changed password for ${user.username}`);
+  saveDB();
+  
+  closeModal();
+  renderSettings();
+  toast('✅ ប្តូរពាក្យសម្ងាត់ជោគជ័យ!');
 }
 
 function saveUser() {
@@ -3423,16 +3937,59 @@ function timeAgo(date) {
   return Math.floor(s/86400) + 'd ago';
 }
 
-function openModal() { const m = document.getElementById('modal'); m.classList.remove('hidden'); m.classList.add('flex'); }
-function closeModal() { const m = document.getElementById('modal'); m.classList.add('hidden'); m.classList.remove('flex'); }
+function openModal() { 
+  const m = document.getElementById('modal'); 
+  m.classList.remove('hidden'); 
+  m.classList.add('flex'); 
+}
 
-function toast(msg, type = 'success') {
-  const el = document.createElement('div');
-  el.className = 'toast';
-  el.style.background = type === 'error' ? 'linear-gradient(135deg,#dc2626,#991b1b)' : 'linear-gradient(135deg,#16a34a,#15803d)';
-  el.textContent = msg;
-  document.body.appendChild(el);
-  setTimeout(() => { el.style.transform = 'translateX(400px)'; el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 2800);
+function closeModal() { 
+  const m = document.getElementById('modal'); 
+  m.classList.add('hidden'); 
+  m.classList.remove('flex'); 
+  // ✅ Reset modal size classes
+  const c = document.getElementById('modalContainer');
+  if (c) {
+    c.classList.remove('modal-xl', 'modal-lg', 'modal-md');
+    c.style.maxWidth = '900px';
+  }
+}
+ function showPage(page) {
+  const content = document.getElementById('pageContent');
+  content.style.opacity = '0.5';
+  
+  // ✅ FIX: Destroy charts when leaving dashboard
+  if (page !== 'dashboard' && Object.keys(charts).length > 0) {
+    Object.values(charts).forEach(c => { try { c?.destroy(); } catch(e) {} });
+    charts = {};
+  }
+  
+  document.querySelectorAll('.sidebar-link').forEach(el => el.classList.remove('active'));
+  const link = document.querySelector(`[data-page="${page}"]`);
+  if (link) link.classList.add('active');
+  const [t, s] = PAGE_META[page] || [page, ''];
+  document.getElementById('pageTitle').textContent = t;
+  document.getElementById('pageSubtitle').textContent = s;
+  
+  const renderers = {
+    dashboard: renderDashboard, employees: renderEmployees, orgchart: renderOrgChart,
+    organization: renderOrganization, positions: renderPositions,
+    attendance: renderAttendance, leave: renderLeave, payroll: renderPayroll,
+    documents: renderDocuments, assets: renderAssets, contracts: renderContracts,
+    inventory: renderInventory, suppliers: renderSuppliers, purchase: renderPurchase,
+    reports: renderReports, audit: renderAudit, settings: renderSettings
+  };
+  
+  try {
+    if (renderers[page]) renderers[page]();
+    content.style.opacity = '1';
+  } catch(e) {
+    console.error('Render error:', e);
+    content.innerHTML = `<div class="card text-center py-12"><div class="text-4xl mb-3">❌</div><div class="text-red-600">មានបញ្ហា: ${escapeHtml(e.message)}</div></div>`;
+    content.style.opacity = '1';
+  }
+  
+  setTimeout(updateBadges, 50);
 }
 
 function exportXLSX(data, filename) {
@@ -3449,7 +4006,7 @@ function exportXLSX(data, filename) {
 document.addEventListener('DOMContentLoaded', () => {
   initDB();
   applyCompanyLogo();
-  
+  initDarkMode();
   const savedSession = sessionStorage.getItem(SESSION_KEY);
   const lastActivity = parseInt(sessionStorage.getItem(ACTIVITY_KEY) || 0);
   const elapsed = Date.now() - lastActivity;
