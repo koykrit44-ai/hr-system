@@ -2267,10 +2267,19 @@ function renderSkillList() {
 }
 function removeSkill(i) { window._tempSkills.splice(i, 1); renderSkillList(); }
 
+// =====================================================
+// HANDLE DOCUMENT UPLOAD
+// =====================================================
 function handleDocUpload(input) {
-  const category = document.getElementById('docCategory')?.value || 'other';
+  if (!window._tempDocs) window._tempDocs = [];
   
-  Array.from(input.files).forEach(file => {
+  const category = document.getElementById('docCategory')?.value || 'other';
+  const files = Array.from(input.files);
+  
+  if (files.length === 0) return;
+  
+  files.forEach(file => {
+    // Check size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
       toast(`❌ ${file.name} ធំពេក (max 10MB)`, 'error');
       return;
@@ -2278,25 +2287,35 @@ function handleDocUpload(input) {
     
     const isPDF = file.type === 'application/pdf';
     const isImage = file.type.startsWith('image/');
-    const isWord = file.type.includes('word') || file.name.endsWith('.doc') || file.name.endsWith('.docx');
+    const isWord = file.type.includes('word') || 
+                   file.name.endsWith('.doc') || 
+                   file.name.endsWith('.docx');
     
     const reader = new FileReader();
+    
     reader.onload = (e) => {
-      window._tempDocs.push({
+      const docData = {
         id: Date.now() + Math.random(),
         name: file.name,
         size: (file.size / 1024).toFixed(1) + ' KB',
-        type: file.type,
+        type: file.type || 'application/octet-stream',
         category: category,
         isPDF: isPDF,
         isImage: isImage,
         isWord: isWord,
         uploaded_at: new Date().toISOString(),
         data: e.target.result
-      });
+      };
+      
+      window._tempDocs.push(docData);
       renderDocList();
       toast(`✅ ${file.name}`);
     };
+    
+    reader.onerror = () => {
+      toast(`❌ Error reading ${file.name}`, 'error');
+    };
+    
     reader.readAsDataURL(file);
   });
   
@@ -2432,6 +2451,13 @@ function saveEmpForm(e, id) {
     return;
   }
   
+  // ✅ Ensure window._tempDocs is defined
+  if (!window._tempDocs) window._tempDocs = [];
+  if (!window._tempEdu) window._tempEdu = [];
+  if (!window._tempSkills) window._tempSkills = [];
+  if (!window._tempHist) window._tempHist = [];
+  if (!window._tempInsurances) window._tempInsurances = [];
+  
   const data = {
     employee_id: empIdInput,
     first_name: fn, last_name: ln, full_name: fn + ' ' + ln,
@@ -2464,7 +2490,7 @@ function saveEmpForm(e, id) {
     education: window._tempEdu,
     skills: window._tempSkills,
     employment_history: window._tempHist,
-    documents: window._tempDocs,
+    documents: window._tempDocs,           // ✅ Save documents
     insurances: window._tempInsurances,
     photo: window._tempPhoto
   };
@@ -2483,7 +2509,6 @@ function saveEmpForm(e, id) {
   }
   saveDB(); closeModal(); filterEmployees();
 }
-
 // =====================================================
 // LOADING INDICATOR (moved OUTSIDE saveEmpForm)
 // =====================================================
