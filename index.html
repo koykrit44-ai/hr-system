@@ -1914,7 +1914,7 @@ function openEmpForm(id) {
       <button type="button" class="tab-btn" onclick="switchTab(event, 'tab-employment')">💼 Employment</button>
       <button type="button" class="tab-btn" onclick="switchTab(event, 'tab-insurance')">🛡️ Insurance</button>
       <button type="button" class="tab-btn" onclick="switchTab(event, 'tab-history')">📜 History</button>
-      <button type="button" class="tab-btn" onclick="switchTab(event, 'tab-documents')">📎 Documents</button>
+      <button type="button" class="tab-btn" onclick="switchTab(event, 'tab-documents')">📎 Documents</button>  // ← ត្រូវមាន!
     </div>
 
     <form id="empForm" onsubmit="saveEmpForm(event, ${id || 'null'})">
@@ -2066,6 +2066,7 @@ function openEmpForm(id) {
         <div class="flex justify-between items-center mb-3">
           <h4 class="font-bold text-slate-700">📜 Employment History</h4>
           <button type="button" onclick="addHistory()" class="btn btn-secondary btn-sm">+ បន្ថែម</button>
+          <button type="button" class="tab-btn" onclick="switchTab(event, 'tab-documents')">📎 Documents</button>
         </div>
         <div id="historyList" class="space-y-3"></div>
       </div>
@@ -2267,33 +2268,83 @@ function renderSkillList() {
 function removeSkill(i) { window._tempSkills.splice(i, 1); renderSkillList(); }
 
 function handleDocUpload(input) {
+  const category = document.getElementById('docCategory')?.value || 'other';
+  
   Array.from(input.files).forEach(file => {
-    if (file.size > 10 * 1024 * 1024) { toast(`❌ ${file.name} ធំពេក`, 'error'); return; }
+    if (file.size > 10 * 1024 * 1024) {
+      toast(`❌ ${file.name} ធំពេក (max 10MB)`, 'error');
+      return;
+    }
+    
     const isPDF = file.type === 'application/pdf';
+    const isImage = file.type.startsWith('image/');
+    const isWord = file.type.includes('word') || file.name.endsWith('.doc') || file.name.endsWith('.docx');
+    
     const reader = new FileReader();
     reader.onload = (e) => {
-      window._tempDocs.push({ id: Date.now() + Math.random(), name: file.name, size: (file.size/1024).toFixed(1) + ' KB', type: file.type, isPDF, data: e.target.result });
+      window._tempDocs.push({
+        id: Date.now() + Math.random(),
+        name: file.name,
+        size: (file.size / 1024).toFixed(1) + ' KB',
+        type: file.type,
+        category: category,
+        isPDF: isPDF,
+        isImage: isImage,
+        isWord: isWord,
+        uploaded_at: new Date().toISOString(),
+        data: e.target.result
+      });
       renderDocList();
       toast(`✅ ${file.name}`);
     };
     reader.readAsDataURL(file);
   });
+  
+  input.value = '';
 }
 function renderDocList() {
-  document.getElementById('docList').innerHTML = window._tempDocs.length
-    ? window._tempDocs.map((d, i) => `
-        <div class="flex items-center gap-3 p-3 border rounded-lg hover:bg-slate-50">
-          <div class="text-3xl">${d.isPDF ? '📕' : '🖼️'}</div>
-          <div class="flex-1 min-w-0">
+  const list = window._tempDocs || [];
+  
+  if (list.length === 0) {
+    document.getElementById('docList').innerHTML = `
+      <div class="text-center py-8 text-slate-400">
+        <div class="text-4xl mb-2">📭</div>
+        <p>មិនមានឯកសារ</p>
+      </div>
+    `;
+    return;
+  }
+  
+  const categoryLabels = {
+    cv: { icon: '📄', label: 'CV', color: 'bg-purple-100 text-purple-700' },
+    contract: { icon: '📝', label: 'Contract', color: 'bg-green-100 text-green-700' },
+    certificate: { icon: '🎓', label: 'Certificate', color: 'bg-blue-100 text-blue-700' },
+    id: { icon: '🪪', label: 'ID', color: 'bg-yellow-100 text-yellow-700' },
+    other: { icon: '📁', label: 'Other', color: 'bg-gray-100 text-gray-700' }
+  };
+  
+  document.getElementById('docList').innerHTML = list.map((d, i) => {
+    const cat = categoryLabels[d.category] || categoryLabels.other;
+    const fileIcon = d.isPDF ? '📕' : d.isImage ? '🖼️' : d.isWord ? '📘' : '📄';
+    
+    return `
+      <div class="flex items-center gap-3 p-3 border rounded-lg hover:bg-slate-50 transition">
+        <div class="text-3xl">${fileIcon}</div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 flex-wrap">
             <div class="font-medium text-sm truncate">${escapeHtml(d.name)}</div>
-            <div class="text-xs text-slate-500">${d.size}</div>
+            <span class="badge ${cat.color}">${cat.icon} ${cat.label}</span>
           </div>
+          <div class="text-xs text-slate-500 mt-1">${d.size}</div>
+        </div>
+        <div class="flex gap-1">
           <button type="button" onclick="previewDoc(${i})" class="text-blue-600 hover:bg-blue-50 px-2 py-1 rounded text-xs">👁️</button>
           <a href="${d.data}" download="${escapeHtml(d.name)}" class="text-green-600 hover:bg-green-50 px-2 py-1 rounded text-xs">⬇️</a>
           <button type="button" onclick="removeDoc(${i})" class="text-red-600 hover:bg-red-50 px-2 py-1 rounded text-xs">🗑️</button>
         </div>
-      `).join('')
-    : '<p class="text-center text-slate-400 py-4">មិនមានឯកសារ</p>';
+      </div>
+    `;
+  }).join('');
 }
 function previewDoc(i) {
   const d = window._tempDocs[i];
