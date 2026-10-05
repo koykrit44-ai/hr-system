@@ -935,6 +935,12 @@ function showPage(page) {
   const content = document.getElementById('pageContent');
   content.style.opacity = '0.5';
   
+  // ✅ FIX: Destroy charts when leaving dashboard
+  if (page !== 'dashboard' && Object.keys(charts).length > 0) {
+    Object.values(charts).forEach(c => { try { c?.destroy(); } catch(e) {} });
+    charts = {};
+  }
+  
   document.querySelectorAll('.sidebar-link').forEach(el => el.classList.remove('active'));
   const link = document.querySelector(`[data-page="${page}"]`);
   if (link) link.classList.add('active');
@@ -959,22 +965,9 @@ function showPage(page) {
     content.innerHTML = `<div class="card text-center py-12"><div class="text-4xl mb-3">❌</div><div class="text-red-600">មានបញ្ហា: ${escapeHtml(e.message)}</div></div>`;
     content.style.opacity = '1';
   }
- function showPage(page) {
-  const content = document.getElementById('pageContent');
-  content.style.opacity = '0.5';
-  
-  // ✅ FIX: Destroy charts when leaving dashboard
-  if (page !== 'dashboard') {
-    Object.values(charts).forEach(c => { try { c?.destroy(); } catch(e) {} });
-    charts = {};
-  }
-  
-  // ... rest of code
-}
   
   setTimeout(updateBadges, 50);
 }
-
 // =====================================================
 // DASHBOARD
 // =====================================================
