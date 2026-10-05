@@ -2563,6 +2563,7 @@ function renderPayroll() {
             ${[2023,2024,2025,2026].map(y => `<option value="${y}" ${y===now.getFullYear()?'selected':''}>${y}</option>`).join('')}
           </select>
           <button onclick="generatePayroll()" class="btn btn-primary">⚡ គណនា</button>
+          <button onclick="exportPayrollExcel()" class="btn btn-secondary">📊 Excel</button>
           <button onclick="exportPayrollPDF()" class="btn btn-secondary">📕 PDF</button>
         </div>
       </div>
