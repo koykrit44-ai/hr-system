@@ -194,6 +194,49 @@ body.dark-mode .file-drop { border-color: #334155; }
   }
   @keyframes slideDown { from { transform: translate(-50%, -100px); } to { transform: translate(-50%, 0); } }
   .session-warning.hidden { display: none; }
+ /* ============ LANGUAGE SWITCHER ============ */
+.lang-switcher {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #f1f5f9;
+  border-radius: 999px;
+  padding: 4px;
+}
+.lang-btn {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  transition: all 0.2s;
+}
+.lang-btn:hover {
+  color: #2563eb;
+  background: white;
+}
+.lang-btn.active {
+  background: white;
+  color: #2563eb;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+}
+body.dark-mode .lang-switcher {
+  background: #334155;
+}
+body.dark-mode .lang-btn {
+  color: #94a3b8;
+}
+body.dark-mode .lang-btn:hover {
+  color: #60a5fa;
+  background: #1e293b;
+}
+body.dark-mode .lang-btn.active {
+  background: #1e293b;
+  color: #60a5fa;
+}
 </style>
 </head>
 <body>
@@ -341,20 +384,26 @@ body.dark-mode .file-drop { border-color: #334155; }
         <h1 id="pageTitle" class="text-xl font-bold text-slate-800">Dashboard</h1>
         <p id="pageSubtitle" class="text-xs text-slate-500 mt-0.5"></p>
       </div>
-      <div class="flex items-center gap-4">
+            <div class="flex items-center gap-4">
         <div class="hidden md:block text-right">
-          <div class="text-xs text-slate-500">ថ្ងៃនេះ</div>
+          <div class="text-xs text-slate-500" id="todayLabel">ថ្ងៃនេះ</div>
           <div class="text-sm font-medium text-slate-700" id="currentDate"></div>
         </div>
         <div class="flex items-center gap-2">
-  <button onclick="toggleDarkMode()" id="darkModeBtn" class="w-10 h-10 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center transition" title="Dark Mode">🌙</button>
-  <div class="relative">
-    <button onclick="showNotifications()" class="w-10 h-10 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center relative transition" title="Notifications">
-      🔔
-      <span id="notifBadge" class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center hidden">0</span>
-    </button>
-  </div>
-</div>
+          <!-- Language Switcher -->
+          <div class="lang-switcher" id="langSwitcher">
+            <button class="lang-btn" onclick="setLanguage('km')" data-lang="km" title="ភាសាខ្មែរ">🇰🇭 ខ្មែរ</button>
+            <button class="lang-btn" onclick="setLanguage('en')" data-lang="en" title="English">🇬🇧 EN</button>
+          </div>
+          <button onclick="toggleDarkMode()" id="darkModeBtn" class="w-10 h-10 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center transition" title="Dark Mode">🌙</button>
+          <div class="relative">
+            <button onclick="showNotifications()" class="w-10 h-10 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center relative transition" title="Notifications">
+              🔔
+              <span id="notifBadge" class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center hidden">0</span>
+            </button>
+          </div>
+        </div>
+      </div>
     </header>
     <div id="pageContent" class="p-6"></div>
   </main>
@@ -382,6 +431,266 @@ const SESSION_KEY = 'hr_session_v5';
 let sessionTimer = null;
 let warningTimer = null;
 let countdownInterval = null;
+ // =====================================================
+// I18N - INTERNATIONALIZATION (Khmer/English)
+// =====================================================
+const TRANSLATIONS = {
+  km: {
+    // Sidebar - Main
+    dashboard: 'Dashboard',
+    
+    // Sidebar - HR Management
+    employees: 'Employee Master',
+    orgchart: 'Organization Chart',
+    organization: 'Organization',
+    positions: 'Positions & Grades',
+    
+    // Sidebar - Operations
+    attendance: 'វត្តមាន',
+    leave: 'សុំច្បាប់',
+    payroll: 'ប្រាក់ខែ',
+    
+    // Sidebar - Administration
+    documents: 'ឯកសារ',
+    assets: 'សម្ភារៈ',
+    contracts: 'កិច្ចសន្យា',
+    
+    // Sidebar - Logistics
+    inventory: 'Inventory',
+    suppliers: 'អ្នកផ្គត់ផ្គង់',
+    purchase: 'Purchase Orders',
+    
+    // Sidebar - System
+    reports: 'របាយការណ៍',
+    audit: 'Audit Log',
+    settings: 'ការកំណត់',
+    
+    // Section Titles
+    sectionMain: 'MAIN',
+    sectionHR: 'HR MANAGEMENT',
+    sectionOps: 'OPERATIONS',
+    sectionAdmin: 'ADMINISTRATION',
+    sectionLogistics: 'LOGISTICS',
+    sectionSystem: 'SYSTEM',
+    
+    // Page Titles & Subtitles
+    pageDashboard: '📊 Dashboard',
+    pageDashboardSub: 'ផ្ទាំងគ្រប់គ្រងទូទៅ',
+    pageEmployees: '👥 Employee Master',
+    pageEmployeesSub: 'គ្រប់គ្រងបុគ្គលិក',
+    pageOrgchart: '🌳 Organization Chart',
+    pageOrgchartSub: 'រចនាសម្ព័ន្ធ',
+    pageOrganization: '🏢 Organization',
+    pageOrganizationSub: 'រចនាសម្ព័ន្ធក្រុមហ៊ុន',
+    pagePositions: '💼 Positions & Grades',
+    pagePositionsSub: 'មុខតំណែង',
+    pageAttendance: '⏰ វត្តមាន',
+    pageAttendanceSub: 'តាមដានវត្តមាន',
+    pageLeave: '🏖️ សុំច្បាប់',
+    pageLeaveSub: 'គ្រប់គ្រងច្បាប់',
+    pagePayroll: '💰 ប្រាក់ខែ',
+    pagePayrollSub: 'គណនាប្រាក់ខែ',
+    pageDocuments: '📁 ឯកសារ',
+    pageDocumentsSub: 'គ្រប់គ្រងឯកសារ',
+    pageAssets: '💼 សម្ភារៈ',
+    pageAssetsSub: 'គ្រប់គ្រងទ្រព្យសម្បត្តិ',
+    pageContracts: '📝 កិច្ចសន្យា',
+    pageContractsSub: 'គ្រប់គ្រងកិច្ចសន្យា',
+    pageInventory: '📦 Inventory',
+    pageInventorySub: 'គ្រប់គ្រងស្តុក',
+    pageSuppliers: '🏭 អ្នកផ្គត់ផ្គង់',
+    pageSuppliersSub: 'អ្នកផ្គត់ផ្គង់',
+    pagePurchase: '🛒 Purchase Orders',
+    pagePurchaseSub: 'ការបញ្ជាទិញ',
+    pageReports: '📈 របាយការណ៍',
+    pageReportsSub: 'របាយការណ៍',
+    pageAudit: '🔒 Audit Log',
+    pageAuditSub: 'កត់ត្រា',
+    pageSettings: '⚙️ ការកំណត់',
+    pageSettingsSub: 'កំណត់ប្រព័ន្ធ',
+    
+    // Common Labels
+    today: 'ថ្ងៃនេះ',
+    logout: 'ចាកចេញ',
+    save: 'រក្សាទុក',
+    cancel: 'បោះបង់',
+    delete: 'លុប',
+    edit: 'កែ',
+    add: 'បន្ថែម',
+    search: 'ស្វែងរក',
+    status: 'ស្ថានភាព',
+    actions: 'សកម្មភាព',
+    salary: 'ប្រាក់ខែ',
+    employee: 'បុគ្គលិក',
+    department: 'ផ្នែក',
+    position: 'មុខតំណែង',
+    date: 'កាលបរិច្ឆេទ',
+    notes: 'ចំណាំ',
+    confirm: 'បញ្ជាក់'
+  },
+  en: {
+    // Sidebar - Main
+    dashboard: 'Dashboard',
+    
+    // Sidebar - HR Management
+    employees: 'Employee Master',
+    orgchart: 'Organization Chart',
+    organization: 'Organization',
+    positions: 'Positions & Grades',
+    
+    // Sidebar - Operations
+    attendance: 'Attendance',
+    leave: 'Leave',
+    payroll: 'Payroll',
+    
+    // Sidebar - Administration
+    documents: 'Documents',
+    assets: 'Assets',
+    contracts: 'Contracts',
+    
+    // Sidebar - Logistics
+    inventory: 'Inventory',
+    suppliers: 'Suppliers',
+    purchase: 'Purchase Orders',
+    
+    // Sidebar - System
+    reports: 'Reports',
+    audit: 'Audit Log',
+    settings: 'Settings',
+    
+    // Section Titles
+    sectionMain: 'MAIN',
+    sectionHR: 'HR MANAGEMENT',
+    sectionOps: 'OPERATIONS',
+    sectionAdmin: 'ADMINISTRATION',
+    sectionLogistics: 'LOGISTICS',
+    sectionSystem: 'SYSTEM',
+    
+    // Page Titles & Subtitles
+    pageDashboard: '📊 Dashboard',
+    pageDashboardSub: 'Overview & Statistics',
+    pageEmployees: '👥 Employee Master',
+    pageEmployeesSub: 'Manage Employees',
+    pageOrgchart: '🌳 Organization Chart',
+    pageOrgchartSub: 'Organization Structure',
+    pageOrganization: '🏢 Organization',
+    pageOrganizationSub: 'Company Structure',
+    pagePositions: '💼 Positions & Grades',
+    pagePositionsSub: 'Positions Management',
+    pageAttendance: '⏰ Attendance',
+    pageAttendanceSub: 'Track Attendance',
+    pageLeave: '🏖️ Leave',
+    pageLeaveSub: 'Manage Leave',
+    pagePayroll: '💰 Payroll',
+    pagePayrollSub: 'Calculate Payroll',
+    pageDocuments: '📁 Documents',
+    pageDocumentsSub: 'Manage Documents',
+    pageAssets: '💼 Assets',
+    pageAssetsSub: 'Manage Assets',
+    pageContracts: '📝 Contracts',
+    pageContractsSub: 'Manage Contracts',
+    pageInventory: '📦 Inventory',
+    pageInventorySub: 'Manage Stock',
+    pageSuppliers: '🏭 Suppliers',
+    pageSuppliersSub: 'Manage Suppliers',
+    pagePurchase: '🛒 Purchase Orders',
+    pagePurchaseSub: 'Manage Purchase',
+    pageReports: '📈 Reports',
+    pageReportsSub: 'Reports & Analytics',
+    pageAudit: '🔒 Audit Log',
+    pageAuditSub: 'System Logs',
+    pageSettings: '⚙️ Settings',
+    pageSettingsSub: 'System Settings',
+    
+    // Common Labels
+    today: 'Today',
+    logout: 'Logout',
+    save: 'Save',
+    cancel: 'Cancel',
+    delete: 'Delete',
+    edit: 'Edit',
+    add: 'Add',
+    search: 'Search',
+    status: 'Status',
+    actions: 'Actions',
+    salary: 'Salary',
+    employee: 'Employee',
+    department: 'Department',
+    position: 'Position',
+    date: 'Date',
+    notes: 'Notes',
+    confirm: 'Confirm'
+  }
+};
+
+let currentLang = localStorage.getItem('hr_lang') || 'km';
+
+function t(key) {
+  return TRANSLATIONS[currentLang]?.[key] || TRANSLATIONS['km']?.[key] || key;
+}
+
+function setLanguage(lang) {
+  currentLang = lang;
+  localStorage.setItem('hr_lang', lang);
+  
+  // Update lang buttons
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.lang === lang);
+  });
+  
+  // Update sidebar menu
+  document.querySelectorAll('.sidebar-link').forEach(link => {
+    const page = link.getAttribute('data-page');
+    if (page && t(page)) {
+      const spans = link.querySelectorAll('span');
+      if (spans[1]) spans[1].textContent = t(page);
+    }
+  });
+  
+  // Update section titles
+  const sectionTitles = document.querySelectorAll('.section-title');
+  const sectionKeys = ['sectionMain', 'sectionHR', 'sectionOps', 'sectionAdmin', 'sectionLogistics', 'sectionSystem'];
+  sectionTitles.forEach((el, i) => {
+    if (sectionKeys[i]) el.textContent = t(sectionKeys[i]);
+  });
+  
+  // Update today label
+  const todayLabel = document.getElementById('todayLabel');
+  if (todayLabel) todayLabel.textContent = t('today');
+  
+  // Update logout button
+  const logoutBtn = document.querySelector('button[onclick="doLogout()"]');
+  if (logoutBtn) logoutBtn.textContent = '🚪 ' + t('logout');
+  
+  // Update page title
+  const currentPage = document.querySelector('.sidebar-link.active')?.getAttribute('data-page');
+  if (currentPage && PAGE_META[currentPage]) {
+    const titleKey = 'page' + currentPage.charAt(0).toUpperCase() + currentPage.slice(1);
+    const subKey = titleKey + 'Sub';
+    document.getElementById('pageTitle').textContent = t(titleKey);
+    document.getElementById('pageSubtitle').textContent = t(subKey);
+  }
+  
+  // Re-render current page if needed
+  if (typeof currentPage !== 'undefined' && currentPage) {
+    const content = document.getElementById('pageContent');
+    if (content && content.innerHTML.trim() !== '') {
+      // Silently re-render (don't call showPage to avoid losing state)
+    }
+  }
+  
+  toast(currentLang === 'km' ? '✅ ភាសាខ្មែរ' : '✅ English');
+}
+
+function initLanguage() {
+  // Set active button
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.lang === currentLang);
+  });
+  
+  // Apply language on load
+  setLanguage(currentLang);
+}
 
 // =====================================================
 // DATABASE
@@ -912,30 +1221,30 @@ function doLogout(auto = false) {
 // NAVIGATION
 // =====================================================
 const PAGE_META = {
-  dashboard: ['📊 Dashboard', 'ផ្ទាំងគ្រប់គ្រងទូទៅ'],
-  employees: ['👥 Employee Master', 'គ្រប់គ្រងបុគ្គលិក'],
-  orgchart: ['🌳 Organization Chart', 'រចនាសម្ព័ន្ធ'],
-  organization: ['🏢 Organization', 'រចនាសម្ព័ន្ធក្រុមហ៊ុន'],
-  positions: ['💼 Positions & Grades', 'មុខតំណែង'],
-  attendance: ['⏰ វត្តមាន', 'តាមដានវត្តមាន'],
-  leave: ['🏖️ សុំច្បាប់', 'គ្រប់គ្រងច្បាប់'],
-  payroll: ['💰 ប្រាក់ខែ', 'គណនាប្រាក់ខែ'],
-  documents: ['📁 ឯកសារ', 'គ្រប់គ្រងឯកសារ'],
-  assets: ['💼 សម្ភារៈ', 'គ្រប់គ្រងទ្រព្យសម្បត្តិ'],
-  contracts: ['📝 កិច្ចសន្យា', 'គ្រប់គ្រងកិច្ចសន្យា'],
-  inventory: ['📦 Inventory', 'គ្រប់គ្រងស្តុក'],
-  suppliers: ['🏭 អ្នកផ្គត់ផ្គង់', 'អ្នកផ្គត់ផ្គង់'],
-  purchase: ['🛒 Purchase Orders', 'ការបញ្ជាទិញ'],
-  reports: ['📈 របាយការណ៍', 'របាយការណ៍'],
-  audit: ['🔒 Audit Log', 'កត់ត្រា'],
-  settings: ['⚙️ ការកំណត់', 'កំណត់ប្រព័ន្ធ']
+  dashboard:    { titleKey: 'pageDashboard',    subKey: 'pageDashboardSub' },
+  employees:    { titleKey: 'pageEmployees',    subKey: 'pageEmployeesSub' },
+  orgchart:     { titleKey: 'pageOrgchart',     subKey: 'pageOrgchartSub' },
+  organization: { titleKey: 'pageOrganization', subKey: 'pageOrganizationSub' },
+  positions:    { titleKey: 'pagePositions',    subKey: 'pagePositionsSub' },
+  attendance:   { titleKey: 'pageAttendance',   subKey: 'pageAttendanceSub' },
+  leave:        { titleKey: 'pageLeave',        subKey: 'pageLeaveSub' },
+  payroll:      { titleKey: 'pagePayroll',      subKey: 'pagePayrollSub' },
+  documents:    { titleKey: 'pageDocuments',    subKey: 'pageDocumentsSub' },
+  assets:       { titleKey: 'pageAssets',       subKey: 'pageAssetsSub' },
+  contracts:    { titleKey: 'pageContracts',    subKey: 'pageContractsSub' },
+  inventory:    { titleKey: 'pageInventory',    subKey: 'pageInventorySub' },
+  suppliers:    { titleKey: 'pageSuppliers',    subKey: 'pageSuppliersSub' },
+  purchase:     { titleKey: 'pagePurchase',     subKey: 'pagePurchaseSub' },
+  reports:      { titleKey: 'pageReports',      subKey: 'pageReportsSub' },
+  audit:        { titleKey: 'pageAudit',        subKey: 'pageAuditSub' },
+  settings:     { titleKey: 'pageSettings',     subKey: 'pageSettingsSub' }
 };
 
 function showPage(page) {
   const content = document.getElementById('pageContent');
   content.style.opacity = '0.5';
   
-  // ✅ FIX: Destroy charts when leaving dashboard
+  // ✅ Destroy charts when leaving dashboard
   if (page !== 'dashboard' && Object.keys(charts).length > 0) {
     Object.values(charts).forEach(c => { try { c?.destroy(); } catch(e) {} });
     charts = {};
@@ -944,12 +1253,24 @@ function showPage(page) {
   document.querySelectorAll('.sidebar-link').forEach(el => el.classList.remove('active'));
   const link = document.querySelector(`[data-page="${page}"]`);
   if (link) link.classList.add('active');
-  const [t, s] = PAGE_META[page] || [page, ''];
-  document.getElementById('pageTitle').textContent = t;
-  document.getElementById('pageSubtitle').textContent = s;
+  
+  // ✅ Use i18n for page title
+  const meta = PAGE_META[page];
+  if (meta) {
+    document.getElementById('pageTitle').textContent = t(meta.titleKey);
+    document.getElementById('pageSubtitle').textContent = t(meta.subKey);
+  } else {
+    document.getElementById('pageTitle').textContent = page;
+    document.getElementById('pageSubtitle').textContent = '';
+  }
   
   const renderers = {
-    dashboard: renderDashboard, employees: renderEmployees, // ...
+    dashboard: renderDashboard, employees: renderEmployees, orgchart: renderOrgChart,
+    organization: renderOrganization, positions: renderPositions,
+    attendance: renderAttendance, leave: renderLeave, payroll: renderPayroll,
+    documents: renderDocuments, assets: renderAssets, contracts: renderContracts,
+    inventory: renderInventory, suppliers: renderSuppliers, purchase: renderPurchase,
+    reports: renderReports, audit: renderAudit, settings: renderSettings
   };
   
   try {
@@ -957,7 +1278,7 @@ function showPage(page) {
     content.style.opacity = '1';
   } catch(e) {
     console.error('Render error:', e);
-    content.innerHTML = `<div class="card text-center py-12">...</div>`;
+    content.innerHTML = `<div class="card text-center py-12"><div class="text-4xl mb-3">❌</div><div class="text-red-600">មានបញ្ហា: ${escapeHtml(e.message)}</div></div>`;
     content.style.opacity = '1';
   }
   
@@ -3996,6 +4317,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initDB();
   applyCompanyLogo();
   initDarkMode();
+  initLanguage();
   const savedSession = sessionStorage.getItem(SESSION_KEY);
   const lastActivity = parseInt(sessionStorage.getItem(ACTIVITY_KEY) || 0);
   const elapsed = Date.now() - lastActivity;
