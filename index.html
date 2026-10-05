@@ -436,36 +436,26 @@ let countdownInterval = null;
 // =====================================================
 const TRANSLATIONS = {
   km: {
-    // Sidebar - Main
+    // ===== SIDEBAR =====
     dashboard: 'Dashboard',
-    
-    // Sidebar - HR Management
     employees: 'Employee Master',
     orgchart: 'Organization Chart',
     organization: 'Organization',
     positions: 'Positions & Grades',
-    
-    // Sidebar - Operations
     attendance: 'វត្តមាន',
     leave: 'សុំច្បាប់',
     payroll: 'ប្រាក់ខែ',
-    
-    // Sidebar - Administration
     documents: 'ឯកសារ',
     assets: 'សម្ភារៈ',
     contracts: 'កិច្ចសន្យា',
-    
-    // Sidebar - Logistics
     inventory: 'Inventory',
     suppliers: 'អ្នកផ្គត់ផ្គង់',
     purchase: 'Purchase Orders',
-    
-    // Sidebar - System
     reports: 'របាយការណ៍',
     audit: 'Audit Log',
     settings: 'ការកំណត់',
     
-    // Section Titles
+    // ===== SECTIONS =====
     sectionMain: 'MAIN',
     sectionHR: 'HR MANAGEMENT',
     sectionOps: 'OPERATIONS',
@@ -473,7 +463,7 @@ const TRANSLATIONS = {
     sectionLogistics: 'LOGISTICS',
     sectionSystem: 'SYSTEM',
     
-    // Page Titles & Subtitles
+    // ===== PAGE TITLES =====
     pageDashboard: '📊 Dashboard',
     pageDashboardSub: 'ផ្ទាំងគ្រប់គ្រងទូទៅ',
     pageEmployees: '👥 Employee Master',
@@ -509,7 +499,7 @@ const TRANSLATIONS = {
     pageSettings: '⚙️ ការកំណត់',
     pageSettingsSub: 'កំណត់ប្រព័ន្ធ',
     
-    // Common Labels
+    // ===== COMMON =====
     today: 'ថ្ងៃនេះ',
     logout: 'ចាកចេញ',
     save: 'រក្សាទុក',
@@ -526,39 +516,140 @@ const TRANSLATIONS = {
     position: 'មុខតំណែង',
     date: 'កាលបរិច្ឆេទ',
     notes: 'ចំណាំ',
-    confirm: 'បញ្ជាក់'
+    confirm: 'បញ្ជាក់',
+    approve: 'អនុម័ត',
+    reject: 'បដិសេធ',
+    export: 'ទាញយក',
+    import: 'នាំចូល',
+    print: 'បោះពុម្ព',
+    filter: 'តម្រង',
+    all: 'ទាំងអស់',
+    active: 'សកម្ម',
+    total: 'សរុប',
+    
+    // ===== DASHBOARD =====
+    dashTotalEmp: 'បុគ្គលិកសរុប',
+    dashActiveEmp: 'សកម្ម',
+    dashDept: 'ផ្នែក',
+    dashBranch: 'សាខា',
+    dashTotalSalary: 'ប្រាក់ខែសរុប',
+    dashPending: 'រង់ចាំ',
+    dashMonthly: 'ប្រចាំខែ',
+    dashLowStock: 'ស្តុកតិច',
+    dashNeedOrder: 'ត្រូវបញ្ជា',
+    dashEnough: 'គ្រប់គ្រាន់',
+    dashPendingLeave: 'ច្បាប់រង់ចាំ',
+    dashPendingPO: 'PO រង់ចាំ',
+    dashActiveContract: 'កិច្ចសន្យាសកម្ម',
+    dashClick: 'ចុច',
+    dashEmpByDept: '📊 បុគ្គលិកតាមផ្នែក',
+    dashAttendance7d: '📈 វត្តមានប្រចាំថ្ងៃ (7 ថ្ងៃ)',
+    dashPendingLeaves: '📋 សុំច្បាប់រង់ចាំ',
+    dashViewAll: 'មើលទាំងអស់',
+    dashRecentActivity: '🕒 សកម្មភាពថ្មីៗ',
+    
+    // ===== EMPLOYEE MASTER =====
+    empSearch: '🔍 ស្វែងរកឈ្មោះ ឬ អត្តលេខ...',
+    empAllStatus: 'គ្រប់ស្ថានភាព',
+    empProbation: 'សាកល្បង',
+    empOnLeave: 'ឈប់សម្រាក',
+    empPerPage: 'នាក់',
+    empAdd: '+ បន្ថែមបុគ្គលិក',
+    empPhoto: 'រូបថត',
+    empID: 'អត្តលេខ',
+    empCode: 'កូដ',
+    empName: 'ឈ្មោះ',
+    empDept: 'ផ្នែក',
+    empPosition: 'មុខតំណែង',
+    empStatus: 'ស្ថានភាព',
+    empActions: 'សកម្មភាព',
+    empNoData: 'មិនមានទិន្នន័យ',
+    empShowing: 'បង្ហាញ',
+    empOf: 'ក្នុងចំណោម',
+    
+    // ===== ATTENDANCE =====
+    attCheckInAll: '✅ Check In ទាំងអស់',
+    attCheckOutAll: '🔴 Check Out ទាំងអស់',
+    attCheckIn: 'Check In',
+    attCheckOut: 'Check Out',
+    attLate: 'យឺត',
+    attOT: 'OT',
+    attEmployee: 'បុគ្គលិក',
+    attDepartment: 'ផ្នែក',
+    
+    // ===== LEAVE =====
+    leaveManageTypes: '⚙️ គ្រប់គ្រងប្រភេទ',
+    leaveRequest: '+ ស្នើសុំ',
+    leaveType: 'ប្រភេទ',
+    leaveStart: 'ចាប់ផ្តើម',
+    leaveEnd: 'បញ្ចប់',
+    leaveDays: 'ថ្ងៃ',
+    leaveStatus: 'ស្ថានភាព',
+    
+    // ===== PAYROLL =====
+    payMonth: 'ខែ',
+    payYear: 'ឆ្នាំ',
+    payCalculate: '⚡ គណនា',
+    payID: 'អត្តលេខ',
+    payName: 'ឈ្មោះ',
+    payGender: 'ភេទ',
+    payHireDate: 'ថ្ងៃចូល',
+    payPosition: 'មុខតំណែង',
+    payBase: 'ប្រាក់ខែគោល',
+    payDeduction: 'ការកាត់ប្រាក់',
+    payGross: 'ប្រាក់ខែសរុប',
+    payTotalDeduct: 'ចំណាយសរុប',
+    payNet: 'ប្រាក់ខែសុទ្ធ',
+    payFingerprint: 'ស្នាមមេដៃ',
+    payMale: 'ប្រុស',
+    payFemale: 'ស្រី',
+    
+    // ===== COMMON ACTIONS =====
+    view: 'មើល',
+    saveChanges: 'រក្សាទុកការផ្លាស់ប្តូរ',
+    deleteConfirm: 'តើអ្នកប្រាកដទេ?',
+    
+    // ===== STATUS LABELS =====
+    stActive: 'សកម្ម',
+    stProbation: 'សាកល្បង',
+    stOnLeave: 'ឈប់សម្រាក',
+    stPending: 'រង់ចាំ',
+    stApproved: 'អនុម័ត',
+    stRejected: 'បដិសេធ',
+    stPresent: 'មានវត្តមាន',
+    stLate: 'យឺត',
+    stAbsent: 'អវត្តមាន',
+    stPaid: 'បានបង់',
+    stReceived: 'ទទួលបាន',
+    stInStock: 'ក្នុងស្តុក',
+    stInUse: 'កំពុងប្រើ',
+    stMaintenance: 'ថែទាំ',
+    stDamaged: 'ខូច',
+    stTerminated: 'បញ្ចប់',
+    stResigned: 'លាឈប់',
+    stCancelled: 'បោះបង់'
   },
   en: {
-    // Sidebar - Main
+    // ===== SIDEBAR =====
     dashboard: 'Dashboard',
-    
-    // Sidebar - HR Management
     employees: 'Employee Master',
     orgchart: 'Organization Chart',
     organization: 'Organization',
     positions: 'Positions & Grades',
-    
-    // Sidebar - Operations
     attendance: 'Attendance',
     leave: 'Leave',
     payroll: 'Payroll',
-    
-    // Sidebar - Administration
     documents: 'Documents',
     assets: 'Assets',
     contracts: 'Contracts',
-    
-    // Sidebar - Logistics
     inventory: 'Inventory',
     suppliers: 'Suppliers',
     purchase: 'Purchase Orders',
-    
-    // Sidebar - System
     reports: 'Reports',
     audit: 'Audit Log',
     settings: 'Settings',
     
-    // Section Titles
+    // ===== SECTIONS =====
     sectionMain: 'MAIN',
     sectionHR: 'HR MANAGEMENT',
     sectionOps: 'OPERATIONS',
@@ -566,7 +657,7 @@ const TRANSLATIONS = {
     sectionLogistics: 'LOGISTICS',
     sectionSystem: 'SYSTEM',
     
-    // Page Titles & Subtitles
+    // ===== PAGE TITLES =====
     pageDashboard: '📊 Dashboard',
     pageDashboardSub: 'Overview & Statistics',
     pageEmployees: '👥 Employee Master',
@@ -602,7 +693,7 @@ const TRANSLATIONS = {
     pageSettings: '⚙️ Settings',
     pageSettingsSub: 'System Settings',
     
-    // Common Labels
+    // ===== COMMON =====
     today: 'Today',
     logout: 'Logout',
     save: 'Save',
@@ -619,7 +710,118 @@ const TRANSLATIONS = {
     position: 'Position',
     date: 'Date',
     notes: 'Notes',
-    confirm: 'Confirm'
+    confirm: 'Confirm',
+    approve: 'Approve',
+    reject: 'Reject',
+    export: 'Export',
+    import: 'Import',
+    print: 'Print',
+    filter: 'Filter',
+    all: 'All',
+    active: 'Active',
+    total: 'Total',
+    
+    // ===== DASHBOARD =====
+    dashTotalEmp: 'Total Employees',
+    dashActiveEmp: 'Active',
+    dashDept: 'Departments',
+    dashBranch: 'Branches',
+    dashTotalSalary: 'Total Salary',
+    dashPending: 'Pending',
+    dashMonthly: 'Monthly',
+    dashLowStock: 'Low Stock',
+    dashNeedOrder: 'Need Order',
+    dashEnough: 'Enough',
+    dashPendingLeave: 'Pending Leaves',
+    dashPendingPO: 'Pending POs',
+    dashActiveContract: 'Active Contracts',
+    dashClick: 'Click',
+    dashEmpByDept: '📊 Employees by Department',
+    dashAttendance7d: '📈 Daily Attendance (7 days)',
+    dashPendingLeaves: '📋 Pending Leaves',
+    dashViewAll: 'View All',
+    dashRecentActivity: '🕒 Recent Activity',
+    
+    // ===== EMPLOYEE MASTER =====
+    empSearch: '🔍 Search name or employee ID...',
+    empAllStatus: 'All Status',
+    empProbation: 'Probation',
+    empOnLeave: 'On Leave',
+    empPerPage: 'per page',
+    empAdd: '+ Add Employee',
+    empPhoto: 'Photo',
+    empID: 'Employee ID',
+    empCode: 'Code',
+    empName: 'Name',
+    empDept: 'Department',
+    empPosition: 'Position',
+    empStatus: 'Status',
+    empActions: 'Actions',
+    empNoData: 'No data available',
+    empShowing: 'Showing',
+    empOf: 'of',
+    
+    // ===== ATTENDANCE =====
+    attCheckInAll: '✅ Check In All',
+    attCheckOutAll: '🔴 Check Out All',
+    attCheckIn: 'Check In',
+    attCheckOut: 'Check Out',
+    attLate: 'Late',
+    attOT: 'OT',
+    attEmployee: 'Employee',
+    attDepartment: 'Department',
+    
+    // ===== LEAVE =====
+    leaveManageTypes: '⚙️ Manage Types',
+    leaveRequest: '+ Request',
+    leaveType: 'Type',
+    leaveStart: 'Start',
+    leaveEnd: 'End',
+    leaveDays: 'Days',
+    leaveStatus: 'Status',
+    
+    // ===== PAYROLL =====
+    payMonth: 'Month',
+    payYear: 'Year',
+    payCalculate: '⚡ Calculate',
+    payID: 'ID',
+    payName: 'Name',
+    payGender: 'Gender',
+    payHireDate: 'Hire Date',
+    payPosition: 'Position',
+    payBase: 'Base Salary',
+    payDeduction: 'Deduction',
+    payGross: 'Gross Salary',
+    payTotalDeduct: 'Total Deduction',
+    payNet: 'Net Salary',
+    payFingerprint: 'Fingerprint',
+    payMale: 'Male',
+    payFemale: 'Female',
+    
+    // ===== COMMON ACTIONS =====
+    view: 'View',
+    saveChanges: 'Save Changes',
+    deleteConfirm: 'Are you sure?',
+    
+    // ===== STATUS LABELS =====
+    stActive: 'Active',
+    stProbation: 'Probation',
+    stOnLeave: 'On Leave',
+    stPending: 'Pending',
+    stApproved: 'Approved',
+    stRejected: 'Rejected',
+    stPresent: 'Present',
+    stLate: 'Late',
+    stAbsent: 'Absent',
+    stPaid: 'Paid',
+    stReceived: 'Received',
+    stInStock: 'In Stock',
+    stInUse: 'In Use',
+    stMaintenance: 'Maintenance',
+    stDamaged: 'Damaged',
+    stTerminated: 'Terminated',
+    stResigned: 'Resigned',
+    stCancelled: 'Cancelled'
   }
 };
 
@@ -633,7 +835,7 @@ function setLanguage(lang) {
   currentLang = lang;
   localStorage.setItem('hr_lang', lang);
   
-  // Update lang buttons
+  // Update lang buttons active state
   document.querySelectorAll('.lang-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.lang === lang);
   });
@@ -660,23 +862,12 @@ function setLanguage(lang) {
   
   // Update logout button
   const logoutBtn = document.querySelector('button[onclick="doLogout()"]');
-  if (logoutBtn) logoutBtn.textContent = '🚪 ' + t('logout');
+  if (logoutBtn) logoutBtn.innerHTML = '🚪 ' + t('logout');
   
-  // Update page title
+  // Re-render current page
   const currentPage = document.querySelector('.sidebar-link.active')?.getAttribute('data-page');
-  if (currentPage && PAGE_META[currentPage]) {
-    const titleKey = 'page' + currentPage.charAt(0).toUpperCase() + currentPage.slice(1);
-    const subKey = titleKey + 'Sub';
-    document.getElementById('pageTitle').textContent = t(titleKey);
-    document.getElementById('pageSubtitle').textContent = t(subKey);
-  }
-  
-  // Re-render current page if needed
-  if (typeof currentPage !== 'undefined' && currentPage) {
-    const content = document.getElementById('pageContent');
-    if (content && content.innerHTML.trim() !== '') {
-      // Silently re-render (don't call showPage to avoid losing state)
-    }
+  if (currentPage && typeof showPage === 'function') {
+    showPage(currentPage);
   }
   
   toast(currentLang === 'km' ? '✅ ភាសាខ្មែរ' : '✅ English');
@@ -688,8 +879,20 @@ function initLanguage() {
     btn.classList.toggle('active', btn.dataset.lang === currentLang);
   });
   
-  // Apply language on load
-  setLanguage(currentLang);
+  // Apply language on load (without re-render)
+  document.querySelectorAll('.sidebar-link').forEach(link => {
+    const page = link.getAttribute('data-page');
+    if (page && t(page)) {
+      const spans = link.querySelectorAll('span');
+      if (spans[1]) spans[1].textContent = t(page);
+    }
+  });
+  
+  const todayLabel = document.getElementById('todayLabel');
+  if (todayLabel) todayLabel.textContent = t('today');
+  
+  const logoutBtn = document.querySelector('button[onclick="doLogout()"]');
+  if (logoutBtn) logoutBtn.innerHTML = '🚪 ' + t('logout');
 }
 
 // =====================================================
@@ -1289,8 +1492,8 @@ function showPage(page) {
 // =====================================================
 function renderDashboard() {
   const totalEmp = DB.employees.length;
-  const activeEmp = DB.employees.filter(e => ['active','probation','on_leave'].includes(e.status)).length;  // ✅
-  const totalSalary = DB.employees.filter(e => ['active','probation','on_leave'].includes(e.status)).reduce((s, e) => s + (e.base_salary || 0), 0);  // ✅
+  const activeEmp = DB.employees.filter(e => ['active','probation','on_leave'].includes(e.status)).length;
+  const totalSalary = DB.employees.filter(e => ['active','probation','on_leave'].includes(e.status)).reduce((s, e) => s + (e.base_salary || 0), 0);
   const pendingLeaves = DB.leaves.filter(l => l.status === 'pending').length;
   const lowStock = DB.inventory.filter(i => i.quantity <= i.min_stock).length;
   const pendingPOs = DB.purchaseOrders.filter(p => p.status === 'pending').length;
@@ -1298,36 +1501,36 @@ function renderDashboard() {
 
   document.getElementById('pageContent').innerHTML = `
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      ${kpiCardWithBadge('👥', 'បុគ្គលិកសរុប', totalEmp, `${activeEmp} សកម្ម`, '#3b82f6', 'employees', 0)}
-      ${kpiCardWithBadge('🏢', 'ផ្នែក', DB.departments.length, `${DB.branches.length} សាខា`, '#10b981', 'organization', 0)}
-      ${kpiCardWithBadge('💰', 'ប្រាក់ខែសរុប', '$'+totalSalary.toLocaleString(), pendingPayrolls > 0 ? `${pendingPayrolls} រង់ចាំ` : 'ប្រចាំខែ', '#8b5cf6', 'payroll', pendingPayrolls)}
-      ${kpiCardWithBadge('⚠️', 'ស្តុកតិច', lowStock, lowStock > 0 ? 'ត្រូវបញ្ជា' : 'គ្រប់គ្រាន់', '#ef4444', 'inventory', lowStock)}
+      ${kpiCardWithBadge('👥', t('dashTotalEmp'), totalEmp, `${activeEmp} ${t('dashActiveEmp')}`, '#3b82f6', 'employees', 0)}
+      ${kpiCardWithBadge('🏢', t('dashDept'), DB.departments.length, `${DB.branches.length} ${t('dashBranch')}`, '#10b981', 'organization', 0)}
+      ${kpiCardWithBadge('💰', t('dashTotalSalary'), '$'+totalSalary.toLocaleString(), pendingPayrolls > 0 ? `${pendingPayrolls} ${t('dashPending')}` : t('dashMonthly'), '#8b5cf6', 'payroll', pendingPayrolls)}
+      ${kpiCardWithBadge('⚠️', t('dashLowStock'), lowStock, lowStock > 0 ? t('dashNeedOrder') : t('dashEnough'), '#ef4444', 'inventory', lowStock)}
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
       <div onclick="showPage('leave')" class="card card-click flex items-center gap-4 relative">
         ${pendingLeaves > 0 ? `<div class="kpi-badge">${pendingLeaves}</div>` : ''}
         <div class="w-14 h-14 text-yellow-600 bg-yellow-50 rounded-xl flex items-center justify-center text-2xl">🏖️</div>
-        <div><div class="text-sm text-slate-500">ច្បាប់រង់ចាំ</div><div class="text-2xl font-bold">${pendingLeaves}</div><div class="text-xs text-blue-500">ចុច →</div></div>
+        <div><div class="text-sm text-slate-500">${t('dashPendingLeave')}</div><div class="text-2xl font-bold">${pendingLeaves}</div><div class="text-xs text-blue-500">${t('dashClick')} →</div></div>
       </div>
       <div onclick="showPage('purchase')" class="card card-click flex items-center gap-4 relative">
         ${pendingPOs > 0 ? `<div class="kpi-badge">${pendingPOs}</div>` : ''}
         <div class="w-14 h-14 text-blue-600 bg-blue-50 rounded-xl flex items-center justify-center text-2xl">🛒</div>
-        <div><div class="text-sm text-slate-500">PO រង់ចាំ</div><div class="text-2xl font-bold">${pendingPOs}</div><div class="text-xs text-blue-500">ចុច →</div></div>
+        <div><div class="text-sm text-slate-500">${t('dashPendingPO')}</div><div class="text-2xl font-bold">${pendingPOs}</div><div class="text-xs text-blue-500">${t('dashClick')} →</div></div>
       </div>
       <div onclick="showPage('contracts')" class="card card-click flex items-center gap-4">
         <div class="w-14 h-14 text-green-600 bg-green-50 rounded-xl flex items-center justify-center text-2xl">📝</div>
-        <div><div class="text-sm text-slate-500">កិច្ចសន្យាសកម្ម</div><div class="text-2xl font-bold">${DB.contracts.filter(c => c.status === 'active').length}</div><div class="text-xs text-blue-500">ចុច →</div></div>
+        <div><div class="text-sm text-slate-500">${t('dashActiveContract')}</div><div class="text-2xl font-bold">${DB.contracts.filter(c => c.status === 'active').length}</div><div class="text-xs text-blue-500">${t('dashClick')} →</div></div>
       </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
       <div class="card">
-        <h3 class="font-bold mb-4">📊 បុគ្គលិកតាមផ្នែក</h3>
+        <h3 class="font-bold mb-4">${t('dashEmpByDept')}</h3>
         <div class="static-chart"><canvas id="chartDept" height="200"></canvas></div>
       </div>
       <div class="card">
-        <h3 class="font-bold mb-4">📈 វត្តមានប្រចាំថ្ងៃ (7 ថ្ងៃ)</h3>
+        <h3 class="font-bold mb-4">${t('dashAttendance7d')}</h3>
         <div class="static-chart"><canvas id="chartAtt" height="200"></canvas></div>
       </div>
     </div>
@@ -1335,22 +1538,22 @@ function renderDashboard() {
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div class="card">
         <div class="flex justify-between items-center mb-4">
-          <h3 class="font-bold">📋 សុំច្បាប់រង់ចាំ ${pendingLeaves > 0 ? `<span class="badge badge-red">${pendingLeaves}</span>` : ''}</h3>
-          <button onclick="showPage('leave')" class="text-sm text-blue-600 hover:underline">មើលទាំងអស់ →</button>
+          <h3 class="font-bold">${t('dashPendingLeaves')} ${pendingLeaves > 0 ? `<span class="badge badge-red">${pendingLeaves}</span>` : ''}</h3>
+          <button onclick="showPage('leave')" class="text-sm text-blue-600 hover:underline">${t('dashViewAll')} →</button>
         </div>
         ${DB.leaves.filter(l => l.status === 'pending').slice(0, 5).map(l => `
           <div class="flex items-center justify-between p-3 border-b last:border-0">
             <div>
               <div class="font-medium text-sm">${escapeHtml(getEmpName(l.employee_id))}</div>
-              <div class="text-xs text-slate-500">${escapeHtml(getLeaveType(l.leave_type_id))} · ${l.total_days} ថ្ងៃ</div>
+              <div class="text-xs text-slate-500">${escapeHtml(getLeaveType(l.leave_type_id))} · ${l.total_days} ${t('leaveDays')}</div>
             </div>
-            <button onclick="event.stopPropagation();approveLeave(${l.id})" class="btn btn-success btn-sm">Approve</button>
+            <button onclick="event.stopPropagation();approveLeave(${l.id})" class="btn btn-success btn-sm">${t('approve')}</button>
           </div>
-        `).join('') || '<p class="text-center text-slate-400 py-4">មិនមាន</p>'}
+        `).join('') || `<p class="text-center text-slate-400 py-4">${t('empNoData')}</p>`}
       </div>
 
       <div class="card">
-        <h3 class="font-bold mb-4">🕒 សកម្មភាពថ្មីៗ</h3>
+        <h3 class="font-bold mb-4">${t('dashRecentActivity')}</h3>
         <div class="space-y-2 max-h-80 overflow-y-auto">
           ${DB.auditLogs.slice(-8).reverse().map(a => `
             <div class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-lg">
@@ -1361,7 +1564,7 @@ function renderDashboard() {
               </div>
               <div class="text-xs text-slate-400">${timeAgo(a.created_at)}</div>
             </div>
-          `).join('') || '<p class="text-center text-slate-400 py-4">មិនមាន</p>'}
+          `).join('') || `<p class="text-center text-slate-400 py-4">${t('empNoData')}</p>`}
         </div>
       </div>
     </div>
@@ -1381,9 +1584,9 @@ function renderDashboard() {
     charts.att = new Chart(document.getElementById('chartAtt'), {
       type: 'bar',
       data: { labels: last7.map(d => d.slice(5)), datasets: [
-        { label: 'Present', data: ad.map(a => a.p), backgroundColor: '#10b981' },
-        { label: 'Late', data: ad.map(a => a.l), backgroundColor: '#f59e0b' },
-        { label: 'Absent', data: ad.map(a => a.a), backgroundColor: '#ef4444' }
+        { label: t('stPresent'), data: ad.map(a => a.p), backgroundColor: '#10b981' },
+        { label: t('stLate'), data: ad.map(a => a.l), backgroundColor: '#f59e0b' },
+        { label: t('stAbsent'), data: ad.map(a => a.a), backgroundColor: '#ef4444' }
       ] },
       options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } }, animation: false }
     });
@@ -1485,41 +1688,41 @@ function renderEmployees() {
     <div class="card">
       <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
         <div class="flex gap-2 flex-wrap">
-          <input id="empSearch" oninput="debounceFilterEmployees()" placeholder="🔍 ស្វែងរកឈ្មោះ ឬ អត្តលេខ..." class="input" style="width:280px;">
+          <input id="empSearch" oninput="debounceFilterEmployees()" placeholder="${t('empSearch')}" class="input" style="width:280px;">
           <select id="empStatusF" onchange="empPage=1;filterEmployees()" class="input" style="width:150px;">
-            <option value="">គ្រប់ស្ថានភាព</option>
-            <option value="active">Active</option>
-            <option value="probation">Probation</option>
-            <option value="on_leave">On Leave</option>
+            <option value="">${t('empAllStatus')}</option>
+            <option value="active">${t('stActive')}</option>
+            <option value="probation">${t('stProbation')}</option>
+            <option value="on_leave">${t('stOnLeave')}</option>
           </select>
           <select id="empLimit" onchange="empLimit=+this.value;empPage=1;filterEmployees()" class="input" style="width:120px;">
-            <option value="10">10 នាក់</option>
-            <option value="20">20 នាក់</option>
-            <option value="50">50 នាក់</option>
+            <option value="10">10 ${t('empPerPage')}</option>
+            <option value="20">20 ${t('empPerPage')}</option>
+            <option value="50">50 ${t('empPerPage')}</option>
           </select>
         </div>
         <div class="flex gap-2 flex-wrap">
           <label class="btn btn-secondary cursor-pointer">
-            📤 Import
+            📤 ${t('import')}
             <input type="file" accept=".xlsx,.xls,.csv" class="hidden" onchange="importEmployeesExcel(this)">
           </label>
           <button onclick="exportEmployeesExcel()" class="btn btn-secondary">📊 Excel</button>
           <button onclick="exportEmployeesPDF()" class="btn btn-secondary">📕 PDF</button>
-          <button onclick="openEmpForm()" class="btn btn-primary">+ បន្ថែមបុគ្គលិក</button>
+          <button onclick="openEmpForm()" class="btn btn-primary">${t('empAdd')}</button>
         </div>
       </div>
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
           <thead class="bg-slate-50 border-b-2">
             <tr>
-              <th class="text-left p-3">Photo</th>
-              <th class="text-left p-3">អត្តលេខ</th>
-              <th class="text-left p-3">Code</th>
-              <th class="text-left p-3">ឈ្មោះ</th>
-              <th class="text-left p-3">ផ្នែក</th>
-              <th class="text-left p-3">មុខតំណែង</th>
-              <th class="text-left p-3">ស្ថានភាព</th>
-              <th class="text-right p-3">Actions</th>
+              <th class="text-left p-3">${t('empPhoto')}</th>
+              <th class="text-left p-3">${t('empID')}</th>
+              <th class="text-left p-3">${t('empCode')}</th>
+              <th class="text-left p-3">${t('empName')}</th>
+              <th class="text-left p-3">${t('empDept')}</th>
+              <th class="text-left p-3">${t('empPosition')}</th>
+              <th class="text-left p-3">${t('empStatus')}</th>
+              <th class="text-right p-3">${t('empActions')}</th>
             </tr>
           </thead>
           <tbody id="empTableBody"></tbody>
@@ -2771,8 +2974,8 @@ function renderAttendance() {
       <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
         <div class="flex gap-2 flex-wrap">
           <input type="date" id="attDate" value="${today}" onchange="renderAttTable()" class="input" style="width:180px;">
-          <button onclick="bulkCheckIn()" class="btn btn-success">✅ Check In All</button>
-          <button onclick="bulkCheckOut()" class="btn btn-warning">🔴 Check Out All</button>
+          <button onclick="bulkCheckIn()" class="btn btn-success">${t('attCheckInAll')}</button>
+          <button onclick="bulkCheckOut()" class="btn btn-warning">${t('attCheckOutAll')}</button>
         </div>
         <div class="flex gap-2">
           <button onclick="exportAttendanceExcel()" class="btn btn-secondary">📊 Excel</button>
@@ -2782,14 +2985,14 @@ function renderAttendance() {
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
           <thead class="bg-slate-50"><tr>
-            <th class="text-left p-3">Employee</th>
-            <th class="text-left p-3">Department</th>
-            <th class="text-left p-3">Check In</th>
-            <th class="text-left p-3">Check Out</th>
-            <th class="text-left p-3">Late</th>
-            <th class="text-left p-3">OT</th>
-            <th class="text-left p-3">Status</th>
-            <th class="text-right p-3">Actions</th>
+            <th class="text-left p-3">${t('attEmployee')}</th>
+            <th class="text-left p-3">${t('attDepartment')}</th>
+            <th class="text-left p-3">${t('attCheckIn')}</th>
+            <th class="text-left p-3">${t('attCheckOut')}</th>
+            <th class="text-left p-3">${t('attLate')}</th>
+            <th class="text-left p-3">${t('attOT')}</th>
+            <th class="text-left p-3">${t('status')}</th>
+            <th class="text-right p-3">${t('actions')}</th>
           </tr></thead>
           <tbody id="attTableBody"></tbody>
         </table>
@@ -2944,19 +3147,23 @@ function exportAttendancePDF() {
 function renderLeave() {
   document.getElementById('pageContent').innerHTML = `
     <div class="card">
-            <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
-        <h3 class="font-bold">🏖️ Leaves</h3>
+      <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
+        <h3 class="font-bold">🏖️ ${t('leave')}</h3>
         <div class="flex gap-2">
-          <button onclick="manageLeaveTypes()" class="btn btn-secondary">⚙️ Manage Types</button>
-          <button onclick="openLeaveModal()" class="btn btn-primary">+ ស្នើសុំ</button>
+          <button onclick="manageLeaveTypes()" class="btn btn-secondary">${t('leaveManageTypes')}</button>
+          <button onclick="openLeaveModal()" class="btn btn-primary">${t('leaveRequest')}</button>
         </div>
       </div>
       <table class="w-full text-sm">
         <thead class="bg-slate-50"><tr>
-          <th class="text-left p-3">Code</th><th class="text-left p-3">Employee</th>
-          <th class="text-left p-3">Type</th><th class="text-left p-3">Start</th>
-          <th class="text-left p-3">End</th><th class="text-left p-3">Days</th>
-          <th class="text-left p-3">Status</th><th class="text-right p-3">Actions</th>
+          <th class="text-left p-3">${t('empCode')}</th>
+          <th class="text-left p-3">${t('employee')}</th>
+          <th class="text-left p-3">${t('leaveType')}</th>
+          <th class="text-left p-3">${t('leaveStart')}</th>
+          <th class="text-left p-3">${t('leaveEnd')}</th>
+          <th class="text-left p-3">${t('leaveDays')}</th>
+          <th class="text-left p-3">${t('status')}</th>
+          <th class="text-right p-3">${t('actions')}</th>
         </tr></thead>
         <tbody>
           ${DB.leaves.map(l => `
@@ -2976,7 +3183,7 @@ function renderLeave() {
                 <button onclick="deleteLeave(${l.id})" class="text-red-600 hover:bg-red-50 px-2 py-1 rounded text-xs">🗑️</button>
               </td>
             </tr>
-          `).join('') || '<tr><td colspan="8" class="text-center p-8 text-slate-400">មិនមាន</td></tr>'}
+          `).join('') || `<tr><td colspan="8" class="text-center p-8 text-slate-400">${t('empNoData')}</td></tr>`}
         </tbody>
       </table>
     </div>
@@ -3146,37 +3353,37 @@ function renderPayroll() {
   document.getElementById('pageContent').innerHTML = `
     <div class="card mb-4">
       <div class="flex flex-wrap justify-between items-center gap-3">
-        <h3 class="font-bold">💰 Payroll</h3>
+        <h3 class="font-bold">💰 ${t('payroll')}</h3>
         <div class="flex gap-2 flex-wrap">
           <select id="payMonth" class="input" style="width:140px;">
-            ${[...Array(12)].map((_, i) => `<option value="${i+1}" ${i+1===now.getMonth()+1?'selected':''}>ខែ ${i+1}</option>`).join('')}
+            ${[...Array(12)].map((_, i) => `<option value="${i+1}" ${i+1===now.getMonth()+1?'selected':''}>${t('payMonth')} ${i+1}</option>`).join('')}
           </select>
           <select id="payYear" class="input" style="width:120px;">
             ${[2023,2024,2025,2026].map(y => `<option value="${y}" ${y===now.getFullYear()?'selected':''}>${y}</option>`).join('')}
           </select>
-          <button onclick="generatePayroll()" class="btn btn-primary">⚡ គណនា</button>
+          <button onclick="generatePayroll()" class="btn btn-primary">${t('payCalculate')}</button>
           <button onclick="exportPayrollExcel()" class="btn btn-secondary">📊 Excel</button>
           <button onclick="exportPayrollPDF()" class="btn btn-secondary">📕 PDF</button>
         </div>
       </div>
     </div>
-        <div class="card overflow-x-auto">
+    <div class="card overflow-x-auto">
       <table class="w-full text-xs">
         <thead class="bg-slate-50"><tr>
-          <th class="p-2 text-left">ល.រ</th>
-          <th class="p-2 text-left">អត្តលេខ</th>
-          <th class="p-2 text-left">ឈ្មោះ</th>
-          <th class="p-2 text-left">ភេទ</th>
-          <th class="p-2 text-left">ថ្ងៃចូល</th>
-          <th class="p-2 text-left">មុខតំណែង</th>
-          <th class="p-2 text-right">ប្រាក់ខែគោល</th>
-          <th class="p-2 text-right">ការកាត់ប្រាក់</th>
-          <th class="p-2 text-right">ប្រាក់ខែសរុប</th>
+          <th class="p-2 text-left">#</th>
+          <th class="p-2 text-left">${t('payID')}</th>
+          <th class="p-2 text-left">${t('payName')}</th>
+          <th class="p-2 text-left">${t('payGender')}</th>
+          <th class="p-2 text-left">${t('payHireDate')}</th>
+          <th class="p-2 text-left">${t('payPosition')}</th>
+          <th class="p-2 text-right">${t('payBase')}</th>
+          <th class="p-2 text-right">${t('payDeduction')}</th>
+          <th class="p-2 text-right">${t('payGross')}</th>
           <th class="p-2 text-right">NSSF</th>
           <th class="p-2 text-right">Tax</th>
-          <th class="p-2 text-right">ចំណាយសរុប</th>
-          <th class="p-2 text-right">ប្រាក់ខែសុទ្ធ</th>
-          <th class="p-2 text-center">ស្នាមមេដៃ</th>
+          <th class="p-2 text-right">${t('payTotalDeduct')}</th>
+          <th class="p-2 text-right">${t('payNet')}</th>
+          <th class="p-2 text-center">${t('payFingerprint')}</th>
         </tr></thead>
         <tbody id="payTableBody"></tbody>
       </table>
@@ -3198,7 +3405,7 @@ function renderPayTable() {
       <td class="p-2">${idx + 1}</td>
       <td class="p-2 font-mono text-xs">${escapeHtml(e?.employee_id || '')}</td>
       <td class="p-2">${escapeHtml(e?.full_name || '')}</td>
-      <td class="p-2">${e?.gender === 'M' ? 'ប្រុស' : 'ស្រី'}</td>
+      <td class="p-2">${e?.gender === 'M' ? t('payMale') : t('payFemale')}</td>
       <td class="p-2 text-xs">${e?.hire_date || '-'}</td>
       <td class="p-2 text-xs">${escapeHtml(getPosName(e?.position_id))}</td>
       <td class="p-2 text-right">$${parseFloat(p.base_salary).toFixed(2)}</td>
