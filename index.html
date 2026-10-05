@@ -1550,9 +1550,9 @@ function showPage(page) {
   const link = document.querySelector(`[data-page="${page}"]`);
   if (link) link.classList.add('active');
   
-  // Use i18n for page title
+  // ✅ FIX: Use object property (not array destructuring)
   const meta = PAGE_META[page];
-  if (meta) {
+  if (meta && meta.titleKey) {
     document.getElementById('pageTitle').textContent = t(meta.titleKey);
     document.getElementById('pageSubtitle').textContent = t(meta.subKey);
   } else {
