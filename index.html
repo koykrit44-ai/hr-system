@@ -2746,21 +2746,6 @@ function renderOrganization() {
     </div>
   `;
 }
- // km:
-orgCompanies: 'ក្រុមហ៊ុន',
-orgBranches: 'សាខា',
-orgDepartments: 'ផ្នែក',
-orgDivisions: 'ផ្នែករង',
-orgTeams: 'ក្រុម',
-orgPositions: 'មុខតំណែង',
-// en:
-orgCompanies: 'Companies',
-orgBranches: 'Branches',
-orgDepartments: 'Departments',
-orgDivisions: 'Divisions',
-orgTeams: 'Teams',
-orgPositions: 'Positions',
-
 function editOrg(type, id) {
   const map = { company: DB.companies, branch: DB.branches, department: DB.departments, division: DB.divisions, team: DB.teams, position: DB.positions };
   const item = map[type]?.find(x => x.id === id);
