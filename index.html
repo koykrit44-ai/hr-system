@@ -1221,23 +1221,23 @@ function doLogout(auto = false) {
 // NAVIGATION
 // =====================================================
 const PAGE_META = {
-  dashboard:    { titleKey: 'pageDashboard',    subKey: 'pageDashboardSub' },
-  employees:    { titleKey: 'pageEmployees',    subKey: 'pageEmployeesSub' },
-  orgchart:     { titleKey: 'pageOrgchart',     subKey: 'pageOrgchartSub' },
-  organization: { titleKey: 'pageOrganization', subKey: 'pageOrganizationSub' },
-  positions:    { titleKey: 'pagePositions',    subKey: 'pagePositionsSub' },
-  attendance:   { titleKey: 'pageAttendance',   subKey: 'pageAttendanceSub' },
-  leave:        { titleKey: 'pageLeave',        subKey: 'pageLeaveSub' },
-  payroll:      { titleKey: 'pagePayroll',      subKey: 'pagePayrollSub' },
-  documents:    { titleKey: 'pageDocuments',    subKey: 'pageDocumentsSub' },
-  assets:       { titleKey: 'pageAssets',       subKey: 'pageAssetsSub' },
-  contracts:    { titleKey: 'pageContracts',    subKey: 'pageContractsSub' },
-  inventory:    { titleKey: 'pageInventory',    subKey: 'pageInventorySub' },
-  suppliers:    { titleKey: 'pageSuppliers',    subKey: 'pageSuppliersSub' },
-  purchase:     { titleKey: 'pagePurchase',     subKey: 'pagePurchaseSub' },
-  reports:      { titleKey: 'pageReports',      subKey: 'pageReportsSub' },
-  audit:        { titleKey: 'pageAudit',        subKey: 'pageAuditSub' },
-  settings:     { titleKey: 'pageSettings',     subKey: 'pageSettingsSub' }
+  dashboard: ['📊 Dashboard', 'ផ្ទាំងគ្រប់គ្រងទូទៅ'],
+  employees: ['👥 Employee Master', 'គ្រប់គ្រងបុគ្គលិក'],
+  orgchart: ['🌳 Organization Chart', 'រចនាសម្ព័ន្ធ'],
+  organization: ['🏢 Organization', 'រចនាសម្ព័ន្ធក្រុមហ៊ុន'],
+  positions: ['💼 Positions & Grades', 'មុខតំណែង'],
+  attendance: ['⏰ វត្តមាន', 'តាមដានវត្តមាន'],
+  leave: ['🏖️ សុំច្បាប់', 'គ្រប់គ្រងច្បាប់'],
+  payroll: ['💰 ប្រាក់ខែ', 'គណនាប្រាក់ខែ'],
+  documents: ['📁 ឯកសារ', 'គ្រប់គ្រងឯកសារ'],
+  assets: ['💼 សម្ភារៈ', 'គ្រប់គ្រងទ្រព្យសម្បត្តិ'],
+  contracts: ['📝 កិច្ចសន្យា', 'គ្រប់គ្រងកិច្ចសន្យា'],
+  inventory: ['📦 Inventory', 'គ្រប់គ្រងស្តុក'],
+  suppliers: ['🏭 អ្នកផ្គត់ផ្គង់', 'អ្នកផ្គត់ផ្គង់'],
+  purchase: ['🛒 Purchase Orders', 'ការបញ្ជាទិញ'],
+  reports: ['📈 របាយការណ៍', 'របាយការណ៍'],
+  audit: ['🔒 Audit Log', 'កត់ត្រា'],
+  settings: ['⚙️ ការកំណត់', 'កំណត់ប្រព័ន្ធ']
 };
 
 function showPage(page) {
@@ -1254,7 +1254,7 @@ function showPage(page) {
   const link = document.querySelector(`[data-page="${page}"]`);
   if (link) link.classList.add('active');
   
-  // ✅ Use i18n for page title
+  // ✅ Use i18n for page title (PAGE_META is now an object)
   const meta = PAGE_META[page];
   if (meta) {
     document.getElementById('pageTitle').textContent = t(meta.titleKey);
