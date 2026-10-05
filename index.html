@@ -436,6 +436,80 @@ let countdownInterval = null;
 // =====================================================
 const TRANSLATIONS = {
   km: {
+   // ==== ADDITIONAL KEYS ====
+// km:
+payClickCalculate: 'ចុច "គណនា" ដើម្បីបង្កើត',
+invTotalItems: 'ទំនិញសរុប',
+invValue: 'តម្លៃ',
+invQty: 'ចំនួន',
+invMin: 'អប្បបរមា',
+invPrice: 'តម្លៃ',
+repStatistics: 'ស្ថិតិ',
+repTotalPayrolls: 'ប្រាក់ខែសរុប',
+auditUser: 'អ្នកប្រើ',
+auditAction: 'សកម្មភាព',
+auditModule: 'ម៉ូឌុល',
+auditDetails: 'ព័ត៌មានលម្អិត',
+setCompanyInfo: 'ព័ត៌មានក្រុមហ៊ុន & Logo',
+setUploadLogo: 'ផ្ទុក Logo',
+setCompanyLogo: 'Company Logo',
+setLogoFormat: 'PNG, JPG · Max 2MB',
+setCompanyName: 'ឈ្មោះក្រុមហ៊ុន',
+setUsersManagement: 'គ្រប់គ្រងអ្នកប្រើ',
+setChangePassword: 'ប្តូរពាក្យសម្ងាត់',
+setProtected: 'ការពារ',
+setBackupRestore: 'Backup & Restore',
+setExportBackup: 'នាំចេញ Backup',
+setImportBackup: 'នាំចូល Backup',
+setResetAll: 'Reset ទិន្នន័យទាំងអស់',
+orgCompanies: 'ក្រុមហ៊ុន',
+orgBranches: 'សាខា',
+orgDepartments: 'ផ្នែក',
+orgDivisions: 'ផ្នែករង',
+orgTeams: 'ក្រុម',
+orgPositions: 'មុខតំណែង',
+positions: 'មុខតំណែង',
+posTitle: 'ចំណងជើង',
+posCount: 'ចំនួន',
+jobGrades: 'Job Grades',
+posLevel: 'កម្រិត',
+
+// en:
+payClickCalculate: 'Click "Calculate" to generate',
+invTotalItems: 'Total Items',
+invValue: 'Value',
+invQty: 'Qty',
+invMin: 'Min',
+invPrice: 'Price',
+repStatistics: 'Statistics',
+repTotalPayrolls: 'Total Payrolls',
+auditUser: 'User',
+auditAction: 'Action',
+auditModule: 'Module',
+auditDetails: 'Details',
+setCompanyInfo: 'Company Information & Logo',
+setUploadLogo: 'Upload Logo',
+setCompanyLogo: 'Company Logo',
+setLogoFormat: 'PNG, JPG · Max 2MB',
+setCompanyName: 'Company Name',
+setUsersManagement: 'Users Management',
+setChangePassword: 'Change Password',
+setProtected: 'Protected',
+setBackupRestore: 'Backup & Restore',
+setExportBackup: 'Export Backup',
+setImportBackup: 'Import Backup',
+setResetAll: 'Reset All Data',
+orgCompanies: 'Companies',
+orgBranches: 'Branches',
+orgDepartments: 'Departments',
+orgDivisions: 'Divisions',
+orgTeams: 'Teams',
+orgPositions: 'Positions',
+positions: 'Positions',
+posTitle: 'Title',
+posCount: 'Count',
+jobGrades: 'Job Grades',
+posLevel: 'Level',
     // ===== SIDEBAR =====
     dashboard: 'Dashboard',
     employees: 'Employee Master',
@@ -1592,7 +1666,6 @@ function renderDashboard() {
     });
   }, 50);
 }
-
 function kpiCardWithBadge(icon, label, value, sub, color, page, badgeCount) {
   return `<div onclick="showPage('${page}')" class="card card-click relative" style="border-left:4px solid ${color};">
     ${badgeCount > 0 ? `<div class="kpi-badge">${badgeCount > 99 ? '99+' : badgeCount}</div>` : ''}
@@ -1772,7 +1845,7 @@ function filterEmployees() {
     </tr>
   `).join('') || '<tr><td colspan="8" class="text-center p-8 text-slate-400">មិនមានទិន្នន័យ</td></tr>';
 
-  let pag = '<div class="text-sm text-slate-500">Showing ' + (total ? start+1 : 0) + '-' + Math.min(start+empLimit, total) + ' of ' + total + '</div><div class="pagination">';
+  let pag = `<div class="text-sm text-slate-500">${t('empShowing')} ` + (total ? start+1 : 0) + '-' + Math.min(start+empLimit, total) + ' ' + t('empOf') + ' ' + total + '</div><div class="pagination">';
   pag += `<button onclick="empPage=1;filterEmployees()" ${empPage===1?'disabled':''}>«</button>`;
   pag += `<button onclick="empPage=${empPage-1};filterEmployees()" ${empPage===1?'disabled':''}>‹</button>`;
   for (let i = 1; i <= totalPages; i++) {
@@ -2600,23 +2673,25 @@ function renderOrgChart() {
 function renderOrganization() {
   document.getElementById('pageContent').innerHTML = `
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
-      <button onclick="openOrgModal('company')" class="card card-click text-left"><div class="text-3xl mb-2">🏢</div><div class="font-bold">Companies</div><div class="text-xs text-slate-500">${DB.companies.length}</div></button>
-      <button onclick="openOrgModal('branch')" class="card card-click text-left"><div class="text-3xl mb-2">🏬</div><div class="font-bold">Branches</div><div class="text-xs text-slate-500">${DB.branches.length}</div></button>
-      <button onclick="openOrgModal('department')" class="card card-click text-left"><div class="text-3xl mb-2">🏛️</div><div class="font-bold">Departments</div><div class="text-xs text-slate-500">${DB.departments.length}</div></button>
-      <button onclick="openOrgModal('division')" class="card card-click text-left"><div class="text-3xl mb-2">📊</div><div class="font-bold">Divisions</div><div class="text-xs text-slate-500">${DB.divisions.length}</div></button>
-      <button onclick="openOrgModal('team')" class="card card-click text-left"><div class="text-3xl mb-2">👥</div><div class="font-bold">Teams</div><div class="text-xs text-slate-500">${DB.teams.length}</div></button>
-      <button onclick="openOrgModal('position')" class="card card-click text-left"><div class="text-3xl mb-2">💼</div><div class="font-bold">Positions</div><div class="text-xs text-slate-500">${DB.positions.length}</div></button>
+      <button onclick="openOrgModal('company')" class="card card-click text-left"><div class="text-3xl mb-2">🏢</div><div class="font-bold">${t('orgCompanies')}</div><div class="text-xs text-slate-500">${DB.companies.length}</div></button>
+      <button onclick="openOrgModal('branch')" class="card card-click text-left"><div class="text-3xl mb-2">🏬</div><div class="font-bold">${t('orgBranches')}</div><div class="text-xs text-slate-500">${DB.branches.length}</div></button>
+      <button onclick="openOrgModal('department')" class="card card-click text-left"><div class="text-3xl mb-2">🏛️</div><div class="font-bold">${t('orgDepartments')}</div><div class="text-xs text-slate-500">${DB.departments.length}</div></button>
+      <button onclick="openOrgModal('division')" class="card card-click text-left"><div class="text-3xl mb-2">📊</div><div class="font-bold">${t('orgDivisions')}</div><div class="text-xs text-slate-500">${DB.divisions.length}</div></button>
+      <button onclick="openOrgModal('team')" class="card card-click text-left"><div class="text-3xl mb-2">👥</div><div class="font-bold">${t('orgTeams')}</div><div class="text-xs text-slate-500">${DB.teams.length}</div></button>
+      <button onclick="openOrgModal('position')" class="card card-click text-left"><div class="text-3xl mb-2">💼</div><div class="font-bold">${t('orgPositions')}</div><div class="text-xs text-slate-500">${DB.positions.length}</div></button>
     </div>
 
     <div class="card mb-4">
       <div class="flex justify-between items-center mb-3">
-        <h3 class="font-bold">🏛️ Departments</h3>
+        <h3 class="font-bold">🏛️ ${t('orgDepartments')}</h3>
         <button onclick="exportOrgPDF('department')" class="btn btn-secondary btn-sm">📕 PDF</button>
       </div>
       <table class="w-full text-sm">
         <thead class="bg-slate-50"><tr>
-          <th class="text-left p-3">Code</th><th class="text-left p-3">Name</th>
-          <th class="text-right p-3">Employees</th><th class="text-right p-3">Actions</th>
+          <th class="text-left p-3">${t('empCode')}</th>
+          <th class="text-left p-3">${t('empName')}</th>
+          <th class="text-right p-3">${t('employees')}</th>
+          <th class="text-right p-3">${t('actions')}</th>
         </tr></thead>
         <tbody>
           ${DB.departments.map(d => `
@@ -2635,7 +2710,7 @@ function renderOrganization() {
     </div>
 
     <div class="card">
-      <h3 class="font-bold mb-3">🏬 Branches</h3>
+      <h3 class="font-bold mb-3">🏬 ${t('orgBranches')}</h3>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         ${DB.branches.map(b => `
           <div class="p-4 border rounded-lg relative">
@@ -2652,6 +2727,20 @@ function renderOrganization() {
     </div>
   `;
 }
+ // km:
+orgCompanies: 'ក្រុមហ៊ុន',
+orgBranches: 'សាខា',
+orgDepartments: 'ផ្នែក',
+orgDivisions: 'ផ្នែករង',
+orgTeams: 'ក្រុម',
+orgPositions: 'មុខតំណែង',
+// en:
+orgCompanies: 'Companies',
+orgBranches: 'Branches',
+orgDepartments: 'Departments',
+orgDivisions: 'Divisions',
+orgTeams: 'Teams',
+orgPositions: 'Positions',
 
 function editOrg(type, id) {
   const map = { company: DB.companies, branch: DB.branches, department: DB.departments, division: DB.divisions, team: DB.teams, position: DB.positions };
@@ -2916,13 +3005,15 @@ function renderPositions() {
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div class="card">
         <div class="flex justify-between items-center mb-3">
-          <h3 class="font-bold">💼 Positions</h3>
-          <button onclick="openOrgModal('position')" class="btn btn-primary btn-sm">+ បន្ថែម</button>
+          <h3 class="font-bold">💼 ${t('positions')}</h3>
+          <button onclick="openOrgModal('position')" class="btn btn-primary btn-sm">${t('add')}</button>
         </div>
         <table class="w-full text-sm">
           <thead class="bg-slate-50"><tr>
-            <th class="text-left p-3">Code</th><th class="text-left p-3">Title</th>
-            <th class="text-right p-3">Count</th><th class="text-right p-3">Actions</th>
+            <th class="text-left p-3">${t('empCode')}</th>
+            <th class="text-left p-3">${t('posTitle')}</th>
+            <th class="text-right p-3">${t('posCount')}</th>
+            <th class="text-right p-3">${t('actions')}</th>
           </tr></thead>
           <tbody>
             ${DB.positions.map(p => `
@@ -2939,17 +3030,17 @@ function renderPositions() {
           </tbody>
         </table>
       </div>
-            <div class="card">
+      <div class="card">
         <div class="flex justify-between items-center mb-3">
-          <h3 class="font-bold">📊 Job Grades</h3>
-          <button onclick="openGradeModal()" class="btn btn-primary btn-sm">+ បន្ថែម</button>
+          <h3 class="font-bold">📊 ${t('jobGrades')}</h3>
+          <button onclick="openGradeModal()" class="btn btn-primary btn-sm">${t('add')}</button>
         </div>
         <div class="space-y-2">
           ${DB.jobGrades.map(g => `
             <div class="flex items-center justify-between p-3 border rounded-lg">
               <div class="flex items-center gap-3">
                 <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-lg flex items-center justify-center font-bold">${escapeHtml(g.code)}</div>
-                <div><div class="font-medium">${escapeHtml(g.name)}</div><div class="text-xs text-slate-500">Level ${g.level}</div></div>
+                <div><div class="font-medium">${escapeHtml(g.name)}</div><div class="text-xs text-slate-500">${t('posLevel')} ${g.level}</div></div>
               </div>
               <div class="text-right flex items-center gap-2">
                 <div class="font-bold text-green-600">$${g.min_salary} - $${g.max_salary}</div>
@@ -2963,7 +3054,18 @@ function renderPositions() {
     </div>
   `;
 }
-
+// km:
+positions: 'មុខតំណែង',
+posTitle: 'ចំណងជើង',
+posCount: 'ចំនួន',
+jobGrades: 'Job Grades',
+posLevel: 'កម្រិត',
+// en:
+positions: 'Positions',
+posTitle: 'Title',
+posCount: 'Count',
+jobGrades: 'Job Grades',
+posLevel: 'Level',
 // =====================================================
 // ATTENDANCE
 // =====================================================
@@ -3419,7 +3521,7 @@ function renderPayTable() {
   <button onclick="printPayslip(${p.id})" class="text-blue-600 hover:bg-blue-50 px-2 py-1 rounded text-xs" title="Print Payslip">🖨️</button>
 </td>
     </tr>`;
-  }).join('') || '<tr><td colspan="14" class="text-center p-8 text-slate-400">ចុច "គណនា" ដើម្បីបង្កើត</td></tr>';
+  }).join('') || `<tr><td colspan="14" class="text-center p-8 text-slate-400">${t('payClickCalculate')}</td></tr>`;
 }
 
 function generatePayroll() {
@@ -3587,8 +3689,8 @@ function renderDocuments() {
   document.getElementById('pageContent').innerHTML = `
     <div class="card">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="font-bold">📁 Documents</h3>
-        <label class="btn btn-primary cursor-pointer">📤 Upload<input type="file" accept=".pdf,.doc,.docx,image/*" multiple class="hidden" onchange="uploadDocument(this)"></label>
+        <h3 class="font-bold">📁 ${t('documents')}</h3>
+        <label class="btn btn-primary cursor-pointer">📤 ${t('import')}<input type="file" accept=".pdf,.doc,.docx,image/*" multiple class="hidden" onchange="uploadDocument(this)"></label>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         ${DB.documents.map(d => `
@@ -3601,7 +3703,7 @@ function renderDocuments() {
               <button onclick="deleteDocument(${d.id})" class="btn btn-danger btn-sm">🗑️</button>
             </div>
           </div>
-        `).join('') || '<p class="col-span-full text-center text-slate-400 py-8">មិនមានឯកសារ</p>'}
+        `).join('') || `<p class="col-span-full text-center text-slate-400 py-8">${t('empNoData')}</p>`}
       </div>
     </div>
   `;
@@ -3648,18 +3750,20 @@ function deleteDocument(id) {
 function renderAssets() {
   document.getElementById('pageContent').innerHTML = `
     <div class="card">
-           <div class="flex justify-between items-center mb-4">
-        <h3 class="font-bold">💼 Assets</h3>
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-bold">💼 ${t('assets')}</h3>
         <div class="flex gap-2">
           <button onclick="exportAssetsPDF()" class="btn btn-secondary">📕 PDF</button>
-          <button onclick="openAssetModal()" class="btn btn-primary">+ បន្ថែម</button>
+          <button onclick="openAssetModal()" class="btn btn-primary">${t('add')}</button>
         </div>
       </div>
       <table class="w-full text-sm">
         <thead class="bg-slate-50"><tr>
-          <th class="text-left p-3">Code</th><th class="text-left p-3">Name</th>
-          <th class="text-right p-3">Value</th><th class="text-center p-3">Status</th>
-          <th class="text-right p-3">Actions</th>
+          <th class="text-left p-3">${t('empCode')}</th>
+          <th class="text-left p-3">${t('empName')}</th>
+          <th class="text-right p-3">${t('salary')}</th>
+          <th class="text-center p-3">${t('status')}</th>
+          <th class="text-right p-3">${t('actions')}</th>
         </tr></thead>
         <tbody>
           ${DB.assets.map(a => `
@@ -3672,7 +3776,7 @@ function renderAssets() {
                 <button onclick="deleteAsset(${a.id})" class="text-red-600 hover:bg-red-50 px-2 py-1 rounded text-xs">🗑️</button>
               </td>
             </tr>
-          `).join('') || '<tr><td colspan="5" class="text-center p-8 text-slate-400">មិនមាន</td></tr>'}
+          `).join('') || `<tr><td colspan="5" class="text-center p-8 text-slate-400">${t('empNoData')}</td></tr>`}
         </tbody>
       </table>
     </div>
@@ -3722,18 +3826,20 @@ function deleteAsset(id) {
 function renderContracts() {
   document.getElementById('pageContent').innerHTML = `
     <div class="card">
-            <div class="flex justify-between items-center mb-4">
-        <h3 class="font-bold">📝 Contracts</h3>
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-bold">📝 ${t('contracts')}</h3>
         <div class="flex gap-2">
           <button onclick="exportContractsPDF()" class="btn btn-secondary">📕 PDF</button>
-          <button onclick="openContractModal()" class="btn btn-primary">+ បន្ថែម</button>
+          <button onclick="openContractModal()" class="btn btn-primary">${t('add')}</button>
         </div>
       </div>
       <table class="w-full text-sm">
         <thead class="bg-slate-50"><tr>
-          <th class="text-left p-3">Code</th><th class="text-left p-3">Title</th>
-          <th class="text-right p-3">Value</th><th class="text-center p-3">Status</th>
-          <th class="text-right p-3">Actions</th>
+          <th class="text-left p-3">${t('empCode')}</th>
+          <th class="text-left p-3">${t('empName')}</th>
+          <th class="text-right p-3">${t('salary')}</th>
+          <th class="text-center p-3">${t('status')}</th>
+          <th class="text-right p-3">${t('actions')}</th>
         </tr></thead>
         <tbody>
           ${DB.contracts.map(c => `
@@ -3746,7 +3852,7 @@ function renderContracts() {
                 <button onclick="deleteContract(${c.id})" class="text-red-600 hover:bg-red-50 px-2 py-1 rounded text-xs">🗑️</button>
               </td>
             </tr>
-          `).join('') || '<tr><td colspan="5" class="text-center p-8 text-slate-400">មិនមាន</td></tr>'}
+          `).join('') || `<tr><td colspan="5" class="text-center p-8 text-slate-400">${t('empNoData')}</td></tr>`}
         </tbody>
       </table>
     </div>
@@ -3798,23 +3904,26 @@ function renderInventory() {
   const lowStock = DB.inventory.filter(i => i.quantity <= i.min_stock).length;
   document.getElementById('pageContent').innerHTML = `
     <div class="grid grid-cols-3 gap-4 mb-4">
-      <div class="card"><div class="text-3xl mb-2">📦</div><div class="text-sm text-slate-500">Total Items</div><div class="text-2xl font-bold">${DB.inventory.length}</div></div>
-      <div class="card"><div class="text-3xl mb-2">⚠️</div><div class="text-sm text-slate-500">Low Stock</div><div class="text-2xl font-bold text-red-600">${lowStock}</div></div>
-      <div class="card"><div class="text-3xl mb-2">💰</div><div class="text-sm text-slate-500">Value</div><div class="text-2xl font-bold text-green-600">$${DB.inventory.reduce((s,i)=>s+i.quantity*i.unit_price,0).toFixed(0)}</div></div>
+      <div class="card"><div class="text-3xl mb-2">📦</div><div class="text-sm text-slate-500">${t('invTotalItems')}</div><div class="text-2xl font-bold">${DB.inventory.length}</div></div>
+      <div class="card"><div class="text-3xl mb-2">⚠️</div><div class="text-sm text-slate-500">${t('dashLowStock')}</div><div class="text-2xl font-bold text-red-600">${lowStock}</div></div>
+      <div class="card"><div class="text-3xl mb-2">💰</div><div class="text-sm text-slate-500">${t('invValue')}</div><div class="text-2xl font-bold text-green-600">$${DB.inventory.reduce((s,i)=>s+i.quantity*i.unit_price,0).toFixed(0)}</div></div>
     </div>
     <div class="card">
-            <div class="flex justify-between items-center mb-4">
-        <h3 class="font-bold">📦 Inventory</h3>
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-bold">📦 ${t('inventory')}</h3>
         <div class="flex gap-2">
           <button onclick="exportInventoryPDF()" class="btn btn-secondary">📕 PDF</button>
-          <button onclick="openInvModal()" class="btn btn-primary">+ បន្ថែម</button>
+          <button onclick="openInvModal()" class="btn btn-primary">${t('add')}</button>
         </div>
       </div>
       <table class="w-full text-sm">
         <thead class="bg-slate-50"><tr>
-          <th class="text-left p-3">Code</th><th class="text-left p-3">Name</th>
-          <th class="text-right p-3">Qty</th><th class="text-right p-3">Min</th>
-          <th class="text-right p-3">Price</th><th class="text-right p-3">Actions</th>
+          <th class="text-left p-3">${t('empCode')}</th>
+          <th class="text-left p-3">${t('empName')}</th>
+          <th class="text-right p-3">${t('invQty')}</th>
+          <th class="text-right p-3">${t('invMin')}</th>
+          <th class="text-right p-3">${t('invPrice')}</th>
+          <th class="text-right p-3">${t('actions')}</th>
         </tr></thead>
         <tbody>
           ${DB.inventory.map(i => `
@@ -3889,11 +3998,11 @@ function deleteInv(id) {
 function renderSuppliers() {
   document.getElementById('pageContent').innerHTML = `
     <div class="card">
-            <div class="flex justify-between items-center mb-4">
-        <h3 class="font-bold">🏭 Suppliers</h3>
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-bold">🏭 ${t('suppliers')}</h3>
         <div class="flex gap-2">
           <button onclick="exportSuppliersPDF()" class="btn btn-secondary">📕 PDF</button>
-          <button onclick="openSupModal()" class="btn btn-primary">+ បន្ថែម</button>
+          <button onclick="openSupModal()" class="btn btn-primary">${t('add')}</button>
         </div>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -3906,9 +4015,9 @@ function renderSuppliers() {
               <div>📞 ${escapeHtml(s.phone || '-')}</div>
               <div>📧 ${escapeHtml(s.email || '-')}</div>
             </div>
-            <button onclick="deleteSupplier(${s.id})" class="text-red-600 text-xs mt-2">🗑️ Delete</button>
+            <button onclick="deleteSupplier(${s.id})" class="text-red-600 text-xs mt-2">🗑️ ${t('delete')}</button>
           </div>
-        `).join('') || '<p class="col-span-full text-center text-slate-400 py-8">មិនមាន</p>'}
+        `).join('') || `<p class="col-span-full text-center text-slate-400 py-8">${t('empNoData')}</p>`}
       </div>
     </div>
   `;
@@ -3958,14 +4067,16 @@ function renderPurchase() {
   document.getElementById('pageContent').innerHTML = `
     <div class="card">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="font-bold">🛒 Purchase Orders</h3>
-        <button onclick="openPOModal()" class="btn btn-primary">+ បង្កើត PO</button>
+        <h3 class="font-bold">🛒 ${t('purchase')}</h3>
+        <button onclick="openPOModal()" class="btn btn-primary">${t('add')}</button>
       </div>
       <table class="w-full text-sm">
         <thead class="bg-slate-50"><tr>
-          <th class="text-left p-3">Code</th><th class="text-left p-3">Supplier</th>
-          <th class="text-right p-3">Total</th><th class="text-center p-3">Status</th>
-          <th class="text-right p-3">Actions</th>
+          <th class="text-left p-3">${t('empCode')}</th>
+          <th class="text-left p-3">${t('suppliers')}</th>
+          <th class="text-right p-3">${t('total')}</th>
+          <th class="text-center p-3">${t('status')}</th>
+          <th class="text-right p-3">${t('actions')}</th>
         </tr></thead>
         <tbody>
           ${DB.purchaseOrders.map(p => `
@@ -3975,22 +4086,21 @@ function renderPurchase() {
               <td class="p-3 text-right font-medium">$${p.total.toFixed(2)}</td>
               <td class="p-3 text-center">
                 <select onchange="updatePOStatus(${p.id}, this.value)" class="input" style="padding:4px;font-size:12px;width:auto;">
-                  <option value="pending" ${p.status==='pending'?'selected':''}>Pending</option>
-                  <option value="approved" ${p.status==='approved'?'selected':''}>Approved</option>
-                  <option value="received" ${p.status==='received'?'selected':''}>Received</option>
+                  <option value="pending" ${p.status==='pending'?'selected':''}>${t('stPending')}</option>
+                  <option value="approved" ${p.status==='approved'?'selected':''}>${t('stApproved')}</option>
+                  <option value="received" ${p.status==='received'?'selected':''}>${t('stReceived')}</option>
                 </select>
               </td>
               <td class="p-3 text-right">
                 <button onclick="deletePO(${p.id})" class="text-red-600 hover:bg-red-50 px-2 py-1 rounded text-xs">🗑️</button>
               </td>
             </tr>
-          `).join('') || '<tr><td colspan="5" class="text-center p-8 text-slate-400">មិនមាន</td></tr>'}
+          `).join('') || `<tr><td colspan="5" class="text-center p-8 text-slate-400">${t('empNoData')}</td></tr>`}
         </tbody>
       </table>
     </div>
   `;
 }
-
 function updatePOStatus(id, status) {
   const p = DB.purchaseOrders.find(x => x.id === id);
   p.status = status;
@@ -4042,30 +4152,36 @@ function renderReports() {
   document.getElementById('pageContent').innerHTML = `
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
       <button onclick="exportReport('employees')" class="card card-click text-left">
-        <div class="text-4xl mb-2">👥</div><div class="font-bold">Employees</div>
+        <div class="text-4xl mb-2">👥</div><div class="font-bold">${t('employees')}</div>
       </button>
       <button onclick="exportReport('attendance')" class="card card-click text-left">
-        <div class="text-4xl mb-2">⏰</div><div class="font-bold">Attendance</div>
+        <div class="text-4xl mb-2">⏰</div><div class="font-bold">${t('attendance')}</div>
       </button>
       <button onclick="exportReport('leave')" class="card card-click text-left">
-        <div class="text-4xl mb-2">🏖️</div><div class="font-bold">Leave</div>
+        <div class="text-4xl mb-2">🏖️</div><div class="font-bold">${t('leave')}</div>
       </button>
       <button onclick="exportReport('payroll')" class="card card-click text-left">
-        <div class="text-4xl mb-2">💰</div><div class="font-bold">Payroll</div>
+        <div class="text-4xl mb-2">💰</div><div class="font-bold">${t('payroll')}</div>
       </button>
     </div>
     <div class="card">
-      <h3 class="font-bold mb-3">📊 Statistics</h3>
+      <h3 class="font-bold mb-3">📊 ${t('repStatistics')}</h3>
       <div class="grid grid-cols-5 gap-3">
-        <div class="p-3 bg-blue-50 rounded-lg"><div class="text-xs">Total Employees</div><div class="text-2xl font-bold text-blue-600">${DB.employees.length}</div></div>
-        <div class="p-3 bg-green-50 rounded-lg"><div class="text-xs">Active</div><div class="text-2xl font-bold text-green-600">${DB.employees.filter(e=>e.status==='active').length}</div></div>
-        <div class="p-3 bg-yellow-50 rounded-lg"><div class="text-xs">Pending Leaves</div><div class="text-2xl font-bold text-yellow-600">${DB.leaves.filter(l=>l.status==='pending').length}</div></div>
-        <div class="p-3 bg-purple-50 rounded-lg"><div class="text-xs">Departments</div><div class="text-2xl font-bold text-purple-600">${DB.departments.length}</div></div>
-        <div class="p-3 bg-red-50 rounded-lg"><div class="text-xs">Total Payrolls</div><div class="text-2xl font-bold text-red-600">${DB.payrolls.length}</div></div>
+        <div class="p-3 bg-blue-50 rounded-lg"><div class="text-xs">${t('dashTotalEmp')}</div><div class="text-2xl font-bold text-blue-600">${DB.employees.length}</div></div>
+        <div class="p-3 bg-green-50 rounded-lg"><div class="text-xs">${t('dashActiveEmp')}</div><div class="text-2xl font-bold text-green-600">${DB.employees.filter(e=>e.status==='active').length}</div></div>
+        <div class="p-3 bg-yellow-50 rounded-lg"><div class="text-xs">${t('dashPendingLeave')}</div><div class="text-2xl font-bold text-yellow-600">${DB.leaves.filter(l=>l.status==='pending').length}</div></div>
+        <div class="p-3 bg-purple-50 rounded-lg"><div class="text-xs">${t('dashDept')}</div><div class="text-2xl font-bold text-purple-600">${DB.departments.length}</div></div>
+        <div class="p-3 bg-red-50 rounded-lg"><div class="text-xs">${t('repTotalPayrolls')}</div><div class="text-2xl font-bold text-red-600">${DB.payrolls.length}</div></div>
       </div>
     </div>
   `;
 }
+ // km:
+repStatistics: 'ស្ថិតិ',
+repTotalPayrolls: 'ប្រាក់ខែសរុប',
+// en:
+repStatistics: 'Statistics',
+repTotalPayrolls: 'Total Payrolls',
 
 function exportReport(type) {
   const { jsPDF } = window.jspdf;
@@ -4114,15 +4230,17 @@ function renderAudit() {
   document.getElementById('pageContent').innerHTML = `
     <div class="card">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="font-bold">🔒 Audit Log</h3>
-        <button onclick="clearAudit()" class="btn btn-danger btn-sm">🗑️ Clear</button>
+        <h3 class="font-bold">🔒 ${t('audit')}</h3>
+        <button onclick="clearAudit()" class="btn btn-danger btn-sm">🗑️ ${t('delete')}</button>
       </div>
       <div class="overflow-x-auto max-h-[70vh]">
         <table class="w-full text-sm">
           <thead class="bg-slate-50 sticky top-0"><tr>
-            <th class="text-left p-3">Date</th><th class="text-left p-3">User</th>
-            <th class="text-left p-3">Action</th><th class="text-left p-3">Module</th>
-            <th class="text-left p-3">Details</th>
+            <th class="text-left p-3">${t('date')}</th>
+            <th class="text-left p-3">${t('auditUser')}</th>
+            <th class="text-left p-3">${t('auditAction')}</th>
+            <th class="text-left p-3">${t('auditModule')}</th>
+            <th class="text-left p-3">${t('auditDetails')}</th>
           </tr></thead>
           <tbody>
             ${DB.auditLogs.slice().reverse().slice(0, 500).map(a => `
@@ -4140,6 +4258,16 @@ function renderAudit() {
     </div>
   `;
 }
+ // km:
+auditUser: 'អ្នកប្រើ',
+auditAction: 'សកម្មភាព',
+auditModule: 'ម៉ូឌុល',
+auditDetails: 'ព័ត៌មានលម្អិត',
+// en:
+auditUser: 'User',
+auditAction: 'Action',
+auditModule: 'Module',
+auditDetails: 'Details',
 
 function clearAudit() {
   if (!confirm('Clear all?')) return;
@@ -4155,57 +4283,83 @@ function renderSettings() {
   document.getElementById('pageContent').innerHTML = `
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div class="card">
-        <h3 class="font-bold mb-4">🏢 Company Information & Logo</h3>
+        <h3 class="font-bold mb-4">🏢 ${t('setCompanyInfo')}</h3>
         <div class="flex items-center gap-4 mb-4 p-4 bg-slate-50 rounded-lg">
           <div class="logo-upload" onclick="document.getElementById('logoInput').click()">
             ${DB.settings.companyLogo 
               ? `<img src="${DB.settings.companyLogo}" class="w-full h-full object-cover">`
-              : '<div class="text-center text-slate-400"><div class="text-3xl">🏢</div><div class="text-xs mt-1">Upload Logo</div></div>'}
+              : `<div class="text-center text-slate-400"><div class="text-3xl">🏢</div><div class="text-xs mt-1">${t('setUploadLogo')}</div></div>`}
           </div>
           <input type="file" id="logoInput" accept="image/*" class="hidden" onchange="uploadCompanyLogo(this)">
           <div class="flex-1">
-            <p class="font-medium">Company Logo</p>
-            <p class="text-xs text-slate-500 mt-1">PNG, JPG · Max 2MB</p>
+            <p class="font-medium">${t('setCompanyLogo')}</p>
+            <p class="text-xs text-slate-500 mt-1">${t('setLogoFormat')}</p>
           </div>
         </div>
         <div class="space-y-2 text-sm">
-          <div><label class="text-xs text-slate-500">Company Name</label><input id="set_companyName" class="input" value="${DB.settings.companyName || ''}"></div>
-          <button onclick="saveCompanyInfo()" class="btn btn-primary w-full">💾 Save</button>
+          <div><label class="text-xs text-slate-500">${t('setCompanyName')}</label><input id="set_companyName" class="input" value="${DB.settings.companyName || ''}"></div>
+          <button onclick="saveCompanyInfo()" class="btn btn-primary w-full">💾 ${t('save')}</button>
         </div>
       </div>
 
       <div class="card">
-  <div class="flex justify-between items-center mb-4">
-    <h3 class="font-bold">👥 Users Management</h3>
-    <button onclick="openUserModal()" class="btn btn-primary btn-sm">+ បន្ថែម User</button>
-  </div>
-  <div class="space-y-2">
-    ${DB.users.map(u => `
-      <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
-        <div class="w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold">${escapeHtml(u.name.charAt(0))}</div>
-        <div class="flex-1">
-          <div class="font-medium text-sm">${escapeHtml(u.name)}</div>
-          <div class="text-xs text-slate-500">${escapeHtml(u.username)} · ${escapeHtml(u.role)}</div>
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="font-bold">👥 ${t('setUsersManagement')}</h3>
+          <button onclick="openUserModal()" class="btn btn-primary btn-sm">${t('add')}</button>
         </div>
-        <button onclick="openChangePasswordModal(${u.id})" class="text-blue-600 hover:bg-blue-50 px-2 py-1 rounded text-xs" title="ប្តូរពាក្យសម្ងាត់">🔑</button>
-        ${u.id !== 1 ? `<button onclick="deleteUser(${u.id})" class="text-red-600 hover:bg-red-50 px-2 py-1 rounded text-xs">🗑️</button>` : '<span class="badge badge-gray text-xs">Protected</span>'}
+        <div class="space-y-2">
+          ${DB.users.map(u => `
+            <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+              <div class="w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold">${escapeHtml(u.name.charAt(0))}</div>
+              <div class="flex-1">
+                <div class="font-medium text-sm">${escapeHtml(u.name)}</div>
+                <div class="text-xs text-slate-500">${escapeHtml(u.username)} · ${escapeHtml(u.role)}</div>
+              </div>
+              <button onclick="openChangePasswordModal(${u.id})" class="text-blue-600 hover:bg-blue-50 px-2 py-1 rounded text-xs" title="${t('setChangePassword')}">🔑</button>
+              ${u.id !== 1 ? `<button onclick="deleteUser(${u.id})" class="text-red-600 hover:bg-red-50 px-2 py-1 rounded text-xs">🗑️</button>` : `<span class="badge badge-gray text-xs">${t('setProtected')}</span>`}
+            </div>
+          `).join('')}
+        </div>
       </div>
-    `).join('')}
-  </div>
-</div>
 
       <div class="card">
-        <h3 class="font-bold mb-4">💾 Backup & Restore</h3>
-        <button onclick="exportBackup()" class="btn btn-success w-full mb-2">📥 Export Backup</button>
+        <h3 class="font-bold mb-4">💾 ${t('setBackupRestore')}</h3>
+        <button onclick="exportBackup()" class="btn btn-success w-full mb-2">📥 ${t('setExportBackup')}</button>
         <label class="block mb-2">
           <input type="file" accept=".json" onchange="importBackup(event)" class="hidden">
-          <span class="btn btn-primary w-full block text-center cursor-pointer">📤 Import Backup</span>
+          <span class="btn btn-primary w-full block text-center cursor-pointer">📤 ${t('setImportBackup')}</span>
         </label>
-        <button onclick="resetDB()" class="btn btn-danger w-full">🔄 Reset All Data</button>
+        <button onclick="resetDB()" class="btn btn-danger w-full">🔄 ${t('setResetAll')}</button>
       </div>
     </div>
   `;
 }
+ // km:
+setCompanyInfo: 'ព័ត៌មានក្រុមហ៊ុន & Logo',
+setUploadLogo: 'ផ្ទុក Logo',
+setCompanyLogo: 'Company Logo',
+setLogoFormat: 'PNG, JPG · Max 2MB',
+setCompanyName: 'ឈ្មោះក្រុមហ៊ុន',
+setUsersManagement: 'គ្រប់គ្រងអ្នកប្រើ',
+setChangePassword: 'ប្តូរពាក្យសម្ងាត់',
+setProtected: 'ការពារ',
+setBackupRestore: 'Backup & Restore',
+setExportBackup: 'នាំចេញ Backup',
+setImportBackup: 'នាំចូល Backup',
+setResetAll: 'Reset ទិន្នន័យទាំងអស់',
+// en:
+setCompanyInfo: 'Company Information & Logo',
+setUploadLogo: 'Upload Logo',
+setCompanyLogo: 'Company Logo',
+setLogoFormat: 'PNG, JPG · Max 2MB',
+setCompanyName: 'Company Name',
+setUsersManagement: 'Users Management',
+setChangePassword: 'Change Password',
+setProtected: 'Protected',
+setBackupRestore: 'Backup & Restore',
+setExportBackup: 'Export Backup',
+setImportBackup: 'Import Backup',
+setResetAll: 'Reset All Data',
 
 function saveCompanyInfo() {
   DB.settings.companyName = document.getElementById('set_companyName').value;
