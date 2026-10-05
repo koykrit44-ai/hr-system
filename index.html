@@ -2071,16 +2071,31 @@ function openEmpForm(id) {
       </div>
 
       <div id="tab-documents" class="tab-content hidden">
-        <div class="flex justify-between items-center mb-3">
-          <h4 class="font-bold text-slate-700">📎 Documents</h4>
-          <label class="btn btn-primary btn-sm cursor-pointer">📤 Upload<input type="file" accept=".pdf,image/*" multiple class="hidden" onchange="handleDocUpload(this)"></label>
-        </div>
-        <div class="file-drop">
-          <div class="text-4xl mb-2">📄</div>
-          <p class="font-medium text-slate-700">ចុច Upload ដើម្បីបន្ថែមឯកសារ</p>
-        </div>
-        <div id="docList" class="mt-4 space-y-2"></div>
-      </div>
+  <div class="flex justify-between items-center mb-3">
+    <h4 class="font-bold text-slate-700">📎 Documents</h4>
+    <div class="flex gap-2">
+      <select id="docCategory" class="input" style="width:150px;">
+        <option value="cv">📄 ប្រវត្តិរូប (CV)</option>
+        <option value="contract">📝 កិច្ចសន្យា (Contract)</option>
+        <option value="certificate">🎓 សញ្ញាបត្រ (Certificate)</option>
+        <option value="id">🪪 អត្តសញ្ញាណប័ណ្ណ (ID)</option>
+        <option value="other">📁 ផ្សេងៗ (Other)</option>
+      </select>
+      <label class="btn btn-primary btn-sm cursor-pointer">
+        📤 Upload
+        <input type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" multiple class="hidden" onchange="handleDocUpload(this)">
+      </label>
+    </div>
+  </div>
+  
+  <div class="file-drop" id="fileDropZone" onclick="document.querySelector('#tab-documents input[type=file]').click()" ondragover="event.preventDefault(); this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="handleDocDrop(event)">
+    <div class="text-5xl mb-3">📤</div>
+    <p class="font-medium text-slate-700">ចុច ឬ អូសឯកសារទម្លាក់ទីនេះ</p>
+    <p class="text-xs text-slate-500 mt-2">PDF, Word, JPG, PNG · Max 10MB</p>
+  </div>
+  
+  <div id="docList" class="mt-4 space-y-2"></div>
+</div>
 
       <div class="flex justify-end gap-2 mt-6 pt-4 border-t sticky bottom-0 bg-white">
         <button type="button" onclick="closeModal()" class="btn btn-secondary">បោះបង់</button>
