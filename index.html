@@ -949,12 +949,7 @@ function showPage(page) {
   document.getElementById('pageSubtitle').textContent = s;
   
   const renderers = {
-    dashboard: renderDashboard, employees: renderEmployees, orgchart: renderOrgChart,
-    organization: renderOrganization, positions: renderPositions,
-    attendance: renderAttendance, leave: renderLeave, payroll: renderPayroll,
-    documents: renderDocuments, assets: renderAssets, contracts: renderContracts,
-    inventory: renderInventory, suppliers: renderSuppliers, purchase: renderPurchase,
-    reports: renderReports, audit: renderAudit, settings: renderSettings
+    dashboard: renderDashboard, employees: renderEmployees, // ...
   };
   
   try {
@@ -962,7 +957,7 @@ function showPage(page) {
     content.style.opacity = '1';
   } catch(e) {
     console.error('Render error:', e);
-    content.innerHTML = `<div class="card text-center py-12"><div class="text-4xl mb-3">❌</div><div class="text-red-600">មានបញ្ហា: ${escapeHtml(e.message)}</div></div>`;
+    content.innerHTML = `<div class="card text-center py-12">...</div>`;
     content.style.opacity = '1';
   }
   
