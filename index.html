@@ -434,6 +434,9 @@ let countdownInterval = null;
  // =====================================================
 // I18N - INTERNATIONALIZATION (Khmer/English)
 // =====================================================
+// =====================================================
+// I18N - INTERNATIONALIZATION (Khmer/English)
+// =====================================================
 const TRANSLATIONS = {
   km: {
     // ===== SIDEBAR =====
@@ -526,7 +529,7 @@ const TRANSLATIONS = {
     all: 'ទាំងអស់',
     active: 'សកម្ម',
     total: 'សរុប',
-    employees: 'បុគ្គលិក',
+    employees_plural: 'បុគ្គលិក',
     
     // ===== DASHBOARD =====
     dashTotalEmp: 'បុគ្គលិកសរុប',
@@ -765,7 +768,7 @@ const TRANSLATIONS = {
     all: 'All',
     active: 'Active',
     total: 'Total',
-    employees: 'Employees',
+    employees_plural: 'Employees',
     
     // ===== DASHBOARD =====
     dashTotalEmp: 'Total Employees',
@@ -914,6 +917,7 @@ const TRANSLATIONS = {
     deleteConfirm: 'Are you sure?'
   }
 };
+
 let currentLang = localStorage.getItem('hr_lang') || 'km';
 
 function t(key) {
@@ -4191,13 +4195,6 @@ function renderReports() {
     </div>
   `;
 }
- // km:
-repStatistics: 'ស្ថិតិ',
-repTotalPayrolls: 'ប្រាក់ខែសរុប',
-// en:
-repStatistics: 'Statistics',
-repTotalPayrolls: 'Total Payrolls',
-
 function exportReport(type) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF('l');
@@ -4273,17 +4270,6 @@ function renderAudit() {
     </div>
   `;
 }
- // km:
-auditUser: 'អ្នកប្រើ',
-auditAction: 'សកម្មភាព',
-auditModule: 'ម៉ូឌុល',
-auditDetails: 'ព័ត៌មានលម្អិត',
-// en:
-auditUser: 'User',
-auditAction: 'Action',
-auditModule: 'Module',
-auditDetails: 'Details',
-
 function clearAudit() {
   if (!confirm('Clear all?')) return;
   DB.auditLogs = [];
@@ -4349,32 +4335,6 @@ function renderSettings() {
     </div>
   `;
 }
- // km:
-setCompanyInfo: 'ព័ត៌មានក្រុមហ៊ុន & Logo',
-setUploadLogo: 'ផ្ទុក Logo',
-setCompanyLogo: 'Company Logo',
-setLogoFormat: 'PNG, JPG · Max 2MB',
-setCompanyName: 'ឈ្មោះក្រុមហ៊ុន',
-setUsersManagement: 'គ្រប់គ្រងអ្នកប្រើ',
-setChangePassword: 'ប្តូរពាក្យសម្ងាត់',
-setProtected: 'ការពារ',
-setBackupRestore: 'Backup & Restore',
-setExportBackup: 'នាំចេញ Backup',
-setImportBackup: 'នាំចូល Backup',
-setResetAll: 'Reset ទិន្នន័យទាំងអស់',
-// en:
-setCompanyInfo: 'Company Information & Logo',
-setUploadLogo: 'Upload Logo',
-setCompanyLogo: 'Company Logo',
-setLogoFormat: 'PNG, JPG · Max 2MB',
-setCompanyName: 'Company Name',
-setUsersManagement: 'Users Management',
-setChangePassword: 'Change Password',
-setProtected: 'Protected',
-setBackupRestore: 'Backup & Restore',
-setExportBackup: 'Export Backup',
-setImportBackup: 'Import Backup',
-setResetAll: 'Reset All Data',
 
 function saveCompanyInfo() {
   DB.settings.companyName = document.getElementById('set_companyName').value;
