@@ -1047,7 +1047,6 @@ function escapeHtml(str) {
 function toast(message, type) {
   type = type || 'success';
   
-  // លុប toast ចាស់ៗ ចេញ
   var oldToasts = document.querySelectorAll('.toast');
   for (var i = 0; i < oldToasts.length; i++) {
     oldToasts[i].remove();
