@@ -1111,6 +1111,7 @@ function initDB() {
   { id: 2, username: 'hr', password: hashPassword('hr123'), name: 'Sok Dara', role: 'hr_manager', email: 'hr@company.com' },
   { id: 3, username: 'staff', password: hashPassword('staff123'), name: 'Chan Vuthy', role: 'staff', email: 'staff@company.com' },
   { id: 4, username: 'accountant', password: hashPassword('acc123'), name: 'Kim Sreyneang', role: 'accountant', email: 'acc@company.com' }
+  { id: 5, username: 'leader', password: hashPassword('leader123'), name: 'Thol Chanthuo', role: 'leader', email: 'leader@company.com' }
 ];
 
   DB.companies = [{
@@ -1503,6 +1504,7 @@ function showSessionWarning() {
     'super_admin': '🔑 Super Admin',
     'hr_manager': '👔 HR Manager',
     'accountant': '🧮 Accountant',
+    'leader': '🧮👤 leader',
     'staff': '👤 Staff'
   };
   return labels[role] || role;
@@ -4511,6 +4513,7 @@ function openUserModal() {
           <option value="super_admin">Super Admin</option>
           <option value="hr_manager">HR Manager</option>
           <option value="accountant">Accountant (គណនេយ្យ)</option>
+          <option value="leader">Leader (ប្រធានក្រុម)</option>
           <option value="staff">Staff</option>
         </select>
       </div>
@@ -4724,6 +4727,12 @@ function canCreate() {
   if (!currentUser) return false;
   // Super Admin, HR Manager, Accountant បន្ថែមបាន
   return currentUser.role === 'super_admin' || currentUser.role === 'hr_manager' || currentUser.role === 'accountant';
+}
+
+function canCreate() {
+  if (!currentUser) return false;
+  // Super Admin, HR Manager, leader បន្ថែមបាន
+  return currentUser.role === 'super_admin' || currentUser.role === 'hr_manager' || currentUser.role === 'leader';
 }
 
 function canView() {
