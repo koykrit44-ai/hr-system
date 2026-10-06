@@ -2583,7 +2583,14 @@ function saveEmpForm(e, id) {
     logAudit(currentUser.id, 'CREATE_EMPLOYEE', 'employee', data.id, `Created ${data.full_name}`);
     toast('✅ បន្ថែមជោគជ័យ');
   }
-  saveDB(); closeModal(); filterEmployees();
+       saveDB(); 
+    closeModal(); 
+    filterEmployees();
+    
+  } catch (err) {
+    console.error('❌ Error in saveEmpForm:', err);
+    toast('❌ មានបញ្ហា: ' + err.message, 'error');
+  }
 }
 // =====================================================
 // LOADING INDICATOR (moved OUTSIDE saveEmpForm)
