@@ -1109,7 +1109,7 @@ function initDB() {
   { id: 1, username: 'krit', password: hashPassword('admin123'), name: 'Krit', role: 'super_admin', email: 'krit@company.com' },
   { id: 2, username: 'hr', password: hashPassword('hr123'), name: 'Sok Dara', role: 'hr_manager', email: 'hr@company.com' },
   { id: 3, username: 'staff', password: hashPassword('staff123'), name: 'Chan Vuthy', role: 'staff', email: 'staff@company.com' },
-  { id: 4, username: 'accountant', password: hashPassword('acc123'), name: 'Kim Sreyneang', role: 'accountant', email: 'acc@company.com' }
+  { id: 4, username: 'accountant', password: hashPassword('acc123'), name: 'Kim Sreyneang', role: 'accountant', email: 'acc@company.com' },
   { id: 5, username: 'leader', password: hashPassword('leader123'), name: 'Thol Chanthuo', role: 'leader', email: 'leader@company.com' }
 ];
 
@@ -2463,13 +2463,13 @@ function clearFieldErrors() {
   document.querySelectorAll('.input').forEach(i => {
     i.style.borderColor = '';
   });
- function removeDoc(i) {
-  // ✅ ពិនិត្យសិទ្ធិ
+}
+
+function removeDoc(i) {
   if (!canEdit()) {
     toast('❌ អ្នកគ្មានសិទ្ធិលុបឯកសារ', 'error');
     return;
   }
-  
   if (!confirm('លុបឯកសារនេះ?')) return;
   if (!Array.isArray(window._tempDocs)) window._tempDocs = [];
   window._tempDocs.splice(i, 1);
@@ -4724,14 +4724,10 @@ function canDelete() {
 
 function canCreate() {
   if (!currentUser) return false;
-  // Super Admin, HR Manager, Accountant បន្ថែមបាន
-  return currentUser.role === 'super_admin' || currentUser.role === 'hr_manager' || currentUser.role === 'accountant';
-}
-
-function canCreate() {
-  if (!currentUser) return false;
-  // Super Admin, HR Manager, leader បន្ថែមបាន
-  return currentUser.role === 'super_admin' || currentUser.role === 'hr_manager' || currentUser.role === 'leader';
+  return currentUser.role === 'super_admin' || 
+         currentUser.role === 'hr_manager' || 
+         currentUser.role === 'accountant' ||
+         currentUser.role === 'leader';
 }
 
 function canView() {
@@ -4787,11 +4783,10 @@ function closeModal() {
     c.style.maxWidth = '900px';
   }
 }
- function showPage(page) {
+  function showPage(page) {
   const content = document.getElementById('pageContent');
   content.style.opacity = '0.5';
   
-  // ✅ FIX: Destroy charts when leaving dashboard
   if (page !== 'dashboard' && Object.keys(charts).length > 0) {
     Object.values(charts).forEach(c => { try { c?.destroy(); } catch(e) {} });
     charts = {};
@@ -4824,7 +4819,6 @@ function closeModal() {
   
   setTimeout(updateBadges, 50);
 }
-
 function exportXLSX(data, filename) {
   const ws = XLSX.utils.json_to_sheet(data);
   const wb = XLSX.utils.book_new();
