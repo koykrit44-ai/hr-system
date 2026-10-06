@@ -1107,10 +1107,11 @@ function initDB() {
   }
 
   DB.users = [
-    { id: 1, username: 'krit', password: hashPassword('admin123'), name: 'Krit', role: 'super_admin', email: 'krit@company.com' },
-    { id: 2, username: 'hr', password: hashPassword('hr123'), name: 'Sok Dara', role: 'hr_manager', email: 'hr@company.com' },
-    { id: 3, username: 'staff', password: hashPassword('staff123'), name: 'Chan Vuthy', role: 'staff', email: 'staff@company.com' }
-  ];
+  { id: 1, username: 'krit', password: hashPassword('admin123'), name: 'Krit', role: 'super_admin', email: 'krit@company.com' },
+  { id: 2, username: 'hr', password: hashPassword('hr123'), name: 'Sok Dara', role: 'hr_manager', email: 'hr@company.com' },
+  { id: 3, username: 'staff', password: hashPassword('staff123'), name: 'Chan Vuthy', role: 'staff', email: 'staff@company.com' },
+  { id: 4, username: 'accountant', password: hashPassword('acc123'), name: 'Kim Sreyneang', role: 'accountant', email: 'acc@company.com' }
+];
 
   DB.companies = [{
     id: DB.nextId.company++, code: 'HRC', name: 'HR Company Ltd.', nameEn: 'HR Company Limited',
@@ -1497,6 +1498,15 @@ function showSessionWarning() {
 ['click', 'keydown', 'touchstart'].forEach(evt => {
   document.addEventListener(evt, debounce(resetActivity, 3000), { passive: true });
 });
+ function getRoleLabel(role) {
+  const labels = {
+    'super_admin': '🔑 Super Admin',
+    'hr_manager': '👔 HR Manager',
+    'accountant': '🧮 Accountant',
+    'staff': '👤 Staff'
+  };
+  return labels[role] || role;
+}
 
 // =====================================================
 // LOGIN / LOGOUT
@@ -1529,7 +1539,7 @@ function doLogin(e) {
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('appScreen').classList.remove('hidden');
   document.getElementById('userName').textContent = user.name;
-  document.getElementById('userRole').textContent = user.role.replace('_', ' ').toUpperCase();
+  document.getElementById('userRole').textContent = getRoleLabel(user.role);
   document.getElementById('userAvatar').textContent = user.name.charAt(0);
   document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   
@@ -1835,14 +1845,16 @@ function renderEmployees() {
             <option value="50">50 ${t('empPerPage')}</option>
           </select>
         </div>
-        <div class="flex gap-2 flex-wrap">
+          <div class="flex gap-2 flex-wrap">
+          ${canCreate() ? `
           <label class="btn btn-secondary cursor-pointer">
             📤 ${t('import')}
             <input type="file" accept=".xlsx,.xls,.csv" class="hidden" onchange="importEmployeesExcel(this)">
           </label>
+          ` : ''}
           <button onclick="exportEmployeesExcel()" class="btn btn-secondary">📊 Excel</button>
           <button onclick="exportEmployeesPDF()" class="btn btn-secondary">📕 PDF</button>
-          <button onclick="openEmpForm()" class="btn btn-primary">${t('empAdd')}</button>
+          ${canCreate() ? `<button onclick="openEmpForm()" class="btn btn-primary">${t('empAdd')}</button>` : ''}
         </div>
       </div>
       <div class="overflow-x-auto">
@@ -1898,10 +1910,10 @@ function filterEmployees() {
       <td class="p-3">${escapeHtml(getDeptName(e.department_id))}</td>
       <td class="p-3">${escapeHtml(getPosName(e.position_id))}</td>
       <td class="p-3">${statusBadge(e.status)}</td>
-      <td class="p-3 text-right whitespace-nowrap">
-        <button onclick="viewEmpProfile(${e.id})" class="text-blue-600 hover:bg-blue-50 px-2 py-1 rounded text-xs">👁️</button>
-        <button onclick="openEmpForm(${e.id})" class="text-amber-600 hover:bg-amber-50 px-2 py-1 rounded text-xs">✏️</button>
-        <button onclick="deleteEmp(${e.id})" class="text-red-600 hover:bg-red-50 px-2 py-1 rounded text-xs">🗑️</button>
+        <td class="p-3 text-right whitespace-nowrap">
+        <button onclick="viewEmpProfile(${e.id})" class="text-blue-600 hover:bg-blue-50 px-2 py-1 rounded text-xs" title="មើល">👁️</button>
+        ${canEdit() ? `<button onclick="openEmpForm(${e.id})" class="text-amber-600 hover:bg-amber-50 px-2 py-1 rounded text-xs" title="កែ">✏️</button>` : ''}
+        ${canDelete() ? `<button onclick="deleteEmp(${e.id})" class="text-red-600 hover:bg-red-50 px-2 py-1 rounded text-xs" title="លុប">🗑️</button>` : ''}
       </td>
     </tr>
   `).join('') || '<tr><td colspan="8" class="text-center p-8 text-slate-400">មិនមានទិន្នន័យ</td></tr>';
@@ -1923,7 +1935,14 @@ function filterEmployees() {
 }
 
 function deleteEmp(id) {
+  // ✅ ពិនិត្យសិទ្ធិ
+  if (!canDelete()) {
+    toast('❌ អ្នកគ្មានសិទ្ធិលុបបុគ្គលិក', 'error');
+    return;
+  }
+  
   const emp = DB.employees.find(e => e.id === id);
+  // ... កូដដើម ...
   if (!emp) return;
   if (emp.id === 1) return toast('❌ មិនអាចលុប Super Admin', 'error');
   if (!confirm(`លុប "${emp.full_name}"?`)) return;
@@ -2443,10 +2462,35 @@ function clearFieldErrors() {
   document.querySelectorAll('.input').forEach(i => {
     i.style.borderColor = '';
   });
+ function removeDoc(i) {
+  // ✅ ពិនិត្យសិទ្ធិ
+  if (!canEdit()) {
+    toast('❌ អ្នកគ្មានសិទ្ធិលុបឯកសារ', 'error');
+    return;
+  }
+  
+  if (!confirm('លុបឯកសារនេះ?')) return;
+  if (!Array.isArray(window._tempDocs)) window._tempDocs = [];
+  window._tempDocs.splice(i, 1);
+  if (typeof renderDocList === 'function') renderDocList();
+  toast('🗑️ លុបឯកសាររួច');
+}
 }
 function saveEmpForm(e, id) {
   e.preventDefault();
-  clearFieldErrors();
+  
+  // ✅ ពិនិត្យសិទ្ធិ
+  if (id && !canEdit()) {
+    toast('❌ អ្នកគ្មានសិទ្ធិកែបុគ្គលិក', 'error');
+    return;
+  }
+  if (!id && !canCreate()) {
+    toast('❌ អ្នកគ្មានសិទ្ធិបន្ថែមបុគ្គលិក', 'error');
+    return;
+  }
+  
+  try {
+    clearFieldErrors();
   
   const fn = document.getElementById('f_fn').value.trim();
   const ln = document.getElementById('f_ln').value.trim();
@@ -4459,6 +4503,7 @@ function openUserModal() {
         <select id="u_role" class="input">
           <option value="super_admin">Super Admin</option>
           <option value="hr_manager">HR Manager</option>
+          <option value="accountant">Accountant (គណនេយ្យ)</option>
           <option value="staff">Staff</option>
         </select>
       </div>
@@ -4653,7 +4698,30 @@ function resetDB() {
   sessionStorage.removeItem(ACTIVITY_KEY);
   location.reload();
 }
+// =====================================================
+// PERMISSIONS - ពិនិត្យសិទ្ធិអ្នកប្រើ
+// =====================================================
+function canEdit() {
+  if (!currentUser) return false;
+  // Super Admin, HR Manager អាចកែបាន
+  return currentUser.role === 'super_admin' || currentUser.role === 'hr_manager';
+}
 
+function canDelete() {
+  if (!currentUser) return false;
+  // តែ Super Admin ទេដែលលុបបាន
+  return currentUser.role === 'super_admin';
+}
+
+function canCreate() {
+  if (!currentUser) return false;
+  // Super Admin, HR Manager, Accountant បន្ថែមបាន
+  return currentUser.role === 'super_admin' || currentUser.role === 'hr_manager' || currentUser.role === 'accountant';
+}
+
+function canView() {
+  return !!currentUser;
+}
 // =====================================================
 // UTILITIES
 // =====================================================
