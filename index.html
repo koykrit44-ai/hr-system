@@ -1578,14 +1578,26 @@ function doLogin(e) {
   err.classList.add('hidden');
   if (!u || !p) { err.textContent = '❌ សូមបំពេញព័ត៌មាន'; err.classList.remove('hidden'); return; }
   
-  const user = DB.users.find(x => x.username.toLowerCase() === u.toLowerCase());
-  if (!user || !verifyPassword(p, user.password)) {
+  const user = DB.users.find(x => (x.username.toLowerCase() === u.toLowerCase() || x.email === u));
+  if (!user) {
     err.textContent = '❌ ឈ្មោះឬលេខសម្ងាត់មិនត្រឹមត្រូវ';
     err.classList.remove('hidden');
     logAudit(null, 'LOGIN_FAILED', 'auth', null, `Failed: ${u}`);
     saveDB();
     return;
   }
+   // ✅ Firebase Authentication
+  fbAuth.signInWithEmailAndPassword(user.email, p)
+    .then(() => {
+      console.log('✅ Firebase login success');
+    })
+    .catch((error) => {
+      console.error('Firebase login error:', error);
+      err.textContent = '❌ ឈ្មោះឬលេខសម្ងាត់មិនត្រឹមត្រូវ';
+      err.classList.remove('hidden');
+      return;
+    });
+  
   
   currentUser = { ...user };
   delete currentUser.password;
