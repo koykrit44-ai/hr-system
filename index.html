@@ -1622,6 +1622,15 @@ function doLogin(e) {
 }
 
 function doLogout(auto = false) {
+   // ✅ Firebase Sign Out
+  if (typeof fbAuth !== 'undefined') {
+    fbAuth.signOut().then(() => {
+      console.log('✅ Firebase logout success');
+    }).catch((error) => {
+      console.error('Firebase logout error:', error);
+    });
+  }
+  
   if (!auto && !confirm('ចាកចេញ?')) return;
   if (currentUser) logAudit(currentUser.id, 'LOGOUT', 'auth', null, auto ? 'Auto logout' : 'Logout');
   currentUser = null;
