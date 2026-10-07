@@ -369,7 +369,9 @@ body.dark-mode .lang-btn.active {
         <span>🔒</span><span>Audit Log</span>
         <span class="nav-badge gray hidden" id="badge-audit">0</span>
       </a>
-      <a href="#" onclick="showPage('settings');return false;" data-page="settings" class="sidebar-link flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition text-sm"><span>⚙️</span><span>ការកំណត់</span></a>
+      <a href="#" id="menu-settings" onclick="showPage('settings');return false;" data-page="settings" class="sidebar-link flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition text-sm hidden">
+  <span>⚙️</span><span>ការកំណត់</span>
+</a>
     </nav>
     <div class="p-3 border-t border-slate-700">
       <div class="flex items-center gap-3 p-2 rounded-lg bg-slate-800">
@@ -1612,6 +1614,15 @@ function doLogin(e) {
   document.getElementById('userName').textContent = user.name;
   document.getElementById('userRole').textContent = getRoleLabel(user.role);
   document.getElementById('userAvatar').textContent = user.name.charAt(0);
+       // ✅ បង្ហាញ Menu Setting តែ Super Admin
+      const settingsMenu = document.getElementById('menu-settings');
+      if (settingsMenu) {
+        if (user.role === 'super_admin') {
+          settingsMenu.classList.remove('hidden');
+        } else {
+          settingsMenu.classList.add('hidden');
+        }
+      }
   document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   
   updateBadges();
@@ -1670,6 +1681,11 @@ const PAGE_META = {
 };
 
  function showPage(page) {
+    // ✅ ការពារ Setting Page ពី User ផ្សេង
+  if (page === 'settings' && currentUser?.role !== 'super_admin') {
+    toast('❌ អ្នកគ្មានសិទ្ធិចូល Setting', 'error');
+    return;
+  }
   const content = document.getElementById('pageContent');
   content.style.opacity = '0.5';
   
