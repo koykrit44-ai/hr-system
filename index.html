@@ -444,6 +444,34 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const fbDB = firebase.database();
 const fbAuth = firebase.auth();
+
+ // =====================================================
+// CLOUDINARY CONFIG
+// =====================================================
+const CLOUDINARY_CLOUD_NAME = 'yx3vilbn';
+const CLOUDINARY_UPLOAD_PRESET = 'hr_system_upload';
+
+// ✅ Upload File ទៅ Cloudinary
+async function uploadToCloudinary(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+  formData.append('folder', 'hr_documents');
+  
+  const url = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`;
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    body: formData
+  });
+  
+  if (!response.ok) {
+    throw new Error('Upload failed');
+  }
+  
+  return await response.json();
+}
+
 // =====================================================
 // CONSTANTS
 // =====================================================
