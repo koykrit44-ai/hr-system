@@ -1964,6 +1964,7 @@ function renderEmployees() {
               <th class="text-left p-3">${t('empDept')}</th>
               <th class="text-left p-3">${t('empPosition')}</th>
               <th class="text-left p-3">${t('empStatus')}</th>
+              <th class="text-center p-3">📎 ឯកសារ</th>
               <th class="text-right p-3">${t('empActions')}</th>
             </tr>
           </thead>
@@ -2006,6 +2007,9 @@ function filterEmployees() {
       <td class="p-3">${escapeHtml(getDeptName(e.department_id))}</td>
       <td class="p-3">${escapeHtml(getPosName(e.position_id))}</td>
       <td class="p-3">${statusBadge(e.status)}</td>
+      <td class="p-3 text-center">
+          ${renderDocBadges(e.documents)}
+        </td>
         <td class="p-3 text-right whitespace-nowrap">
         <button onclick="viewEmpProfile(${e.id})" class="text-blue-600 hover:bg-blue-50 px-2 py-1 rounded text-xs" title="មើល">👁️</button>
         ${canEdit() ? `<button onclick="openEmpForm(${e.id})" class="text-amber-600 hover:bg-amber-50 px-2 py-1 rounded text-xs" title="កែ">✏️</button>` : ''}
@@ -2470,6 +2474,37 @@ function handleDocUpload(input) {
   
   input.value = '';
 }
+ // ✅ បង្ហាញ Documents Badges ក្នុង Table
+function renderDocBadges(docs) {
+  if (!docs || docs.length === 0) {
+    return '<span class="text-slate-300 text-xs">-</span>';
+  }
+  
+  const categoryIcons = {
+    cv: '📄',
+    contract: '📝',
+    certificate: '🎓',
+    id: '🪪',
+    license: '🚗',
+    other: '📁'
+  };
+  
+  const counts = {};
+  docs.forEach(d => {
+    const cat = d.category || 'other';
+    counts[cat] = (counts[cat] || 0) + 1;
+  });
+  
+  let html = '<div class="flex gap-1 justify-center flex-wrap">';
+  Object.entries(counts).forEach(([cat, count]) => {
+    const icon = categoryIcons[cat] || '📁';
+    html += `<span class="badge badge-blue" style="font-size:10px; padding:2px 6px;" title="${cat}">${icon} ${count}</span>`;
+  });
+  html += '</div>';
+  
+  return html;
+}
+
 function renderDocList() {
   const list = window._tempDocs || [];
   
