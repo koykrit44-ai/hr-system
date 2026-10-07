@@ -2645,10 +2645,32 @@ function renderDocList() {
   }).join('');
 }
 function previewDoc(i) {
-  const d = window._tempDocs[i];
+  const docs = window._tempDocs || [];
+  const d = docs[i];
+  if (!d) {
+    toast('❌ រកមិនឃើញឯកសារ', 'error');
+    return;
+  }
+  
   const w = window.open('', '_blank');
-  if (d.isPDF) w.document.write(`<html><body style="margin:0;background:#1e293b;"><iframe src="${d.data}" style="width:100%;height:100vh;border:none;"></iframe></body></html>`);
-  else w.document.write(`<html><body style="margin:0;background:#1e293b;display:flex;align-items:center;justify-content:center;height:100vh;"><img src="${d.data}" style="max-width:100%;max-height:100vh;"></body></html>`);
+  if (!w) {
+    toast('❌ Browser បិទ Popup', 'error');
+    return;
+  }
+  
+  if (d.isPDF) {
+    w.document.write(`<html><head><title>${escapeHtml(d.name)}</title></head><body style="margin:0;background:#1e293b;"><iframe src="${d.data}" style="width:100%;height:100vh;border:none;"></iframe></body></html>`);
+  } else if (d.isImage) {
+    w.document.write(`<html><head><title>${escapeHtml(d.name)}</title></head><body style="margin:0;background:#1e293b;display:flex;align-items:center;justify-content:center;height:100vh;"><img src="${d.data}" style="max-width:100%;max-height:100vh;object-fit:contain;"></body></html>`);
+  } else {
+    const a = document.createElement('a');
+    a.href = d.data;
+    a.download = d.name;
+    a.click();
+    w.close();
+    toast('📥 កំពុង Download...');
+  }
+  w.document.close();
 }
  // =====================================================
 // FORM VALIDATION HELPERS
