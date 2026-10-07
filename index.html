@@ -2451,7 +2451,7 @@ function removeSkill(i) { window._tempSkills.splice(i, 1); renderSkillList(); }
 // =====================================================
 // HANDLE DOCUMENT UPLOAD
 // =====================================================
-function handleDocUpload(input) {
+async function handleDocUpload(input) {
   if (!window._tempDocs) window._tempDocs = [];
   
   const category = document.getElementById('docCategory')?.value || 'other';
@@ -2459,11 +2459,11 @@ function handleDocUpload(input) {
   
   if (files.length === 0) return;
   
-  files.forEach(file => {
+  for (const file of files) {
     // Check size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
       toast(`❌ ${file.name} ធំពេក (max 10MB)`, 'error');
-      return;
+      continue;
     }
     
     const isPDF = file.type === 'application/pdf';
@@ -2472,9 +2472,12 @@ function handleDocUpload(input) {
                    file.name.endsWith('.doc') || 
                    file.name.endsWith('.docx');
     
-    const reader = new FileReader();
+    showLoading('កំពុង Upload ' + file.name + '...');
     
-    reader.onload = (e) => {
+    try {
+      // ✅ Upload ទៅ Cloudinary
+      const result = await uploadToCloudinary(file);
+      
       const docData = {
         id: Date.now() + Math.random(),
         name: file.name,
@@ -2485,21 +2488,21 @@ function handleDocUpload(input) {
         isImage: isImage,
         isWord: isWord,
         uploaded_at: new Date().toISOString(),
-        data: e.target.result
+        url: result.secure_url,
+        publicId: result.public_id,
+        data: result.secure_url
       };
       
       window._tempDocs.push(docData);
       renderDocList();
       toast(`✅ ${file.name}`);
-    };
-    
-    reader.onerror = () => {
-      toast(`❌ Error reading ${file.name}`, 'error');
-    };
-    
-    reader.readAsDataURL(file);
-  });
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast(`❌ Error: ${error.message}`, 'error');
+    }
+  }
   
+  hideLoading();
   input.value = '';
 }
  // ✅ បង្ហាញ Documents Badges ក្នុង Table
