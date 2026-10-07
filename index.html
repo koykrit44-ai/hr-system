@@ -1114,6 +1114,28 @@ function debounce(fn, wait = 250) {
 // INIT DATABASE
 // =====================================================
 function initDB() {
+  if (typeof fbDB !== 'undefined') {
+    fbDB.ref('hr_data').once('value').then((snapshot) => {
+      const data = snapshot.val();
+      if (data && data.users && data.users.length > 0) {
+        Object.assign(DB, data);
+        applyCompanyLogo();
+        console.log('✅ Loaded from Firebase');
+        return;
+      } else {
+        createInitialData();
+        saveDB();
+      }
+    }).catch((error) => {
+      console.error('❌ Firebase error:', error);
+      loadFromLocalStorage();
+    });
+  } else {
+    loadFromLocalStorage();
+  }
+}
+
+function loadFromLocalStorage() {
   const saved = localStorage.getItem(STORAGE_KEY);
   if (saved) {
     try { 
@@ -1122,6 +1144,11 @@ function initDB() {
       return; 
     } catch(e) {}
   }
+  createInitialData();
+  saveDB();
+}
+
+function createInitialData() {
 
   DB.users = [
   { id: 1, username: 'krit', password: hashPassword('admin123'), name: 'Krit', role: 'super_admin', email: 'krit@company.com' },
