@@ -11,6 +11,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
 <style>
   * { font-family: 'Khmer OS', 'Noto Sans Khmer', 'Segoe UI', system-ui, sans-serif; }
   body { background: #f1f5f9; }
@@ -423,6 +425,21 @@ body.dark-mode .lang-btn.active {
   </div>
 </div>
 <script>
+ // =====================================================
+// FIREBASE CONFIG
+// =====================================================
+const firebaseConfig = {
+  apiKey: "AIzaSyDUipoLKXsa1hIimVCGONpmYuURa4GI0mY",
+  authDomain: "hr-system-69403.firebaseapp.com",
+  databaseURL: "https://hr-system-69403-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "hr-system-69403",
+  storageBucket: "hr-system-69403.firebasestorage.app",
+  messagingSenderId: "701323981759",
+  appId: "1:701323981759:web:436217b8291bc91809e70a"
+};
+
+firebase.initializeApp(firebaseConfig);
+const fbDB = firebase.database();
 // =====================================================
 // CONSTANTS
 // =====================================================
@@ -1244,7 +1261,18 @@ function initDB() {
 
 function saveDB() { 
   try {
+    // Save to localStorage (backup)
     localStorage.setItem(STORAGE_KEY, JSON.stringify(DB));
+    
+    // Save to Firebase (shared)
+    if (typeof fbDB !== 'undefined') {
+      fbDB.ref('hr_data').set(DB).then(() => {
+        console.log('✅ Saved to Firebase');
+      }).catch((error) => {
+        console.error('❌ Firebase save error:', error);
+      });
+    }
+    
     if (currentUser) setTimeout(updateBadges, 100);
   } catch(e) {
     console.error('Save error', e);
