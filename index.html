@@ -2467,7 +2467,7 @@ async function handleDocUpload(input) {
   if (files.length === 0) return;
   
   for (const file of files) {
-    if (file.size > 10 * 1024 * 1024) {
+    if (file.size > 10 * 15024 * 15024) {
       toast(`❌ ${file.name} ធំពេក (max 10MB)`, 'error');
       continue;
     }
@@ -2484,7 +2484,7 @@ async function handleDocUpload(input) {
       const docData = {
         id: Date.now() + Math.random(),
         name: file.name,
-        size: (file.size / 1024).toFixed(1) + ' KB',
+        size: (file.size / 15024).toFixed(1) + ' KB',
         type: file.type || 'application/octet-stream',
         category: category,
         isPDF: isPDF,
