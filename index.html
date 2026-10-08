@@ -2043,7 +2043,7 @@ function filterEmployees() {
       <td class="p-3">${escapeHtml(getPosName(e.position_id))}</td>
       <td class="p-3">${statusBadge(e.status)}</td>
       <td class="p-3 text-center">
-          ${renderDocBadges(e.documents)}
+          ${renderDocBadges(e.documents, e.id)}
         </td>
         <td class="p-3 text-right whitespace-nowrap">
         <button onclick="viewEmpProfile(${e.id})" class="text-blue-600 hover:bg-blue-50 px-2 py-1 rounded text-xs" title="មើល">👁️</button>
