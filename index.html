@@ -2459,7 +2459,6 @@ async function handleDocUpload(input) {
   if (files.length === 0) return;
   
   for (const file of files) {
-    // Check size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
       toast(`❌ ${file.name} ធំពេក (max 10MB)`, 'error');
       continue;
@@ -2467,14 +2466,11 @@ async function handleDocUpload(input) {
     
     const isPDF = file.type === 'application/pdf';
     const isImage = file.type.startsWith('image/');
-    const isWord = file.type.includes('word') || 
-                   file.name.endsWith('.doc') || 
-                   file.name.endsWith('.docx');
+    const isWord = file.type.includes('word') || file.name.endsWith('.doc') || file.name.endsWith('.docx');
     
     showLoading('កំពុង Upload ' + file.name + '...');
     
     try {
-      // ✅ Upload ទៅ Cloudinary
       const result = await uploadToCloudinary(file);
       
       const docData = {
@@ -2493,6 +2489,7 @@ async function handleDocUpload(input) {
       };
       
       window._tempDocs.push(docData);
+      console.log('✅ Document added:', docData);
       renderDocList();
       toast(`✅ ${file.name}`);
     } catch (error) {
