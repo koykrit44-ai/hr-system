@@ -1152,6 +1152,14 @@ function initDB() {
         Object.assign(DB, data);
         applyCompanyLogo();
         console.log('✅ Loaded from Firebase');
+           // ✅ Refresh Dashboard ក្រោយ Load
+    if (typeof currentUser !== 'undefined' && currentUser) {
+      setTimeout(() => {
+        if (typeof updateBadges === 'function') updateBadges();
+        const currentPage = document.querySelector('.sidebar-link.active')?.getAttribute('data-page');
+        if (currentPage && typeof showPage === 'function') showPage(currentPage);
+      }, 500);
+    }
         return;
       } else {
         createInitialData();
