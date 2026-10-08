@@ -2535,7 +2535,6 @@ function previewDoc(i) {
   
   window.open(fileUrl, '_blank');
 }
-// ✅ Download Document
 // ✅ Download Document (បង្ខំ Download)
 function downloadDoc(url, filename) {
   if (!url) {
@@ -2543,17 +2542,31 @@ function downloadDoc(url, filename) {
     return;
   }
   
+  console.log('Downloading:', url);
   showLoading('កំពុង Download...');
   
-  fetch(url, { mode: 'cors' })
+  // ✅ ប្រើ Cloudinary Transformation ដើម្បីបង្ខំ Download
+  let downloadUrl = url;
+  
+  // បើជា PDF ពី Cloudinary → ប្តូរទៅ raw/upload
+  if (url.includes('/image/upload/') && url.endsWith('.pdf')) {
+    downloadUrl = url.replace('/image/upload/', '/raw/upload/');
+  }
+  
+  console.log('Download URL:', downloadUrl);
+  
+  fetch(downloadUrl, { 
+    mode: 'cors',
+    headers: { 'Accept': 'application/pdf, application/octet-stream, */*' }
+  })
     .then(response => {
-      if (!response.ok) throw new Error('Network error');
+      if (!response.ok) throw new Error('HTTP ' + response.status);
       return response.blob();
     })
     .then(blob => {
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
-      link.download = filename || 'download';
+      link.download = filename || 'download.pdf';
       link.style.display = 'none';
       document.body.appendChild(link);
       link.click();
@@ -2570,13 +2583,17 @@ function downloadDoc(url, filename) {
       console.error('Download error:', error);
       hideLoading();
       
-      // Fallback: បើ fetch មិនបាន → បើក Tab ថ្មី
-      const w = window.open(url, '_blank');
-      if (w) {
-        toast('📥 បើកក្នុង Tab ថ្មី');
-      } else {
-        toast('❌ Download បរាជ័យ', 'error');
-      }
+      // ✅ Fallback 1: បង្ខំ Download ដោយ anchor tag
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = filename || 'download.pdf';
+      a.target = '_blank';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      
+      toast('📥 កំពុង Download...');
     });
 }
 
