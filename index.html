@@ -2545,12 +2545,16 @@ function downloadDoc(url, filename) {
   console.log('Downloading:', url);
   showLoading('កំពុង Download...');
   
-  // ✅ ប្រើ Cloudinary Transformation ដើម្បីបង្ខំ Download
+  // ✅ បន្ថែម ?fl_attachment ដើម្បីបង្ខំ Download
   let downloadUrl = url;
+  if (url.includes('cloudinary.com')) {
+    downloadUrl = url + (url.includes('?') ? '&' : '?') + 'fl_attachment=true';
+  }
   
-  // បើជា PDF ពី Cloudinary → ប្តូរទៅ raw/upload
+  // ✅ បើជា PDF ពី Cloudinary → ប្តូរទៅ raw/upload
   if (url.includes('/image/upload/') && url.endsWith('.pdf')) {
     downloadUrl = url.replace('/image/upload/', '/raw/upload/');
+    downloadUrl = downloadUrl + (downloadUrl.includes('?') ? '&' : '?') + 'fl_attachment=true';
   }
   
   console.log('Download URL:', downloadUrl);
@@ -2583,7 +2587,7 @@ function downloadDoc(url, filename) {
       console.error('Download error:', error);
       hideLoading();
       
-      // ✅ Fallback 1: បង្ខំ Download ដោយ anchor tag
+      // ✅ Fallback: បង្ខំ Download ដោយ anchor tag
       const a = document.createElement('a');
       a.href = downloadUrl;
       a.download = filename || 'download.pdf';
