@@ -2497,6 +2497,7 @@ async function handleDocUpload(input) {
       };
       
       window._tempDocs.push(docData);
+      console.log('✅ Document added:', docData);
       renderDocList();
       toast(`✅ ${file.name}`);
     } catch (error) {
@@ -2509,6 +2510,88 @@ async function handleDocUpload(input) {
   input.value = '';
 }
 
+// ✅ Preview Document
+function previewDoc(i) {
+  const docs = window._tempDocs || [];
+  const d = docs[i];
+  if (!d) {
+    toast('❌ រកមិនឃើញឯកសារ', 'error');
+    return;
+  }
+  
+  const fileUrl = d.url || d.data || '';
+  if (!fileUrl) {
+    toast('❌ គ្មាន URL', 'error');
+    return;
+  }
+  
+  window.open(fileUrl, '_blank');
+}
+
+// ✅ បង្ហាញ Documents Modal
+function viewEmpDocs(empId, category) {
+  const emp = DB.employees.find(x => x.id === empId);
+  if (!emp) {
+    toast('❌ រកមិនឃើញបុគ្គលិក', 'error');
+    return;
+  }
+  
+  const docs = (emp.documents || []).filter(d => (d.category || 'other') === category);
+  
+  const categoryLabels = {
+    cv: { icon: '📄', label: 'ប្រវត្តិរូប (CV)' },
+    contract: { icon: '📝', label: 'កិច្ចសន្យា (Contract)' },
+    certificate: { icon: '🎓', label: 'សញ្ញាបត្រ (Certificate)' },
+    id: { icon: '🪪', label: 'អត្តសញ្ញាណប័ណ្ណ (ID)' },
+    license: { icon: '🚗', label: 'ប័ណ្ណបើកបរ (License)' },
+    other: { icon: '📁', label: 'ផ្សេងៗ (Other)' }
+  };
+  
+  const cat = categoryLabels[category] || categoryLabels.other;
+  
+  document.getElementById('modalContainer').classList.add('modal-lg');
+  document.getElementById('modalContainer').classList.remove('modal-xl', 'modal-md');
+  document.getElementById('modalTitle').textContent = `${cat.icon} ${cat.label} - ${emp.full_name}`;
+  
+  document.getElementById('modalBody').innerHTML = `
+    <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+      <div class="font-medium text-blue-700">👤 ${escapeHtml(emp.full_name)}</div>
+      <div class="text-xs text-blue-600">អត្តលេខ: ${escapeHtml(emp.employee_id || emp.code)}</div>
+    </div>
+    
+    ${docs.length ? `
+      <div class="space-y-2">
+        ${docs.map((d, i) => {
+          const fileIcon = d.isPDF ? '📕' : d.isImage ? '🖼️' : d.isWord ? '📘' : '📄';
+          const fileUrl = d.url || d.data || '';
+          return `
+            <div class="flex items-center gap-3 p-3 border rounded-lg hover:bg-slate-50 transition">
+              <div class="text-3xl">${fileIcon}</div>
+              <div class="flex-1 min-w-0">
+                <div class="font-medium text-sm truncate">${escapeHtml(d.name)}</div>
+                <div class="text-xs text-slate-500 mt-1">${d.size || ''}</div>
+              </div>
+              <div class="flex gap-1">
+                <button type="button" onclick="window.open('${fileUrl}', '_blank')" class="text-blue-600 hover:bg-blue-50 px-2 py-1 rounded text-xs">👁️</button>
+                <a href="${fileUrl}" download="${escapeHtml(d.name)}" target="_blank" class="text-green-600 hover:bg-green-50 px-2 py-1 rounded text-xs">⬇️</a>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    ` : `
+      <div class="text-center py-8 text-slate-400">
+        <div class="text-4xl mb-2">📭</div>
+        <p>មិនមានឯកសារ</p>
+      </div>
+    `}
+    
+    <div class="flex justify-end mt-6 pt-4 border-t">
+      <button onclick="closeModal()" class="btn btn-secondary">បិទ</button>
+    </div>
+  `;
+  openModal();
+}
 // ✅ Preview Document
 function previewDoc(i) {
   const docs = window._tempDocs || [];
