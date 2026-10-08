@@ -2536,27 +2536,47 @@ function previewDoc(i) {
   window.open(fileUrl, '_blank');
 }
 // ✅ Download Document
+// ✅ Download Document (បង្ខំ Download)
 function downloadDoc(url, filename) {
   if (!url) {
     toast('❌ គ្មាន URL', 'error');
     return;
   }
   
-  fetch(url)
-    .then(response => response.blob())
+  showLoading('កំពុង Download...');
+  
+  fetch(url, { mode: 'cors' })
+    .then(response => {
+      if (!response.ok) throw new Error('Network error');
+      return response.blob();
+    })
     .then(blob => {
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
-      link.download = filename;
+      link.download = filename || 'download';
+      link.style.display = 'none';
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(link.href);
+      
+      setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+      }, 100);
+      
+      hideLoading();
       toast('📥 Download ជោគជ័យ');
     })
     .catch(error => {
       console.error('Download error:', error);
-      toast('❌ Download បរាជ័យ', 'error');
+      hideLoading();
+      
+      // Fallback: បើ fetch មិនបាន → បើក Tab ថ្មី
+      const w = window.open(url, '_blank');
+      if (w) {
+        toast('📥 បើកក្នុង Tab ថ្មី');
+      } else {
+        toast('❌ Download បរាជ័យ', 'error');
+      }
     });
 }
 
