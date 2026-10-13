@@ -4177,6 +4177,7 @@ function renderPayroll() {
           <button onclick="generatePayroll()" class="btn btn-primary">${t('payCalculate')}</button>
           <button onclick="exportPayrollExcel()" class="btn btn-secondary">📊 Excel</button>
           <button onclick="exportPayrollPDF()" class="btn btn-secondary">📕 PDF</button>
+          <button onclick="exportPayrollReportPDF()" class="btn btn-secondary">📕 Payroll Report</button>
         </div>
       </div>
     </div>
@@ -4204,6 +4205,218 @@ function renderPayroll() {
   `;
   renderPayTable();
 }
+// ✅ Payroll Report (Print - គាំទ្រខ្មែរ 100%)
+function exportPayrollReportPDF() {
+  const m = +document.getElementById('payMonth').value;
+  const y = +document.getElementById('payYear').value;
+  const list = DB.payrolls.filter(p => p.period_month === m && p.period_year === y);
+  
+  if (!list.length) {
+    toast('❌ គ្មានទិន្នន័យ', 'error');
+    return;
+  }
+  
+  // បង្កើត Window ថ្មី
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    toast('❌ Browser បិទ Popup', 'error');
+    return;
+  }
+  
+  // HTML Content
+  const html = `
+    <!DOCTYPE html>
+    <html lang="km">
+    <head>
+      <meta charset="UTF-8">
+      <title>Payroll Report - ${m}/${y}</title>
+      <link href="https://fonts.googleapis.com/css2?family=Moul&family=Siemreap&display=swap" rel="stylesheet">
+      <style>
+        @page { size: A4 landscape; margin: 10mm; }
+        
+        body { 
+          font-family: 'Siemreap', sans-serif; 
+          margin: 0;
+          padding: 20px;
+        }
+        
+        .header { 
+          text-align: center; 
+          margin-bottom: 20px;
+          position: relative;
+        }
+        
+        .logo-left {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 80px;
+          height: 80px;
+        }
+        
+        .logo-left img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+        }
+        
+        .country-right {
+          position: absolute;
+          right: 0;
+          top: 0;
+          text-align: center;
+          font-family: 'Moul', serif;
+          font-size: 12px;
+          line-height: 1.6;
+        }
+        
+        .company-name {
+          font-family: 'Moul', serif;
+          font-size: 16px;
+          color: #1e40af;
+          margin: 0;
+        }
+        
+        .company-name-en {
+          font-family: 'Moul', serif;
+          font-size: 12px;
+          color: #1e40af;
+        }
+        
+        .title {
+          font-family: 'Moul', serif;
+          font-size: 18px;
+          margin: 30px 0 10px;
+          text-align: center;
+        }
+        
+        .subtitle {
+          font-family: 'Moul', serif;
+          font-size: 14px;
+          margin: 0 0 20px;
+          text-align: center;
+        }
+        
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          font-family: 'Siemreap', sans-serif;
+          font-size: 10px;
+        }
+        
+        th, td {
+          border: 1px solid #333;
+          padding: 4px 6px;
+          text-align: center;
+        }
+        
+        th {
+          background: #e5e7eb;
+          font-family: 'Moul', serif;
+          font-size: 9px;
+        }
+        
+        td.name {
+          text-align: left;
+        }
+        
+        .footer {
+          margin-top: 20px;
+          text-align: right;
+          font-family: 'Siemreap', sans-serif;
+          font-size: 11px;
+        }
+        
+        @media print {
+          .no-print { display: none; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div class="logo-left">
+          ${DB.settings.companyLogo ? `<img src="${DB.settings.companyLogo}">` : ''}
+        </div>
+        
+        <div class="country-right">
+          <div>ព្រះរាជាណាចក្រកម្ពុជា</div>
+          <div>ជាតិ សាសនា ព្រះមហាក្សត្រ</div>
+        </div>
+        
+        <div style="text-align: center;">
+          <div class="company-name">${DB.settings.companyName || 'COMPANY NAME'}</div>
+          <div class="company-name-en">${DB.settings.companyNameEn || ''}</div>
+        </div>
+      </div>
+      
+      <div class="title">បញ្ជីប្រាក់ខែ</div>
+      <div class="subtitle">បញ្ជីប្រាក់ខែ ខែ ${m} ឆ្នាំ ${y}</div>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>ល.រ</th>
+            <th>អត្តលេខ</th>
+            <th>ឈ្មោះបុគ្គលិក</th>
+            <th>ថ្ងៃចូលបម្រើការងារ</th>
+            <th>មុខតំណែង</th>
+            <th>ភេទ</th>
+            <th>ប្រាក់ខែគោល</th>
+            <th>ប្រាក់បានពីការបម្រើការងារ</th>
+            <th>ប្រាក់បានការប្រើប្រាស់ទូទាត់</th>
+            <th>កាត់ប្រាក់ផ្សេងៗ</th>
+            <th>ប្រាក់ខែសរុប</th>
+            <th>ចំណាយសរុប</th>
+            <th>ប្រាក់ខែសុទ្ធ</th>
+            <th>ស្នាមមេដៃ</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${list.map((p, idx) => {
+            const e = DB.employees.find(x => x.id === p.employee_id);
+            return `
+              <tr>
+                <td>${String(idx + 1).padStart(2, '0')}</td>
+                <td>${e?.employee_id || e?.code || ''}</td>
+                <td class="name">${e?.full_name || ''}</td>
+                <td>${e?.hire_date || ''}</td>
+                <td class="name">${getPosName(e?.position_id) || ''}</td>
+                <td>${e?.gender === 'M' ? 'ប្រុស' : 'ស្រី'}</td>
+                <td>$${parseFloat(p.base_salary || 0).toFixed(2)}</td>
+                <td>$${parseFloat(p.gross_salary || 0).toFixed(2)}</td>
+                <td>$0.00</td>
+                <td>$0.00</td>
+                <td>$${parseFloat(p.gross_salary || 0).toFixed(2)}</td>
+                <td>$0.00</td>
+                <td>$${parseFloat(p.net_salary || 0).toFixed(2)}</td>
+                <td></td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+      
+      <div class="footer">
+        បានធ្វើនៅ ថ្ងៃទី ${new Date().getDate()} ខែ ${new Date().getMonth()+1} ឆ្នាំ ${new Date().getFullYear()}
+      </div>
+      
+      <div class="no-print" style="text-align: center; margin-top: 20px;">
+        <button onclick="window.print()" style="padding: 10px 20px; font-size: 14px; cursor: pointer;">
+          🖨️ បោះពុម្ព / Save as PDF
+        </button>
+        <button onclick="window.close()" style="padding: 10px 20px; font-size: 14px; cursor: pointer; margin-left: 10px;">
+          ✖️ បិទ
+        </button>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  printWindow.document.write(html);
+  printWindow.document.close();
+  
+  toast('🖨️ ចុច Print ដើម្បី Save as PDF');
+} 
 
 function renderPayTable() {
   const m = +document.getElementById('payMonth').value;
