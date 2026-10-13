@@ -4240,92 +4240,72 @@ function exportPayrollReportPDF() {
           padding: 20px;
         }
         
-        .header { 
-          text-align: center; 
-          margin-bottom: 20px;
-          position: relative;
-        }
-        
-        .logo-left {
-          position: absolute;
-          left: 0;
-          top: 0;
-          width: 80px;
-          height: 80px;
-        }
-        
-        .logo-left img {
-          width: 100%;
-          height: 100%;
-          object-fit: contain;
-        }
-        
-        .country-right {
-          position: absolute;
-          right: 0;
-          top: 0;
-          text-align: center;
-          font-family: 'Moul', serif;
-          font-size: 12px;
-          line-height: 1.6;
-        }
-        
-        .company-name {
-          font-family: 'Moul', serif;
-          font-size: 16px;
-          color: #1e40af;
-          margin: 0;
-        }
-        
-        .company-name-en {
-          font-family: 'Moul', serif;
-          font-size: 12px;
-          color: #1e40af;
-        }
-        
-        .title {
-          font-family: 'Moul', serif;
-          font-size: 18px;
-          margin: 30px 0 10px;
-          text-align: center;
-        }
-        
-        .subtitle {
-          font-family: 'Moul', serif;
-          font-size: 14px;
-          margin: 0 0 20px;
-          text-align: center;
-        }
-        
-        table {
-          width: 100%;
-          border-collapse: collapse;
-          font-family: 'Siemreap', sans-serif;
-          font-size: 10px;
-        }
-        
-        th, td {
-          border: 1px solid #333;
-          padding: 4px 6px;
-          text-align: center;
-        }
-        
-        th {
-          background: #e5e7eb;
-          font-family: 'Moul', serif;
-          font-size: 9px;
-        }
-        
-        td.name {
-          text-align: left;
-        }
-        
-        .footer {
-          margin-top: 20px;
-          text-align: right;
-          font-family: 'Siemreap', sans-serif;
-          font-size: 11px;
-        }
+        /* ✅ Header Layout */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #1e40af;
+  min-height: 120px;
+}
+
+/* ខាងឆ្វេង */
+.header-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 250px;
+}
+
+.logo-box {
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+
+.logo-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.company-info {
+  text-align: center;
+  width: 100%;
+}
+
+.company-name-kh {
+  font-family: 'Moul', serif;
+  font-size: 12px;
+  color: #1e40af;
+  margin: 0;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.company-name-en {
+  font-family: 'Moul', serif;
+  font-size: 10px;
+  color: #1e40af;
+  margin: 3px 0 0;
+  white-space: nowrap;
+}
+
+/* ខាងស្តាំ */
+.header-right {
+  text-align: center;
+  font-family: 'Moul', serif;
+  font-size: 12px;
+  line-height: 1.8;
+  color: #1e40af;
+  padding-top: 10px;
+}
         
         @media print {
           .no-print { display: none; }
@@ -4334,23 +4314,26 @@ function exportPayrollReportPDF() {
     </head>
     <body>
       <div class="header">
-        <div class="logo-left">
-          ${DB.settings.companyLogo ? `<img src="${DB.settings.companyLogo}">` : ''}
-        </div>
-        
-        <div class="country-right">
-          <div>ព្រះរាជាណាចក្រកម្ពុជា</div>
-          <div>ជាតិ សាសនា ព្រះមហាក្សត្រ</div>
-        </div>
-        
-        <div style="text-align: center;">
-          <div class="company-name">${DB.settings.companyName || 'COMPANY NAME'}</div>
-          <div class="company-name-en">${DB.settings.companyNameEn || ''}</div>
-        </div>
-      </div>
+  <!-- ខាងឆ្វេង: Logo + ឈ្មោះក្រុមហ៊ុន -->
+  <div class="header-left">
+    <div class="logo-box">
+      ${DB.settings.companyLogo ? `<img src="${DB.settings.companyLogo}">` : ''}
+    </div>
+    <div class="company-info">
+      <div class="company-name-kh">ក្រុមហ៊ុន សុកន ត្រេនស្ព័ត ឯ.ក</div>
+      <div class="company-name-en">SOKAN TRANSPORT PTE., LTD.</div>
+    </div>
+  </div>
+  
+  <!-- ខាងស្តាំ: ព្រះរាជាណាចក្រ -->
+  <div class="header-right">
+    <div>ព្រះរាជាណាចក្រកម្ពុជា</div>
+    <div>ជាតិ សាសនា ព្រះមហាក្សត្រ</div>
+  </div>
+</div>
       
-      <div class="title">បញ្ជីប្រាក់ខែ</div>
-      <div class="subtitle">បញ្ជីប្រាក់ខែ ខែ ${m} ឆ្នាំ ${y}</div>
+      <div class="title">បញ្ជីប្រាក់ខែប្រចាំក្រុមហ៊ុន សុកន ត្រេនស្ព័ត សាខាដេប៉ូភ្នំពេញ</div>
+      <div class="subtitle">សម្រាប់ខែ ខែ ${m} ឆ្នាំ ${y}</div>
       
       <table>
         <thead>
