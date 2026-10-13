@@ -2124,8 +2124,8 @@ function openEmpForm(id) {
             </div>
           </div>
           <div><label class="text-sm font-medium">អត្តលេខ (Employee ID)</label><input id="f_employee_id" class="input" value="${emp.employee_id || ''}" placeholder="HR-001, IT-002..."></div>
-          <div><label class="text-sm font-medium">First Name <span class="text-red-500">*</span></label><input id="f_fn" class="input" value="${emp.first_name || ''}" required></div>
-          <div><label class="text-sm font-medium">Last Name <span class="text-red-500">*</span></label><input id="f_ln" class="input" value="${emp.last_name || ''}" required></div>
+          <div><label class="text-sm font-medium">KH Name <span class="text-red-500">*</span></label><input id="f_fn" class="input" value="${emp.first_name || ''}" required></div>
+          <div><label class="text-sm font-medium">EN Name <span class="text-red-500">*</span></label><input id="f_ln" class="input" value="${emp.last_name || ''}" required></div>
           <div><label class="text-sm font-medium">Gender</label>
             <select id="f_gender" class="input">
               <option value="M" ${emp.gender==='M'?'selected':''}>Male</option>
@@ -3040,8 +3040,8 @@ function saveEmpForm(e, id) {
   
   let hasError = false;
   
-  if (!fn) { showFieldError('f_fn', 'សូមបំពេញ First Name'); hasError = true; }
-  if (!ln) { showFieldError('f_ln', 'សូមបំពេញ Last Name'); hasError = true; }
+  if (!fn) { showFieldError('f_fn', 'សូមបំពេញ KH Name'); hasError = true; }
+  if (!ln) { showFieldError('f_ln', 'សូមបំពេញ EN Name'); hasError = true; }
   if (!phone) { showFieldError('f_phone', 'សូមបំពេញទូរស័ព្ទ'); hasError = true; }
   else if (!validatePhone(phone)) { showFieldError('f_phone', 'ទូរស័ព្ទមិនត្រឹមត្រូវ'); hasError = true; }
   
