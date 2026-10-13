@@ -4301,11 +4301,77 @@ function exportPayrollReportPDF() {
 .header-right {
   text-align: center;
   font-family: 'Moul', serif;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.8;
   color: #1e40af;
   padding-top: 10px;
 }
+        
+        .company-name-center {
+  text-align: center;
+  margin-top: 10px;
+  padding-left: 80px;
+  padding-right: 80px;
+}
+
+.company-name-kh {
+  font-family: 'Moul', serif;
+  font-size: 16px;
+  color: #1e40af;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.company-name-en {
+  font-family: 'Moul', serif;
+  font-size: 12px;
+  color: #1e40af;
+  margin: 5px 0 0;
+}
+        
+        .title {
+          font-family: 'Moul', serif;
+          font-size: 18px;
+          margin: 30px 0 10px;
+          text-align: center;
+        }
+        
+        .subtitle {
+          font-family: 'Moul', serif;
+          font-size: 14px;
+          margin: 0 0 20px;
+          text-align: center;
+        }
+        
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          font-family: 'Siemreap', sans-serif;
+          font-size: 10px;
+        }
+        
+        th, td {
+          border: 1px solid #333;
+          padding: 4px 6px;
+          text-align: center;
+        }
+        
+        th {
+          background: #e5e7eb;
+          font-family: 'Moul', serif;
+          font-size: 9px;
+        }
+        
+        td.name {
+          text-align: left;
+        }
+        
+        .footer {
+          margin-top: 20px;
+          text-align: right;
+          font-family: 'Siemreap', sans-serif;
+          font-size: 11px;
+        }
         
         @media print {
           .no-print { display: none; }
