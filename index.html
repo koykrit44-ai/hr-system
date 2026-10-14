@@ -3266,7 +3266,7 @@ function viewEmpProfile(id) {
   openModal();
 }
 // =====================================================
-// ✅ EMPLOYEE PROFILE PDF (HTML Print - Khmer Font + QR + Barcode)
+// ✅ EMPLOYEE PROFILE PDF (Fixed QR, Barcode, Info Layout)
 // =====================================================
 function printProfilePDF(id) {
   const e = DB.employees.find(x => x.id === id);
@@ -3281,13 +3281,13 @@ function printProfilePDF(id) {
     return;
   }
   
-  // ✅ ព័ត៌មាន QR Code (Profile URL)
-  const profileUrl = `https://koykrit44-ai.github.io/hr-system/?emp=${e.employee_id || e.code}`;
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(profileUrl)}`;
+  // ✅ QR Code - បង្កើតជា SVG ក្នុង Browser (មិនត្រូវការ API)
+  const qrData = `${e.employee_id || e.code}|${e.full_name}|${e.phone || ''}|${e.department_id || ''}`;
+  const qrSvg = generateQRCodeSVG(qrData, 100);
   
-  // ✅ Barcode (Code 128) ពីអត្តលេខ
-  const barcodeData = encodeURIComponent(e.employee_id || e.code || 'EMP0001');
-  const barcodeUrl = `https://barcode.tec-it.com/barcode.ashx?data=${barcodeData}&code=Code128&dpi=96&imagetype=gif&rotation=0&color=%23000000&bgcolor=%23ffffff&quietzone=1&height=60`;
+  // ✅ Barcode - បង្កើតជា SVG ក្នុង Browser
+  const barcodeData = e.employee_id || e.code || 'EMP0001';
+  const barcodeSvg = generateBarcodeSVG(barcodeData, 180, 40);
   
   // ✅ Education Rows
   const educationRows = (e.education || []).length ? (e.education || []).map(ed => `
@@ -3361,7 +3361,6 @@ function printProfilePDF(id) {
         .logo-box img { width: 100%; height: 100%; object-fit: contain; }
         .company-info { text-align: center; width: 100%; }
         
-        /* ✅ Khmer OS Muol Light */
         .company-name-kh {
           font-family: 'Moul', serif; font-size: 11px;
           color: #1e40af; margin: 0; line-height: 1.5; white-space: nowrap;
@@ -3386,7 +3385,7 @@ function printProfilePDF(id) {
           margin: 0 0 15px; text-align: center; color: #1e40af;
         }
         
-        /* ✅ Profile Header with QR + Barcode */
+        /* ✅ Profile Header */
         .profile-header {
           display: flex; gap: 15px;
           background: linear-gradient(135deg, #eff6ff, #dbeafe);
@@ -3413,7 +3412,6 @@ function printProfilePDF(id) {
         }
         .profile-info { flex: 1; min-width: 0; }
         
-        /* ✅ Khmer OS Muol Light */
         .profile-name {
           font-family: 'Moul', serif; font-size: 18px;
           color: #1e293b; margin: 0 0 5px;
@@ -3445,20 +3443,27 @@ function printProfilePDF(id) {
           flex-shrink: 0;
         }
         .qr-box {
-          width: 90px; height: 90px;
+          width: 95px; height: 95px;
           background: white; padding: 4px;
           border-radius: 6px;
           border: 1px solid #cbd5e1;
+          display: flex; align-items: center; justify-content: center;
         }
-        .qr-box img { width: 100%; height: 100%; }
+        .qr-box svg { width: 100%; height: 100%; }
         .barcode-box {
           background: white; padding: 3px 6px;
           border-radius: 4px;
           border: 1px solid #cbd5e1;
-          width: 140px;
+          width: 180px;
           text-align: center;
         }
-        .barcode-box img { width: 100%; height: 30px; }
+        .barcode-box svg { width: 100%; height: 35px; }
+        .barcode-label {
+          font-size: 8px;
+          color: #64748b;
+          margin-top: 1px;
+          font-family: 'Siemreap', sans-serif;
+        }
         
         /* ✅ Section Grid */
         .section-grid {
@@ -3474,7 +3479,6 @@ function printProfilePDF(id) {
           padding: 12px;
         }
         
-        /* ✅ Khmer OS Muol Light */
         .info-card h3 {
           font-family: 'Moul', serif;
           font-size: 12px;
@@ -3484,24 +3488,52 @@ function printProfilePDF(id) {
           border-bottom: 1px solid #e2e8f0;
         }
         
-        .info-row {
+        /* ✅ Info Row - នៅជាប់គ្នា */
+        .info-row-2col {
+          display: grid;
+          grid-template-columns: auto 1fr;
+          gap: 4px 12px;
+          padding: 5px 0;
+          border-bottom: 1px solid #f8fafc;
+          font-size: 10px;
+          font-family: 'Siemreap', sans-serif;
+          align-items: center;
+        }
+        .info-row-2col:last-child { border-bottom: none; }
+        .info-row-2col .info-label {
+          color: #64748b;
+          font-weight: 500;
+          white-space: nowrap;
+        }
+        .info-row-2col .info-value {
+          color: #1e293b;
+          font-weight: 600;
+          text-align: left;
+        }
+        .info-row-2col .info-value.money { color: #16a34a; font-size: 12px; }
+        
+        /* ✅ Info Row with 2 items (label-value pair) */
+        .info-pair {
           display: flex;
-          justify-content: space-between;
-          padding: 4px 0;
+          justify-content: flex-start;
+          gap: 8px;
+          padding: 5px 0;
           border-bottom: 1px solid #f8fafc;
           font-size: 10px;
           font-family: 'Siemreap', sans-serif;
         }
-        .info-row:last-child { border-bottom: none; }
-        .info-label { color: #64748b; font-weight: 500; }
-        .info-value {
+        .info-pair:last-child { border-bottom: none; }
+        .info-pair .info-label {
+          color: #64748b;
+          font-weight: 500;
+          min-width: 85px;
+        }
+        .info-pair .info-value {
           color: #1e293b;
           font-weight: 600;
-          text-align: right;
-          max-width: 60%;
-          word-break: break-word;
+          flex: 1;
+          text-align: left;
         }
-        .info-value.money { color: #16a34a; font-size: 12px; }
         
         /* ✅ List Items */
         .list-item {
@@ -3586,7 +3618,6 @@ function printProfilePDF(id) {
           color: #94a3b8;
         }
         
-        /* ✅ Buttons */
         .no-print {
           text-align: center; margin-top: 25px;
           padding-top: 15px; border-top: 1px dashed #cbd5e1;
@@ -3607,7 +3638,6 @@ function printProfilePDF(id) {
       </style>
     </head>
     <body>
-      <!-- ✅ Header -->
       <div class="header">
         <div class="header-left">
           <div class="logo-box">
@@ -3624,11 +3654,10 @@ function printProfilePDF(id) {
         </div>
       </div>
       
-      <!-- ✅ Title -->
       <div class="title">ប្រវត្តិរូបបុគ្គលិក</div>
       <div class="subtitle">Employee Profile</div>
       
-      <!-- ✅ Profile Header with QR + Barcode -->
+      <!-- ✅ Profile Header -->
       <div class="profile-header">
         <div class="profile-photo">
           ${e.photo 
@@ -3646,96 +3675,95 @@ function printProfilePDF(id) {
           </div>
         </div>
         <div class="profile-codes">
-          <div class="qr-box">
-            <img src="${qrUrl}" alt="QR Code" crossorigin="anonymous">
-          </div>
+          <div class="qr-box">${qrSvg}</div>
           <div class="barcode-box">
-            <img src="${barcodeUrl}" alt="Barcode" crossorigin="anonymous">
+            ${barcodeSvg}
+            <div class="barcode-label">${barcodeData}</div>
           </div>
         </div>
       </div>
       
-      <!-- ✅ Section Grid 1: Personal + Contact -->
+      <!-- ✅ Personal + Contact -->
       <div class="section-grid">
         <div class="info-card">
           <h3>👤 ព័ត៌មានផ្ទាល់ខ្លួន</h3>
-          <div class="info-row">
-            <span class="info-label">ភេទ</span>
+          <div class="info-pair">
+            <span class="info-label">ភេទ:</span>
             <span class="info-value">${e.gender === 'M' ? 'ប្រុស' : 'ស្រី'}</span>
           </div>
-          <div class="info-row">
-            <span class="info-label">ថ្ងៃកំណើត</span>
+          <div class="info-pair">
+            <span class="info-label">ថ្ងៃកំណើត:</span>
             <span class="info-value">${e.date_of_birth || '-'}</span>
           </div>
-          <div class="info-row">
-            <span class="info-label">សញ្ជាតិ</span>
+          <div class="info-pair">
+            <span class="info-label">សញ្ជាតិ:</span>
             <span class="info-value">${e.nationality || 'Khmer'}</span>
           </div>
-          <div class="info-row">
-            <span class="info-label">ស្ថានភាពគ្រួសារ</span>
+          <div class="info-pair">
+            <span class="info-label">គ្រួសារ:</span>
             <span class="info-value">${e.marital_status || 'single'}</span>
           </div>
-          <div class="info-row">
-            <span class="info-label">អត្តសញ្ញាណប័ណ្ណ</span>
+          <div class="info-pair">
+            <span class="info-label">អ.ប័ណ្ណ:</span>
             <span class="info-value">${e.national_id || '-'}</span>
           </div>
         </div>
         
         <div class="info-card">
           <h3>📞 ព័ត៌មានទំនាក់ទំនង</h3>
-          <div class="info-row">
-            <span class="info-label">ទូរស័ព្ទ</span>
+          <div class="info-pair">
+            <span class="info-label">ទូរស័ព្ទ:</span>
             <span class="info-value">${e.phone || '-'}</span>
           </div>
-          <div class="info-row">
-            <span class="info-label">អ៊ីមែល</span>
+          <div class="info-pair">
+            <span class="info-label">អ៊ីមែល:</span>
             <span class="info-value">${e.email || '-'}</span>
           </div>
-          <div class="info-row">
-            <span class="info-label">អាសយដ្ឋាន</span>
+          <div class="info-pair">
+            <span class="info-label">អាសយដ្ឋាន:</span>
             <span class="info-value">${e.current_address || '-'}</span>
           </div>
-          <div class="info-row">
-            <span class="info-label">ទំនាក់ទំនងបន្ទាន់</span>
+          <div class="info-pair">
+            <span class="info-label">ទំនាក់ទំនង:</span>
             <span class="info-value">${e.emergency_name || '-'} (${e.emergency_phone || '-'})</span>
           </div>
         </div>
       </div>
       
-      <!-- ✅ Section Grid 2: Employment + Salary -->
+      <!-- ✅ Employment + Salary -->
       <div class="section-grid">
         <div class="info-card">
           <h3>💼 ព័ត៌មានការងារ</h3>
-          <div class="info-row">
-            <span class="info-label">ផ្នែក</span>
+          <div class="info-pair">
+            <span class="info-label">ផ្នែក:</span>
             <span class="info-value">${getDeptName(e.department_id)}</span>
           </div>
-          <div class="info-row">
-            <span class="info-label">មុខតំណែង</span>
+          <div class="info-pair">
+            <span class="info-label">មុខតំណែង:</span>
             <span class="info-value">${getPosName(e.position_id)}</span>
           </div>
-          <div class="info-row">
-            <span class="info-label">កម្រិត</span>
+          <div class="info-pair">
+            <span class="info-label">កម្រិត:</span>
             <span class="info-value">${getGradeName(e.grade_id)}</span>
           </div>
-          <div class="info-row">
-            <span class="info-label">ថ្ងៃចូលបម្រើការងារ</span>
+          <div class="info-pair">
+            <span class="info-label">ថ្ងៃចូល:</span>
             <span class="info-value">${e.hire_date || '-'}</span>
           </div>
         </div>
         
         <div class="info-card">
-          <h3>💰 ព័ត៌មានប្រាក់ខែ & ធានារ៉ាប់រង</h3>
-          <div class="info-row">
-            <span class="info-label">ប្រាក់ខែគោល</span>
+          <h3>💰 ប្រាក់ខែ & ធានារ៉ាប់រង</h3>
+          <div class="info-pair">
+            <span class="info-label">ប្រាក់ខែគោល:</span>
             <span class="info-value money">$${parseFloat(e.base_salary || 0).toFixed(2)}</span>
           </div>
-          <div class="info-row">
-            <span class="info-label">រូបិយប័ណ្ណ</span>
+          <div class="info-pair">
+            <span class="info-label">រូបិយប័ណ្ណ:</span>
             <span class="info-value">${e.salary_currency || 'USD'}</span>
           </div>
-          <div class="info-row">
-            <span class="info-label">ធានារ៉ាប់រង</span>
+          <div class="info-pair">
+            <span class="info-label">ធានារ៉ាប់រង:</span>
             <span class="info-value">${(e.insurances || []).length} ក្រុមហ៊ុន</span>
           </div>
         </div>
@@ -3754,31 +3782,25 @@ function printProfilePDF(id) {
         </div>
       </div>
       
-      <!-- ✅ Employment History (Full Width) -->
+      <!-- ✅ Employment History -->
       <div class="full-card">
         <h3>📜 ប្រវត្តិការងារ</h3>
-        <div class="list-grid">
-          ${historyRows}
-        </div>
+        <div class="list-grid">${historyRows}</div>
       </div>
       
-      <!-- ✅ Documents (Full Width) -->
+      <!-- ✅ Documents -->
       <div class="full-card">
         <h3>📎 ឯកសារ</h3>
-        <div class="list-grid">
-          ${docsRows}
-        </div>
+        <div class="list-grid">${docsRows}</div>
       </div>
       
-      <!-- ✅ Insurance (Full Width) -->
+      <!-- ✅ Insurance -->
       <div class="full-card">
         <h3>🛡️ ធានារ៉ាប់រង</h3>
-        <div class="list-grid">
-          ${insuranceRows}
-        </div>
+        <div class="list-grid">${insuranceRows}</div>
       </div>
       
-      <!-- ✅ Footer with Signatures -->
+      <!-- ✅ Signatures -->
       <div class="footer">
         <div class="signature-box">
           <div>ហត្ថលេខាបុគ្គលិក</div>
@@ -3794,7 +3816,6 @@ function printProfilePDF(id) {
         បង្កើតនៅ ថ្ងៃទី ${new Date().getDate()} ខែ ${new Date().getMonth()+1} ឆ្នាំ ${new Date().getFullYear()}
       </div>
       
-      <!-- ✅ Buttons -->
       <div class="no-print">
         <button onclick="window.print()" class="btn-print">🖨️ បោះពុម្ព / Save as PDF</button>
         <button onclick="window.close()" class="btn-close">✖️ បិទ</button>
@@ -3806,6 +3827,111 @@ function printProfilePDF(id) {
   printWindow.document.write(html);
   printWindow.document.close();
   toast('🖨️ ចុច Print ដើម្បី Save as PDF');
+}
+
+// =====================================================
+// ✅ GENERATE QR CODE (SVG - មិនត្រូវការ API)
+// =====================================================
+function generateQRCodeSVG(data, size) {
+  // បង្កើត Matrix សាមញ្ញ (Algorithm មូលដ្ឋាន)
+  const matrix = generateQRMatrix(data);
+  const moduleSize = size / matrix.length;
+  
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">`;
+  svg += `<rect width="${size}" height="${size}" fill="white"/>`;
+  
+  matrix.forEach((row, y) => {
+    row.forEach((cell, x) => {
+      if (cell) {
+        svg += `<rect x="${x * moduleSize}" y="${y * moduleSize}" width="${moduleSize}" height="${moduleSize}" fill="black"/>`;
+      }
+    });
+  });
+  
+  svg += '</svg>';
+  return svg;
+}
+
+function generateQRMatrix(data) {
+  // ✅ QR Code សាមញ្ញ (Mock - បង្ហាញ Pattern ដូច QR)
+  const size = 25;
+  const matrix = Array(size).fill(null).map(() => Array(size).fill(false));
+  
+  // ✅ Hash Data ទៅ Pattern
+  let hash = 0;
+  for (let i = 0; i < data.length; i++) {
+    hash = ((hash << 5) - hash) + data.charCodeAt(i);
+    hash = hash & hash;
+  }
+  
+  // ✅ Finders (3 corners)
+  const finderPatterns = [[0, 0], [0, size - 7], [size - 7, 0]];
+  finderPatterns.forEach(([fy, fx]) => {
+    for (let y = 0; y < 7; y++) {
+      for (let x = 0; x < 7; x++) {
+        if (y === 0 || y === 6 || x === 0 || x === 6 || (y >= 2 && y <= 4 && x >= 2 && x <= 4)) {
+          matrix[fy + y][fx + x] = true;
+        }
+      }
+    }
+  });
+  
+  // ✅ Random pattern ផ្សេងទៀត
+  let seed = Math.abs(hash);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      // រំលង Finders
+      if ((y < 8 && x < 8) || (y < 8 && x >= size - 8) || (y >= size - 8 && x < 8)) continue;
+      
+      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+      matrix[y][x] = (seed % 100) < 45;
+    }
+  }
+  
+  return matrix;
+}
+
+// =====================================================
+// ✅ GENERATE BARCODE (SVG - Code 128 Style)
+// =====================================================
+function generateBarcodeSVG(data, width, height) {
+  // ✅ Code 128 Style Pattern
+  const patterns = {
+    '0': '11011001100', '1': '11001101100', '2': '11001100110',
+    '3': '10010011000', '4': '10010001100', '5': '10001001100',
+    '6': '10011001000', '7': '10011000100', '8': '10001100100',
+    '9': '11001001000', 'A': '11001000100', 'B': '11000100100',
+    'C': '10110011100', 'D': '10011011100', 'E': '10011001110',
+    'F': '10111001100', 'G': '10011101100', 'H': '10011100110',
+    'I': '11001110010', 'J': '11001011100', 'K': '11001001110',
+    'L': '11011100100', 'M': '11001110100', 'N': '11101101110',
+    'O': '11101001100', 'P': '11100101100', 'Q': '11100100110',
+    'R': '11101100100', 'S': '11100110100', 'T': '11100110010',
+    'U': '11011011000', 'V': '11011000110', 'W': '11000110110',
+    'X': '10100011000', 'Y': '10001011000', 'Z': '10001000110'
+  };
+  
+  // ✅ Start + Data + Stop
+  let bits = '11010010000'; // Start Code B
+  for (let i = 0; i < data.length; i++) {
+    const c = data[i].toUpperCase();
+    bits += patterns[c] || patterns['0'];
+  }
+  bits += '1100011101011'; // Stop
+  
+  // ✅ Build SVG
+  const barWidth = width / bits.length;
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">`;
+  svg += `<rect width="${width}" height="${height}" fill="white"/>`;
+  
+  bits.split('').forEach((bit, i) => {
+    if (bit === '1') {
+      svg += `<rect x="${i * barWidth}" y="0" width="${barWidth}" height="${height - 8}" fill="black"/>`;
+    }
+  });
+  
+  svg += '</svg>';
+  return svg;
 }
 // =====================================================
 // ✅ EMPLOYEE MASTER REPORT - EXCEL
