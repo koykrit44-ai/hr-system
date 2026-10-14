@@ -11407,26 +11407,245 @@ function exportContractsPDF2() {
   printWindow.document.close();
   toast('🖨️ ចុច Print ដើម្បី Save as PDF');
 }
-
+// =====================================================
+// ✅ CONTRACT FORM MODAL (បន្ថែម + Import)
+// =====================================================
+let _contractFiles = []; // ✅ ទុក File បណ្ដោះអាសន្ន
 
 function openContractModal() {
+  _contractFiles = [];
+  
   document.getElementById('modalContainer').classList.add('modal-md');
+  document.getElementById('modalContainer').classList.remove('modal-xl', 'modal-lg');
   document.getElementById('modalTitle').textContent = '📝 បន្ថែមកិច្ចសន្យា';
+  
   document.getElementById('modalBody').innerHTML = `
-    <div class="grid grid-cols-2 gap-4">
-      <div class="col-span-2"><label class="text-sm font-medium">Title</label><input id="c_title" class="input"></div>
-      <div><label class="text-sm font-medium">Type</label>
-        <select id="c_type" class="input"><option>Employment</option><option>Supply</option><option>Lease</option></select>
+    <form onsubmit="saveContract(event)">
+      
+      <!-- ✅ Title -->
+      <div class="mb-4">
+        <label class="text-sm font-medium">ចំណងជើង <span class="text-red-500">*</span></label>
+        <input id="c_title" class="input" placeholder="ឧ. កិច្ចសន្យាការងារ Sok Dara" required>
       </div>
-      <div><label class="text-sm font-medium">Value ($)</label><input id="c_value" type="number" class="input" value="0"></div>
-    </div>
-    <div class="flex justify-end gap-2 mt-6 pt-4 border-t">
-      <button onclick="closeModal()" class="btn btn-secondary">Cancel</button>
-      <button onclick="saveContract()" class="btn btn-primary">Save</button>
-    </div>
+      
+      <!-- ✅ Type + Value -->
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div>
+          <label class="text-sm font-medium">ប្រភេទ</label>
+          <select id="c_type" class="input">
+            <option value="Employment">📝 Employment (ការងារ)</option>
+            <option value="Supply">📦 Supply (ផ្គត់ផ្គង់)</option>
+            <option value="Lease">🏢 Lease (ជួល)</option>
+            <option value="Service">🔧 Service (សេវា)</option>
+            <option value="Other">📁 Other (ផ្សេងៗ)</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-sm font-medium">តម្លៃ ($)</label>
+          <input id="c_value" type="number" step="0.01" class="input" value="0">
+        </div>
+      </div>
+      
+      <!-- ✅ Status + Dates -->
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div>
+          <label class="text-sm font-medium">ថ្ងៃចាប់ផ្តើម</label>
+          <input id="c_start_date" type="date" class="input" value="${new Date().toISOString().split('T')[0]}">
+        </div>
+        <div>
+          <label class="text-sm font-medium">ថ្ងៃបញ្ចប់</label>
+          <input id="c_end_date" type="date" class="input">
+        </div>
+      </div>
+      
+      <div class="mb-4">
+        <label class="text-sm font-medium">ស្ថានភាព</label>
+        <select id="c_status" class="input">
+          <option value="active">✅ សកម្ម</option>
+          <option value="pending">⏳ រង់ចាំ</option>
+          <option value="expired">❌ ផុតកំណត់</option>
+          <option value="cancelled">🚫 បោះបង់</option>
+        </select>
+      </div>
+      
+      <div class="mb-4">
+        <label class="text-sm font-medium">ចំណាំ</label>
+        <textarea id="c_remark" rows="2" class="input" placeholder="ព័ត៌មានបន្ថែម..."></textarea>
+      </div>
+      
+      <!-- ✅ IMPORT SECTION -->
+      <div class="border-t pt-4 mt-4">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <h4 class="font-bold text-sm">📎 ឯកសារភ្ជាប់</h4>
+            <p class="text-xs text-slate-500">Excel, CSV, PDF, Word, Image · Max 10MB</p>
+          </div>
+          <label class="btn btn-secondary btn-sm cursor-pointer">
+            📤 Import
+            <input type="file" multiple class="hidden" 
+              accept=".xlsx,.xls,.csv,.pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp"
+              onchange="handleContractImport(this)">
+          </label>
+        </div>
+        
+        <!-- ✅ Drag & Drop Zone -->
+        <div class="file-drop mb-3" 
+          ondragover="event.preventDefault(); this.classList.add('dragover')" 
+          ondragleave="this.classList.remove('dragover')"
+          ondrop="handleContractDrop(event)"
+          onclick="this.querySelector('input').click()">
+          <input type="file" multiple class="hidden"
+            accept=".xlsx,.xls,.csv,.pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp"
+            onchange="handleContractImport(this)">
+          <div class="text-3xl mb-1">📤</div>
+          <p class="text-xs text-slate-500">ចុច ឬ អូសឯកសារទម្លាក់ទីនេះ</p>
+        </div>
+        
+        <!-- ✅ File List -->
+        <div id="contract_file_list" class="space-y-2"></div>
+      </div>
+      
+      <!-- ✅ Buttons -->
+      <div class="flex justify-end gap-2 mt-6 pt-4 border-t">
+        <button type="button" onclick="closeModal()" class="btn btn-secondary">បោះបង់</button>
+        <button type="submit" class="btn btn-primary">💾 រក្សាទុក</button>
+      </div>
+    </form>
   `;
   openModal();
 }
+
+// ✅ Handle Import File
+function handleContractImport(input) {
+  const files = Array.from(input.files);
+  if (!files.length) return;
+  
+  files.forEach(file => {
+    // ✅ Check size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast(`❌ ${file.name} ធំពេក (max 10MB)`, 'error');
+      return;
+    }
+    
+    const isPDF = file.type === 'application/pdf' || file.name.endsWith('.pdf');
+    const isWord = file.type.includes('word') || file.name.endsWith('.doc') || file.name.endsWith('.docx');
+    const isImage = file.type.startsWith('image/') || file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+    const isExcel = file.name.endsWith('.xlsx') || file.name.endsWith('.xls') || file.name.endsWith('.csv');
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      _contractFiles.push({
+        id: Date.now() + Math.random(),
+        name: file.name,
+        size: (file.size / 1024).toFixed(1) + ' KB',
+        type: file.type || 'file',
+        isPDF: isPDF,
+        isWord: isWord,
+        isImage: isImage,
+        isExcel: isExcel,
+        data: e.target.result,
+        uploaded_at: new Date().toISOString()
+      });
+      
+      renderContractFiles();
+      toast(`✅ ${file.name}`);
+    };
+    reader.readAsDataURL(file);
+  });
+  
+  input.value = '';
+}
+
+// ✅ Handle Drop
+function handleContractDrop(event) {
+  event.preventDefault();
+  event.currentTarget.classList.remove('dragover');
+  
+  const files = event.dataTransfer.files;
+  if (!files.length) return;
+  
+  const dt = new DataTransfer();
+  Array.from(files).forEach(f => dt.items.add(f));
+  
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.files = dt.files;
+  handleContractImport(input);
+}
+
+// ✅ Render File List
+function renderContractFiles() {
+  const list = document.getElementById('contract_file_list');
+  if (!list) return;
+  
+  if (_contractFiles.length === 0) {
+    list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">មិនមានឯកសារ</p>';
+    return;
+  }
+  
+  list.innerHTML = _contractFiles.map((f, i) => {
+    let icon = '📎';
+    if (f.isPDF) icon = '📕';
+    else if (f.isWord) icon = '📘';
+    else if (f.isImage) icon = '🖼️';
+    else if (f.isExcel) icon = '📊';
+    
+    return `
+      <div class="flex items-center gap-3 p-2 border rounded-lg hover:bg-slate-50">
+        <div class="text-2xl">${icon}</div>
+        <div class="flex-1 min-w-0">
+          <div class="text-sm font-medium truncate">${escapeHtml(f.name)}</div>
+          <div class="text-xs text-slate-500">${f.size}</div>
+        </div>
+        <button type="button" onclick="removeContractFile(${i})" 
+          class="text-red-600 hover:bg-red-50 px-2 py-1 rounded text-xs">🗑️</button>
+      </div>
+    `;
+  }).join('');
+}
+
+// ✅ Remove File
+function removeContractFile(index) {
+  if (!confirm('លុបឯកសារនេះ?')) return;
+  _contractFiles.splice(index, 1);
+  renderContractFiles();
+  toast('🗑️ លុបរួច');
+}
+
+// ✅ Save Contract (Updated)
+function saveContract(e) {
+  if (e) e.preventDefault();
+  
+  const title = document.getElementById('c_title').value.trim();
+  if (!title) {
+    toast('❌ សូមបំពេញចំណងជើង', 'error');
+    return;
+  }
+  
+  const data = {
+    title: title,
+    type: document.getElementById('c_type').value,
+    value: +document.getElementById('c_value').value || 0,
+    start_date: document.getElementById('c_start_date').value || '',
+    end_date: document.getElementById('c_end_date').value || '',
+    status: document.getElementById('c_status').value,
+    remark: document.getElementById('c_remark').value.trim() || '',
+    attachments: _contractFiles || [],
+    created_at: new Date().toISOString()
+  };
+  
+  const newId = DB.nextId.contract++;
+  data.id = newId;
+  data.code = 'CT' + String(newId).padStart(3, '0');
+  DB.contracts.push(data);
+  
+  logAudit(currentUser.id, 'CREATE_CONTRACT', 'contract', newId, `Created ${title}`);
+  saveDB();
+  closeModal();
+  renderContracts();
+  toast('✅ បន្ថែមជោគជ័យ');
+}
+
 
 function saveContract() {
   const title = document.getElementById('c_title').value.trim();
