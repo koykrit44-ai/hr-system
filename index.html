@@ -8120,40 +8120,732 @@ function deleteDocument(id) {
 // =====================================================
 // ASSETS
 // =====================================================
+// =====================================================
+// ✅ ASSETS MASTER LIST
+// =====================================================
+let assetPage = 1;
+let assetLimit = 10;
+
 function renderAssets() {
   document.getElementById('pageContent').innerHTML = `
     <div class="card">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="font-bold">💼 ${t('assets')}</h3>
-        <div class="flex gap-2">
-          <button onclick="exportAssetsPDF()" class="btn btn-secondary">📕 PDF</button>
-          <button onclick="openAssetModal()" class="btn btn-primary">${t('add')}</button>
+      <!-- ✅ Header -->
+      <div class="flex flex-wrap justify-between items-center gap-3 mb-4 pb-4 border-b">
+        <div>
+          <h3 class="font-bold text-lg">💼 គ្រប់គ្រងសម្ភារៈ</h3>
+          <p class="text-xs text-slate-500 mt-1">Assets Management</p>
+        </div>
+        <div class="flex gap-2 flex-wrap">
+          <button onclick="exportAssetsReportExcel()" class="btn btn-secondary btn-sm">📊 Excel</button>
+          <button onclick="exportAssetsReportPDF2()" class="btn btn-secondary btn-sm">📕 PDF</button>
+          <button onclick="openAssetForm()" class="btn btn-primary btn-sm">+ បន្ថែមសម្ភារៈ</button>
         </div>
       </div>
-      <table class="w-full text-sm">
-        <thead class="bg-slate-50"><tr>
-          <th class="text-left p-3">${t('empCode')}</th>
-          <th class="text-left p-3">${t('empName')}</th>
-          <th class="text-right p-3">${t('salary')}</th>
-          <th class="text-center p-3">${t('status')}</th>
-          <th class="text-right p-3">${t('actions')}</th>
-        </tr></thead>
-        <tbody>
-          ${DB.assets.map(a => `
-            <tr class="border-b table-row">
-              <td class="p-3 font-mono text-xs">${escapeHtml(a.code)}</td>
-              <td class="p-3">${escapeHtml(a.name)}</td>
-              <td class="p-3 text-right">$${a.value}</td>
-              <td class="p-3 text-center">${statusBadge(a.status)}</td>
-              <td class="p-3 text-right">
-                <button onclick="deleteAsset(${a.id})" class="text-red-600 hover:bg-red-50 px-2 py-1 rounded text-xs">🗑️</button>
-              </td>
+      
+      <!-- ✅ Stats -->
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+        <div class="text-center p-3 bg-blue-50 rounded-lg">
+          <div class="text-xl font-bold text-blue-600">${DB.assets.length}</div>
+          <div class="text-xs text-slate-500">សរុប</div>
+        </div>
+        <div class="text-center p-3 bg-green-50 rounded-lg">
+          <div class="text-xl font-bold text-green-600">${DB.assets.filter(a => a.status === 'in_use').length}</div>
+          <div class="text-xs text-slate-500">កំពុងប្រើ</div>
+        </div>
+        <div class="text-center p-3 bg-cyan-50 rounded-lg">
+          <div class="text-xl font-bold text-cyan-600">${DB.assets.filter(a => a.status === 'in_stock').length}</div>
+          <div class="text-xs text-slate-500">ក្នុងស្តុក</div>
+        </div>
+        <div class="text-center p-3 bg-orange-50 rounded-lg">
+          <div class="text-xl font-bold text-orange-600">${DB.assets.filter(a => a.status === 'under_repair').length}</div>
+          <div class="text-xs text-slate-500">ជួសជុល</div>
+        </div>
+        <div class="text-center p-3 bg-red-50 rounded-lg">
+          <div class="text-xl font-bold text-red-600">${DB.assets.filter(a => a.status === 'lost').length}</div>
+          <div class="text-xs text-slate-500">បាត់</div>
+        </div>
+      </div>
+      
+      <!-- ✅ Filters -->
+      <div class="flex flex-wrap gap-2 mb-4">
+        <input id="assetSearch" oninput="debounceAssetFilter()" 
+          placeholder="🔍 ស្វែងរក Asset ID, ឈ្មោះ, Serial..." 
+          class="input" style="width:280px;">
+        
+        <select id="assetCategoryFilter" onchange="assetPage=1;filterAssets()" class="input" style="width:180px;">
+          <option value="">-- គ្រប់ប្រភេទ --</option>
+          ${[...new Set(DB.assetCategories.map(c => c.group))].map(g => 
+            `<option value="${g}">${g}</option>`
+          ).join('')}
+        </select>
+        
+        <select id="assetStatusFilter" onchange="assetPage=1;filterAssets()" class="input" style="width:150px;">
+          <option value="">-- គ្រប់ស្ថានភាព --</option>
+          ${DB.assetStatuses.map(s => `<option value="${s.code}">${s.name}</option>`).join('')}
+        </select>
+        
+        <select id="assetConditionFilter" onchange="assetPage=1;filterAssets()" class="input" style="width:150px;">
+          <option value="">-- គ្រប់លក្ខខណ្ឌ --</option>
+          ${DB.assetConditions.map(c => `<option value="${c.code}">${c.name}</option>`).join('')}
+        </select>
+      </div>
+      
+      <!-- ✅ Table -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50 border-b-2">
+            <tr>
+              <th class="text-left p-2">Asset ID</th>
+              <th class="text-left p-2">ឈ្មោះ</th>
+              <th class="text-left p-2">ប្រភេទ</th>
+              <th class="text-left p-2">Serial</th>
+              <th class="text-left p-2">ទីតាំង</th>
+              <th class="text-left p-2">អ្នកកាន់</th>
+              <th class="text-center p-2">ស្ថានភាព</th>
+              <th class="text-right p-2">សកម្មភាព</th>
             </tr>
-          `).join('') || `<tr><td colspan="5" class="text-center p-8 text-slate-400">${t('empNoData')}</td></tr>`}
-        </tbody>
-      </table>
+          </thead>
+          <tbody id="assetTableBody"></tbody>
+        </table>
+      </div>
+      
+      <div class="flex justify-between items-center mt-4" id="assetPagination"></div>
     </div>
   `;
+  
+  filterAssets();
+}
+
+const debounceAssetFilter = debounce(() => { assetPage = 1; filterAssets(); }, 250);
+
+function filterAssets() {
+  const q = (document.getElementById('assetSearch')?.value || '').toLowerCase();
+  const catGroup = document.getElementById('assetCategoryFilter')?.value || '';
+  const status = document.getElementById('assetStatusFilter')?.value || '';
+  const condition = document.getElementById('assetConditionFilter')?.value || '';
+  
+  const list = DB.assets.filter(a => {
+    const matchQ = !q || 
+      (a.asset_id || '').toLowerCase().includes(q) ||
+      (a.item_name || '').toLowerCase().includes(q) ||
+      (a.serial_number || '').toLowerCase().includes(q) ||
+      (a.brand || '').toLowerCase().includes(q) ||
+      (a.model || '').toLowerCase().includes(q);
+    
+    const matchCat = !catGroup || a.category_group === catGroup;
+    const matchStatus = !status || a.status === status;
+    const matchCondition = !condition || a.condition === condition;
+    
+    return matchQ && matchCat && matchStatus && matchCondition;
+  });
+  
+  const total = list.length;
+  const totalPages = Math.max(1, Math.ceil(total / assetLimit));
+  if (assetPage > totalPages) assetPage = totalPages;
+  const start = (assetPage - 1) * assetLimit;
+  const paginated = list.slice(start, start + assetLimit);
+  
+  document.getElementById('assetTableBody').innerHTML = paginated.map(a => {
+    const statusObj = DB.assetStatuses.find(s => s.code === a.status) || { name: a.status, color: '#64748b' };
+    const condObj = DB.assetConditions.find(c => c.code === a.condition) || { name: a.condition, color: '#64748b' };
+    
+    return `
+      <tr class="border-b hover:bg-slate-50">
+        <td class="p-2 font-mono text-xs text-blue-600 font-bold">${escapeHtml(a.asset_id || '')}</td>
+        <td class="p-2">
+          <div class="font-medium cursor-pointer hover:text-blue-600" onclick="viewAsset(${a.id})">
+            ${escapeHtml(a.item_name || '')}
+          </div>
+          <div class="text-xs text-slate-500">${escapeHtml(a.brand || '')} ${escapeHtml(a.model || '')}</div>
+        </td>
+        <td class="p-2 text-xs">
+          <div>${escapeHtml(a.category_name || '')}</div>
+          <div class="text-slate-500">${escapeHtml(a.category_group || '')}</div>
+        </td>
+        <td class="p-2 font-mono text-xs">${escapeHtml(a.serial_number || '-')}</td>
+        <td class="p-2 text-xs">${escapeHtml(a.location_name || '-')}</td>
+        <td class="p-2 text-xs">${escapeHtml(a.current_holder_name || '-')}</td>
+        <td class="p-2 text-center">
+          <span class="badge" style="background: ${statusObj.color}20; color: ${statusObj.color}; font-size: 10px;">
+            ${escapeHtml(statusObj.name)}
+          </span>
+        </td>
+        <td class="p-2 text-right whitespace-nowrap">
+          <button onclick="viewAsset(${a.id})" class="text-blue-600 hover:bg-blue-50 px-2 py-1 rounded text-xs" title="មើល">👁️</button>
+          <button onclick="openAssetForm(${a.id})" class="text-amber-600 hover:bg-amber-50 px-2 py-1 rounded text-xs" title="កែ">✏️</button>
+          <button onclick="deleteAsset(${a.id})" class="text-red-600 hover:bg-red-50 px-2 py-1 rounded text-xs" title="លុប">🗑️</button>
+        </td>
+      </tr>
+    `;
+  }).join('') || '<tr><td colspan="8" class="text-center p-8 text-slate-400">មិនមានទិន្នន័យ</td></tr>';
+  
+  // ✅ Pagination
+  let pag = `<div class="text-sm text-slate-500">បង្ហាញ ${total ? start+1 : 0}-${Math.min(start+assetLimit, total)} ក្នុងចំណោម ${total}</div><div class="pagination">`;
+  pag += `<button onclick="assetPage=1;filterAssets()" ${assetPage===1?'disabled':''}>«</button>`;
+  pag += `<button onclick="assetPage=${assetPage-1};filterAssets()" ${assetPage===1?'disabled':''}>‹</button>`;
+  for (let i = 1; i <= totalPages; i++) {
+    if (i === 1 || i === totalPages || Math.abs(i - assetPage) <= 1) {
+      pag += `<button onclick="assetPage=${i};filterAssets()" class="${assetPage===i?'active':''}">${i}</button>`;
+    } else if (i === assetPage - 2 || i === assetPage + 2) {
+      pag += `<span>...</span>`;
+    }
+  }
+  pag += `<button onclick="assetPage=${assetPage+1};filterAssets()" ${assetPage===totalPages?'disabled':''}>›</button>`;
+  pag += `<button onclick="assetPage=${totalPages};filterAssets()" ${assetPage===totalPages?'disabled':''}>»</button>`;
+  pag += '</div>';
+  document.getElementById('assetPagination').innerHTML = pag;
+}
+
+// ✅ Open Asset Form (បន្ថែម/កែ)
+function openAssetForm(id) {
+  const a = id ? DB.assets.find(x => x.id === id) : {};
+  
+  document.getElementById('modalContainer').classList.add('modal-xl');
+  document.getElementById('modalContainer').classList.remove('modal-lg', 'modal-md');
+  document.getElementById('modalTitle').textContent = id ? `✏️ កែ: ${a.item_name}` : '➕ បន្ថែមសម្ភារៈថ្មី';
+  
+  document.getElementById('modalBody').innerHTML = `
+    <form id="assetForm" onsubmit="saveAssetForm(event, ${id || 'null'})">
+      
+      <!-- ✅ Basic Info -->
+      <h4 class="font-bold text-slate-700 mb-3 pb-2 border-b">📋 ព័ត៌មានមូលដ្ឋាន</h4>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div>
+          <label class="text-sm font-medium">Asset ID</label>
+          <input class="input bg-slate-100" value="${a.asset_id || 'Auto-generated'}" disabled>
+        </div>
+        <div>
+          <label class="text-sm font-medium">ប្រភេទ <span class="text-red-500">*</span></label>
+          <select id="a_category" class="input" required onchange="updateAssetCategoryInfo()">
+            <option value="">-- ជ្រើសប្រភេទ --</option>
+            ${DB.assetCategories.map(c => `
+              <option value="${c.id}" data-code="${c.code}" data-name="${c.name}" data-group="${c.group}"
+                ${a.category_id === c.id ? 'selected' : ''}>
+                ${c.icon} ${c.name} (${c.group})
+              </option>
+            `).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="text-sm font-medium">ឈ្មោះសម្ភារៈ <span class="text-red-500">*</span></label>
+          <input id="a_name" class="input" value="${escapeHtml(a.item_name || '')}" required>
+        </div>
+      </div>
+      
+      <!-- ✅ Product Details -->
+      <h4 class="font-bold text-slate-700 mb-3 pb-2 border-b">🔧 ព័ត៌មានលម្អិត</h4>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div>
+          <label class="text-sm font-medium">Brand</label>
+          <input id="a_brand" class="input" value="${escapeHtml(a.brand || '')}">
+        </div>
+        <div>
+          <label class="text-sm font-medium">Model</label>
+          <input id="a_model" class="input" value="${escapeHtml(a.model || '')}">
+        </div>
+        <div>
+          <label class="text-sm font-medium">Serial Number</label>
+          <input id="a_serial" class="input" value="${escapeHtml(a.serial_number || '')}">
+        </div>
+      </div>
+      
+      <!-- ✅ Purchase Info -->
+      <h4 class="font-bold text-slate-700 mb-3 pb-2 border-b">💰 ព័ត៌មានទិញ</h4>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div>
+          <label class="text-sm font-medium">ថ្ងៃទិញ</label>
+          <input id="a_purchase_date" type="date" class="input" value="${a.purchase_date || new Date().toISOString().split('T')[0]}">
+        </div>
+        <div>
+          <label class="text-sm font-medium">តម្លៃ ($)</label>
+          <input id="a_price" type="number" step="0.01" class="input" value="${a.purchase_price || 0}">
+        </div>
+        <div>
+          <label class="text-sm font-medium">ការធានា (Warranty)</label>
+          <input id="a_warranty" type="date" class="input" value="${a.warranty_expiry || ''}">
+        </div>
+      </div>
+      
+      <!-- ✅ Status & Location -->
+      <h4 class="font-bold text-slate-700 mb-3 pb-2 border-b">📍 ស្ថានភាព & ទីតាំង</h4>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div>
+          <label class="text-sm font-medium">ស្ថានភាព</label>
+          <select id="a_status" class="input">
+            ${DB.assetStatuses.map(s => `
+              <option value="${s.code}" ${a.status === s.code ? 'selected' : ''}>${s.name}</option>
+            `).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="text-sm font-medium">លក្ខខណ្ឌ</label>
+          <select id="a_condition" class="input">
+            ${DB.assetConditions.map(c => `
+              <option value="${c.code}" ${a.condition === c.code ? 'selected' : ''}>${c.name}</option>
+            `).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="text-sm font-medium">ទីតាំង</label>
+          <select id="a_location" class="input">
+            <option value="">-- ជ្រើសទីតាំង --</option>
+            ${DB.assetLocations.map(l => `
+              <option value="${l.id}" ${a.location_id === l.id ? 'selected' : ''}>${l.name}</option>
+            `).join('')}
+          </select>
+        </div>
+      </div>
+      
+      <!-- ✅ Holder & Remark -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label class="text-sm font-medium">អ្នកកាន់បច្ចុប្បន្ន</label>
+          <select id="a_holder" class="input">
+            <option value="">-- គ្មាន --</option>
+            ${DB.employees.filter(e => e.status === 'active').map(e => `
+              <option value="${e.id}" ${a.current_holder_id === e.id ? 'selected' : ''}>${e.full_name} (${e.employee_id || e.code})</option>
+            `).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="text-sm font-medium">ចំណាំ</label>
+          <input id="a_remark" class="input" value="${escapeHtml(a.remark || '')}">
+        </div>
+      </div>
+      
+      <!-- ✅ Buttons -->
+      <div class="flex justify-end gap-2 mt-6 pt-4 border-t">
+        <button type="button" onclick="closeModal()" class="btn btn-secondary">បោះបង់</button>
+        <button type="submit" class="btn btn-primary">💾 រក្សាទុក</button>
+      </div>
+    </form>
+  `;
+  openModal();
+}
+
+function updateAssetCategoryInfo() {
+  // គ្រាន់តែជា Visual feedback
+}
+
+// ✅ Save Asset
+function saveAssetForm(e, id) {
+  e.preventDefault();
+  
+  const categoryId = +document.getElementById('a_category').value;
+  const category = DB.assetCategories.find(c => c.id === categoryId);
+  
+  const name = document.getElementById('a_name').value.trim();
+  if (!name) {
+    toast('❌ សូមបំពេញឈ្មោះ', 'error');
+    return;
+  }
+  
+  const locationId = +document.getElementById('a_location').value || null;
+  const location = locationId ? DB.assetLocations.find(l => l.id === locationId) : null;
+  
+  const holderId = +document.getElementById('a_holder').value || null;
+  const holder = holderId ? DB.employees.find(e => e.id === holderId) : null;
+  
+  const data = {
+    item_code: category?.code || '',
+    item_name: name,
+    category_id: categoryId,
+    category_name: category?.name || '',
+    category_group: category?.group || '',
+    brand: document.getElementById('a_brand').value.trim(),
+    model: document.getElementById('a_model').value.trim(),
+    serial_number: document.getElementById('a_serial').value.trim(),
+    purchase_date: document.getElementById('a_purchase_date').value,
+    purchase_price: +document.getElementById('a_price').value || 0,
+    warranty_expiry: document.getElementById('a_warranty').value,
+    condition: document.getElementById('a_condition').value,
+    status: document.getElementById('a_status').value,
+    location_id: locationId,
+    location_name: location?.name || '',
+    current_holder_id: holderId,
+    current_holder_name: holder?.full_name || null,
+    remark: document.getElementById('a_remark').value.trim()
+  };
+  
+  if (id) {
+    // ✅ Update
+    const existing = DB.assets.find(a => a.id === id);
+    Object.assign(existing, data);
+    existing.updated_at = new Date().toISOString();
+    
+    // ✅ Add History
+    DB.assetHistory.push({
+      id: DB.assetHistory.length + 1,
+      asset_id: id,
+      action: 'updated',
+      description: 'Asset updated',
+      user_id: currentUser.id,
+      created_at: new Date().toISOString()
+    });
+    
+    logAudit(currentUser.id, 'UPDATE_ASSET', 'asset', id, `Updated ${data.item_name}`);
+    toast('✅ កែជោគជ័យ');
+  } else {
+    // ✅ Create
+    const newId = DB.nextId.asset++;
+    data.id = newId;
+    data.asset_id = 'AST-' + String(newId).padStart(5, '0');
+    data.created_at = new Date().toISOString();
+    data.created_by = currentUser.id;
+    DB.assets.push(data);
+    
+    // ✅ Add History
+    DB.assetHistory.push({
+      id: DB.assetHistory.length + 1,
+      asset_id: newId,
+      action: 'created',
+      description: 'Asset created',
+      user_id: currentUser.id,
+      created_at: new Date().toISOString()
+    });
+    
+    logAudit(currentUser.id, 'CREATE_ASSET', 'asset', newId, `Created ${data.item_name}`);
+    toast('✅ បន្ថែមជោគជ័យ');
+  }
+  
+  saveDB();
+  closeModal();
+  renderAssets();
+}
+
+// ✅ View Asset
+function viewAsset(id) {
+  const a = DB.assets.find(x => x.id === id);
+  if (!a) return;
+  
+  const statusObj = DB.assetStatuses.find(s => s.code === a.status) || { name: a.status };
+  const condObj = DB.assetConditions.find(c => c.code === a.condition) || { name: a.condition };
+  
+  const history = DB.assetHistory.filter(h => h.asset_id === id).reverse();
+  
+  document.getElementById('modalContainer').classList.add('modal-lg');
+  document.getElementById('modalContainer').classList.remove('modal-xl', 'modal-md');
+  document.getElementById('modalTitle').textContent = `💼 ${a.item_name}`;
+  
+  document.getElementById('modalBody').innerHTML = `
+    <!-- ✅ Header -->
+    <div class="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg mb-4">
+      <div class="flex items-start gap-4">
+        <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center text-white text-3xl">
+          💼
+        </div>
+        <div class="flex-1">
+          <h2 class="text-xl font-bold">${escapeHtml(a.item_name)}</h2>
+          <p class="text-sm text-blue-600 font-mono font-bold">${escapeHtml(a.asset_id)}</p>
+          <div class="flex gap-2 mt-2 flex-wrap">
+            <span class="badge" style="background: ${statusObj.color}20; color: ${statusObj.color};">${statusObj.name}</span>
+            <span class="badge" style="background: ${condObj.color}20; color: ${condObj.color};">${condObj.name}</span>
+            <span class="badge badge-blue">${escapeHtml(a.category_group || '')}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- ✅ Info Grid -->
+    <div class="grid grid-cols-2 gap-4 mb-4">
+      <div class="p-3 border rounded-lg">
+        <h4 class="font-bold text-sm mb-2 text-blue-600">📋 ព័ត៌មានមូលដ្ឋាន</h4>
+        <div class="space-y-1 text-xs">
+          <div class="flex justify-between"><span class="text-slate-500">ប្រភេទ:</span><span class="font-medium">${escapeHtml(a.category_name)}</span></div>
+          <div class="flex justify-between"><span class="text-slate-500">Brand:</span><span class="font-medium">${escapeHtml(a.brand || '-')}</span></div>
+          <div class="flex justify-between"><span class="text-slate-500">Model:</span><span class="font-medium">${escapeHtml(a.model || '-')}</span></div>
+          <div class="flex justify-between"><span class="text-slate-500">Serial:</span><span class="font-mono font-medium">${escapeHtml(a.serial_number || '-')}</span></div>
+        </div>
+      </div>
+      
+      <div class="p-3 border rounded-lg">
+        <h4 class="font-bold text-sm mb-2 text-green-600">💰 ព័ត៌មានទិញ</h4>
+        <div class="space-y-1 text-xs">
+          <div class="flex justify-between"><span class="text-slate-500">ថ្ងៃទិញ:</span><span class="font-medium">${a.purchase_date || '-'}</span></div>
+          <div class="flex justify-between"><span class="text-slate-500">តម្លៃ:</span><span class="font-medium text-green-600">$${(a.purchase_price || 0).toFixed(2)}</span></div>
+          <div class="flex justify-between"><span class="text-slate-500">Warranty:</span><span class="font-medium">${a.warranty_expiry || '-'}</span></div>
+        </div>
+      </div>
+      
+      <div class="p-3 border rounded-lg">
+        <h4 class="font-bold text-sm mb-2 text-purple-600">📍 ទីតាំង & អ្នកកាន់</h4>
+        <div class="space-y-1 text-xs">
+          <div class="flex justify-between"><span class="text-slate-500">ទីតាំង:</span><span class="font-medium">${escapeHtml(a.location_name || '-')}</span></div>
+          <div class="flex justify-between"><span class="text-slate-500">អ្នកកាន់:</span><span class="font-medium">${escapeHtml(a.current_holder_name || '-')}</span></div>
+        </div>
+      </div>
+      
+      <div class="p-3 border rounded-lg">
+        <h4 class="font-bold text-sm mb-2 text-orange-600">📝 ចំណាំ</h4>
+        <div class="text-xs text-slate-600">
+          ${escapeHtml(a.remark || 'មិនមានចំណាំ')}
+        </div>
+      </div>
+    </div>
+    
+    <!-- ✅ History -->
+    <div class="border rounded-lg p-3">
+      <h4 class="font-bold text-sm mb-3">📜 ប្រវត្តិ (${history.length})</h4>
+      <div class="space-y-2 max-h-48 overflow-y-auto">
+        ${history.length ? history.map(h => `
+          <div class="flex items-start gap-2 p-2 bg-slate-50 rounded text-xs">
+            <div class="text-blue-500">●</div>
+            <div class="flex-1">
+              <div class="font-medium">${escapeHtml(h.description)}</div>
+              <div class="text-slate-500">${new Date(h.created_at).toLocaleString()}</div>
+            </div>
+          </div>
+        `).join('') : '<div class="text-center text-slate-400 text-xs py-4">មិនមានប្រវត្តិ</div>'}
+      </div>
+    </div>
+    
+    <!-- ✅ Buttons -->
+    <div class="flex justify-end gap-2 mt-6 pt-4 border-t">
+      <button onclick="closeModal()" class="btn btn-secondary">បិទ</button>
+      <button onclick="closeModal();openAssetForm(${a.id})" class="btn btn-primary">✏️ កែ</button>
+    </div>
+  `;
+  openModal();
+}
+
+// ✅ Delete Asset
+function deleteAsset(id) {
+  const a = DB.assets.find(x => x.id === id);
+  if (!a) return;
+  
+  if (!confirm(`លុប "${a.item_name}" (${a.asset_id})?`)) return;
+  
+  DB.assets = DB.assets.filter(x => x.id !== id);
+  logAudit(currentUser.id, 'DELETE_ASSET', 'asset', id, `Deleted ${a.item_name}`);
+  saveDB();
+  renderAssets();
+  toast('🗑️ លុបរួច');
+}
+
+// =====================================================
+// ✅ ASSETS REPORT - EXCEL
+// =====================================================
+function exportAssetsReportExcel() {
+  if (!DB.assets.length) {
+    toast('❌ គ្មានទិន្នន័យ', 'error');
+    return;
+  }
+  
+  const headerRow = [
+    'Asset ID', 'ឈ្មោះ', 'ប្រភេទ', 'ក្រុម', 'Brand', 'Model', 'Serial',
+    'ថ្ងៃទិញ', 'តម្លៃ ($)', 'Warranty', 'ស្ថានភាព', 'លក្ខខណ្ឌ', 'ទីតាំង', 'អ្នកកាន់'
+  ];
+  
+  const dataRows = DB.assets.map(a => [
+    a.asset_id || '',
+    a.item_name || '',
+    a.category_name || '',
+    a.category_group || '',
+    a.brand || '',
+    a.model || '',
+    a.serial_number || '',
+    a.purchase_date || '',
+    (a.purchase_price || 0).toFixed(2),
+    a.warranty_expiry || '',
+    DB.assetStatuses.find(s => s.code === a.status)?.name || a.status,
+    DB.assetConditions.find(c => c.code === a.condition)?.name || a.condition,
+    a.location_name || '',
+    a.current_holder_name || ''
+  ]);
+  
+  const wsData = [
+    ['ក្រុមហ៊ុន សុកន ត្រេនស្ព័ត ឯ.ក'],
+    ['SOKAN TRANSPORT PTE., LTD.'],
+    ['របាយការណ៍សម្ភារៈ'],
+    [`សរុប: ${DB.assets.length} សម្ភារៈ | តម្លៃសរុប: $${DB.assets.reduce((s,a) => s + (a.purchase_price || 0), 0).toFixed(2)}`],
+    [],
+    headerRow,
+    ...dataRows
+  ];
+  
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  ws['!cols'] = [
+    { wch: 12 }, { wch: 25 }, { wch: 18 }, { wch: 18 }, { wch: 12 }, { wch: 15 }, { wch: 15 },
+    { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 14 }, { wch: 12 }, { wch: 20 }, { wch: 20 }
+  ];
+  ws['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 13 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 13 } },
+    { s: { r: 2, c: 0 }, e: { r: 2, c: 13 } },
+    { s: { r: 3, c: 0 }, e: { r: 3, c: 13 } }
+  ];
+  
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Assets');
+  XLSX.writeFile(wb, `Assets_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+  toast('📊 Excel Downloaded');
+}
+
+// =====================================================
+// ✅ ASSETS REPORT - PDF (HTML Print)
+// =====================================================
+function exportAssetsReportPDF2() {
+  if (!DB.assets.length) {
+    toast('❌ គ្មានទិន្នន័យ', 'error');
+    return;
+  }
+  
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    toast('❌ Browser បិទ Popup', 'error');
+    return;
+  }
+  
+  const stats = {
+    total: DB.assets.length,
+    inUse: DB.assets.filter(a => a.status === 'in_use').length,
+    inStock: DB.assets.filter(a => a.status === 'in_stock').length,
+    totalValue: DB.assets.reduce((s,a) => s + (a.purchase_price || 0), 0)
+  };
+  
+  const html = `
+    <!DOCTYPE html>
+    <html lang="km">
+    <head>
+      <meta charset="UTF-8">
+      <title>Assets Report</title>
+      <link href="https://fonts.googleapis.com/css2?family=Moul&family=Siemreap&display=swap" rel="stylesheet">
+      <style>
+        @page { size: A4 landscape; margin: 8mm; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Siemreap', sans-serif; margin: 0; padding: 15px; color: #1e293b; font-size: 11px; }
+        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 2px solid #1e40af; min-height: 90px; }
+        .header-left { display: flex; flex-direction: column; align-items: center; text-align: center; width: 220px; }
+        .logo-box { width: 65px; height: 65px; display: flex; align-items: center; justify-content: center; margin-bottom: 5px; }
+        .logo-box img { width: 100%; height: 100%; object-fit: contain; }
+        .company-name-kh { font-family: 'Moul', serif; font-size: 11px; color: #1e40af; margin: 0; line-height: 1.5; }
+        .company-name-en { font-family: 'Moul', serif; font-size: 9px; color: #1e40af; margin: 3px 0 0; }
+        .header-right { text-align: center; font-family: 'Moul', serif; font-size: 12px; line-height: 1.8; color: #1e40af; padding-top: 6px; }
+        .title { font-family: 'Moul', serif; font-size: 16px; margin: 12px 0 3px; text-align: center; color: #1e40af; }
+        .subtitle { font-family: 'Moul', serif; font-size: 11px; margin: 0 0 15px; text-align: center; color: #1e40af; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 15px; }
+        .stat-card { border-radius: 6px; padding: 10px; text-align: center; border: 1px solid; }
+        .stat-blue { background: #eff6ff; border-color: #bfdbfe; }
+        .stat-green { background: #f0fdf4; border-color: #bbf7d0; }
+        .stat-cyan { background: #ecfeff; border-color: #a5f3fc; }
+        .stat-purple { background: #faf5ff; border-color: #e9d5ff; }
+        .stat-value { font-family: 'Moul', serif; font-size: 18px; font-weight: bold; line-height: 1.2; }
+        .stat-blue .stat-value { color: #1e40af; }
+        .stat-green .stat-value { color: #16a34a; }
+        .stat-cyan .stat-value { color: #0891b2; }
+        .stat-purple .stat-value { color: #7c3aed; }
+        .stat-label { font-family: 'Siemreap', sans-serif; font-size: 10px; color: #64748b; margin-top: 3px; }
+        table { width: 100%; border-collapse: collapse; font-family: 'Siemreap', sans-serif; font-size: 10px; }
+        th, td { border: 1px solid #333; padding: 5px 6px; text-align: center; vertical-align: middle; }
+        th { background: #1e40af; color: white; font-family: 'Moul', serif; font-size: 9px; line-height: 1.4; }
+        td.name { text-align: left; padding-left: 6px; }
+        td.money { text-align: right; padding-right: 6px; }
+        .footer { margin-top: 25px; display: flex; justify-content: space-around; font-family: 'Siemreap', sans-serif; font-size: 11px; }
+        .signature-box { text-align: center; width: 200px; }
+        .signature-line { border-top: 1px solid #333; margin-top: 50px; padding-top: 5px; }
+        .footer-note { text-align: center; margin-top: 20px; font-family: 'Siemreap', sans-serif; font-size: 9px; color: #94a3b8; }
+        .no-print { text-align: center; margin-top: 25px; padding-top: 15px; border-top: 1px dashed #cbd5e1; }
+        .btn-print { padding: 12px 30px; font-size: 14px; cursor: pointer; background: #1e40af; color: white; border: none; border-radius: 8px; font-family: 'Siemreap', sans-serif; margin: 0 5px; }
+        .btn-close { padding: 12px 30px; font-size: 14px; cursor: pointer; background: #64748b; color: white; border: none; border-radius: 8px; font-family: 'Siemreap', sans-serif; margin: 0 5px; }
+        @media print { .no-print { display: none; } body { padding: 0; } }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div class="header-left">
+          <div class="logo-box">
+            ${DB.settings.companyLogo ? `<img src="${DB.settings.companyLogo}">` : ''}
+          </div>
+          <div>
+            <div class="company-name-kh">ក្រុមហ៊ុន សុកន ត្រេនស្ព័ត ឯ.ក</div>
+            <div class="company-name-en">SOKAN TRANSPORT PTE., LTD.</div>
+          </div>
+        </div>
+        <div class="header-right">
+          <div>ព្រះរាជាណាចក្រកម្ពុជា</div>
+          <div>ជាតិ សាសនា ព្រះមហាក្សត្រ</div>
+        </div>
+      </div>
+      
+      <div class="title">របាយការណ៍សម្ភារៈ</div>
+      <div class="subtitle">Assets Report</div>
+      
+      <div class="stats-grid">
+        <div class="stat-card stat-blue">
+          <div class="stat-value">${stats.total}</div>
+          <div class="stat-label">សម្ភារៈសរុប</div>
+        </div>
+        <div class="stat-card stat-green">
+          <div class="stat-value">${stats.inUse}</div>
+          <div class="stat-label">កំពុងប្រើ</div>
+        </div>
+        <div class="stat-card stat-cyan">
+          <div class="stat-value">${stats.inStock}</div>
+          <div class="stat-label">ក្នុងស្តុក</div>
+        </div>
+        <div class="stat-card stat-purple">
+          <div class="stat-value">$${stats.totalValue.toLocaleString()}</div>
+          <div class="stat-label">តម្លៃសរុប</div>
+        </div>
+      </div>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>Asset ID</th>
+            <th>ឈ្មោះ</th>
+            <th>ប្រភេទ</th>
+            <th>Brand/Model</th>
+            <th>Serial</th>
+            <th>តម្លៃ ($)</th>
+            <th>ស្ថានភាព</th>
+            <th>ទីតាំង</th>
+            <th>អ្នកកាន់</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${DB.assets.map(a => `
+            <tr>
+              <td>${escapeHtml(a.asset_id)}</td>
+              <td class="name">${escapeHtml(a.item_name)}</td>
+              <td>${escapeHtml(a.category_name)}</td>
+              <td>${escapeHtml(a.brand || '')} ${escapeHtml(a.model || '')}</td>
+              <td>${escapeHtml(a.serial_number || '-')}</td>
+              <td class="money">$${(a.purchase_price || 0).toFixed(2)}</td>
+              <td>${escapeHtml(DB.assetStatuses.find(s => s.code === a.status)?.name || a.status)}</td>
+              <td>${escapeHtml(a.location_name || '-')}</td>
+              <td>${escapeHtml(a.current_holder_name || '-')}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      
+      <div class="footer">
+        <div class="signature-box">
+          <div>ហត្ថលេខាអ្នករៀបចំ</div>
+          <div class="signature-line"></div>
+        </div>
+        <div class="signature-box">
+          <div>ហត្ថលេខានាយក</div>
+          <div class="signature-line"></div>
+        </div>
+      </div>
+      
+      <div class="footer-note">
+        បង្កើតនៅ ថ្ងៃទី ${new Date().getDate()} ខែ ${new Date().getMonth()+1} ឆ្នាំ ${new Date().getFullYear()}
+      </div>
+      
+      <div class="no-print">
+        <button onclick="window.print()" class="btn-print">🖨️ បោះពុម្ព / Save as PDF</button>
+        <button onclick="window.close()" class="btn-close">✖️ បិទ</button>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  printWindow.document.write(html);
+  printWindow.document.close();
+  toast('🖨️ ចុច Print ដើម្បី Save as PDF');
 }
 
 function openAssetModal() {
