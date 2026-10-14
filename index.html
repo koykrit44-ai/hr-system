@@ -1983,18 +1983,24 @@ const PAGE_META = {
   document.getElementById('pageSubtitle').textContent = s;
   
   const renderers = {
-  dashboard: renderDashboard, employees: renderEmployees, orgchart: renderOrgChart,
-  organization: renderOrganization, positions: renderPositions,
-  attendance: renderAttendance, leave: renderLeave, payroll: renderPayroll,
-  documents: renderDocuments, 
-  assets: renderAssets, 
-  assetDashboard: renderAssetDashboard,
-  assetHistory: renderAssetHistory,
-  assetIssues: renderAssetIssues,
-  contracts: renderContracts,
-  inventory: renderInventory, suppliers: renderSuppliers, purchase: renderPurchase,
-  reports: renderReports, audit: renderAudit, settings: renderSettings
-};
+    dashboard: renderDashboard,
+    employees: renderEmployees,
+    orgchart: renderOrgChart,
+    organization: renderOrganization,
+    positions: renderPositions,
+    attendance: renderAttendance,
+    leave: renderLeave,
+    payroll: renderPayroll,
+    documents: renderDocuments,
+    assets: renderAssets,
+    contracts: renderContracts,
+    inventory: renderInventory,
+    suppliers: renderSuppliers,
+    purchase: renderPurchase,
+    reports: renderReports,
+    audit: renderAudit,
+    settings: renderSettings
+  };
   
   try {
     if (renderers[page]) renderers[page]();
@@ -12429,7 +12435,7 @@ function closeModal() {
     dashboard: renderDashboard, employees: renderEmployees, orgchart: renderOrgChart,
     organization: renderOrganization, positions: renderPositions,
     attendance: renderAttendance, leave: renderLeave, payroll: renderPayroll,
-    documents: renderDocuments, assets: renderAssets, contracts: renderContracts,
+    documents: renderDocuments, assets: renderAssets, assetDashboard: renderAssetDashboard, assetHistory: renderAssetHistory, assetIssues: renderAssetIssues,  contracts: renderContracts,
     inventory: renderInventory, suppliers: renderSuppliers, purchase: renderPurchase,
     reports: renderReports, audit: renderAudit, settings: renderSettings
   };
