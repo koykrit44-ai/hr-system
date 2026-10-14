@@ -1892,14 +1892,17 @@ function doLogin(e) {
   document.getElementById('userRole').textContent = getRoleLabel(user.role);
   document.getElementById('userAvatar').textContent = user.name.charAt(0);
        // ✅ បង្ហាញ Menu Setting តែ Super Admin
-      const settingsMenu = document.getElementById('menu-settings');
-      if (settingsMenu) {
-        if (user.role === 'super_admin') {
-          settingsMenu.classList.remove('hidden');
-        } else {
-          settingsMenu.classList.add('hidden');
-        }
-      }
+const settingsMenu = document.getElementById('menu-settings');
+if (settingsMenu) {
+  const role = (user.role || '').toLowerCase().trim();
+  const isSuperAdmin = role === 'super_admin' || role === 'superadmin' || role === 'super admin';
+  
+  if (isSuperAdmin) {
+    settingsMenu.classList.remove('hidden');
+  } else {
+    settingsMenu.classList.add('hidden');
+  }
+}
   document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   
   updateBadges();
@@ -1962,7 +1965,14 @@ const PAGE_META = {
 
  function showPage(page) {
     // ✅ ការពារ Setting Page ពី User ផ្សេង
-  if (page === 'settings' && currentUser?.role !== 'super_admin') {
+  if (page === 'settings') {
+  const role = (currentUser?.role || '').toLowerCase().trim();
+  const isSuperAdmin = role === 'super_admin' || role === 'superadmin' || role === 'super admin';
+  if (!isSuperAdmin) {
+    toast('❌ អ្នកគ្មានសិទ្ធិចូល Setting', 'error');
+    return;
+  }
+}
     toast('❌ អ្នកគ្មានសិទ្ធិចូល Setting', 'error');
     return;
   }
