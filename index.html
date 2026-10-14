@@ -1103,9 +1103,51 @@ const DB = {
   settings: { companyLogo: null, companyName: 'HR Company Ltd.', companyNameEn: 'HR Company Limited' },
   users: [], companies: [], branches: [], departments: [], divisions: [], teams: [],
   positions: [], jobGrades: [], employees: [], attendance: [], leaves: [], leaveTypes: [], payrolls: [],
-  documents: [], assets: [], contracts: [], inventory: [], suppliers: [], purchaseOrders: [], auditLogs: [],
+  documents: [], contracts: [], suppliers: [], purchaseOrders: [], auditLogs: [],
   insurances: [],
-  nextId: { company: 1, branch: 1, dept: 1, div: 1, team: 1, pos: 1, grade: 1, emp: 1, att: 1, leave: 1, leaveType: 6, pay: 1, doc: 1, asset: 1, contract: 1, inv: 1, sup: 1, po: 1, audit: 1, ins: 1 }
+  
+  // ✅ Asset Management (សម្ភារៈ)
+  assets: [],              // បញ្ជីសម្ភារៈទាំងអស់
+  assetCategories: [],     // ប្រភេទសម្ភារៈ
+  assetConditions: [
+    { code: 'new', name: 'ថ្មី', color: '#16a34a' },
+    { code: 'good', name: 'ល្អ', color: '#22c55e' },
+    { code: 'fair', name: 'មធ្យម', color: '#eab308' },
+    { code: 'damaged', name: 'ខូច', color: '#f97316' },
+    { code: 'under_repair', name: 'កំពុងជួសជុល', color: '#3b82f6' },
+    { code: 'lost', name: 'បាត់', color: '#ef4444' },
+    { code: 'disposed', name: 'បោះបង់', color: '#64748b' }
+  ],
+  assetStatuses: [
+    { code: 'in_stock', name: 'ក្នុងស្តុក', color: '#3b82f6' },
+    { code: 'in_use', name: 'កំពុងប្រើ', color: '#16a34a' },
+    { code: 'in_transfer', name: 'កំពុងផ្ទេរ', color: '#eab308' },
+    { code: 'under_repair', name: 'កំពុងជួសជុល', color: '#f97316' },
+    { code: 'lost', name: 'បាត់', color: '#ef4444' },
+    { code: 'damaged', name: 'ខូច', color: '#dc2626' },
+    { code: 'disposed', name: 'បោះបង់', color: '#64748b' }
+  ],
+  assetLocations: [],      // ទីតាំង
+  assetIssues: [],         // ការប្រគល់
+  assetTransfers: [],      // ការផ្ទេរ
+  assetReturns: [],        // ការប្រគល់ត្រឡប់
+  assetLost: [],           // បាត់
+  assetDamages: [],        // ខូច
+  assetMaintenance: [],    // ជួសជុល
+  assetDisposals: [],      // បោះបង់
+  assetStockCounts: [],    // រាប់ស្តុក
+  assetHistory: [],        // ប្រវត្តិទាំងអស់
+  
+  // ✅ Inventory Management (ស្តុក)
+  inventory: [],           // ស្តុក
+  inventoryMovements: [],  // ចលនាស្តុក (In/Out)
+  
+  nextId: { 
+    company: 1, branch: 1, dept: 1, div: 1, team: 1, pos: 1, grade: 1, emp: 1, att: 1, leave: 1, 
+    leaveType: 6, pay: 1, doc: 1, contract: 1, sup: 1, po: 1, audit: 1, ins: 1,
+    asset: 1, assetCategory: 1, assetLocation: 1, issue: 1, transfer: 1, return: 1,
+    lost: 1, damage: 1, maintenance: 1, disposal: 1, stockCount: 1, inv: 1, invMovement: 1
+  }
 };
 let currentUser = null;
 let charts = {};
