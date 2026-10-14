@@ -4175,8 +4175,8 @@ function renderPayroll() {
             ${[2023,2024,2025,2026].map(y => `<option value="${y}" ${y===now.getFullYear()?'selected':''}>${y}</option>`).join('')}
           </select>
           <button onclick="generatePayroll()" class="btn btn-primary">${t('payCalculate')}</button>
-          <button onclick="exportPayrollExcel()" class="btn btn-secondary">📊 Excel</button>
-          <button onclick="exportPayrollPDF()" class="btn btn-secondary">📕 PDF</button>
+          <button onclick="exportPayrollReportExcel()" class="btn btn-secondary">📊 Report Excel</button>
+          <button onclick="exportPayrollReportPDF2()" class="btn btn-secondary">📕 Report PDF</button>
           <button onclick="exportPayrollReportPDF()" class="btn btn-secondary">📕 Payroll Report</button>
         </div>
       </div>
@@ -4204,6 +4204,267 @@ function renderPayroll() {
     </div>
   `;
   renderPayTable();
+}
+// =====================================================
+// ✅ PAYROLL REPORT - EXCEL
+// =====================================================
+function exportPayrollReportExcel() {
+  const m = +document.getElementById('payMonth').value;
+  const y = +document.getElementById('payYear').value;
+  const list = DB.payrolls.filter(p => p.period_month === m && p.period_year === y);
+  
+  if (!list.length) {
+    toast('❌ គ្មានទិន្នន័យ', 'error');
+    return;
+  }
+  
+  const headerRow = [
+    'ល.រ', 'អត្តលេខ', 'ឈ្មោះបុគ្គលិក', 'ថ្ងៃចូលបម្រើការងារ',
+    'មុខតំណែង', 'ភេទ', 'ប្រាក់ខែគោល', 'ប្រាក់បានពីការបម្រើការងារ',
+    'ប្រាក់បានការប្រើប្រាស់ទូទាត់', 'កាត់ប្រាក់ផ្សេងៗ',
+    'ប្រាក់ខែសរុប', 'ចំណាយសរុប', 'ប្រាក់ខែសុទ្ធ', 'ស្នាមមេដៃ'
+  ];
+  
+  const dataRows = list.map((p, idx) => {
+    const e = DB.employees.find(x => x.id === p.employee_id);
+    return [
+      String(idx + 1).padStart(2, '0'),
+      e?.employee_id || e?.code || '',
+      e?.full_name || '',
+      e?.hire_date || '',
+      getPosName(e?.position_id) || '',
+      e?.gender === 'M' ? 'ប្រុស' : 'ស្រី',
+      parseFloat(p.base_salary || 0).toFixed(2),
+      parseFloat(p.gross_salary || 0).toFixed(2),
+      '0.00', '0.00',
+      parseFloat(p.gross_salary || 0).toFixed(2),
+      '0.00',
+      parseFloat(p.net_salary || 0).toFixed(2),
+      ''
+    ];
+  });
+  
+  const wsData = [
+    [DB.settings.companyName || 'ក្រុមហ៊ុន សុកន ត្រេនស្ព័ត ឯ.ក'],
+    [`បញ្ជីប្រាក់ខែ ខែ ${m} ឆ្នាំ ${y}`],
+    [],
+    headerRow,
+    ...dataRows
+  ];
+  
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  
+  ws['!cols'] = [
+    { wch: 6 }, { wch: 14 }, { wch: 25 }, { wch: 18 },
+    { wch: 30 }, { wch: 8 }, { wch: 14 }, { wch: 20 },
+    { wch: 22 }, { wch: 18 }, { wch: 14 }, { wch: 14 },
+    { wch: 16 }, { wch: 20 }
+  ];
+  
+  ws['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 13 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 13 } }
+  ];
+  
+  ws['!rows'] = [
+    { hpt: 25 }, { hpt: 22 }, { hpt: 5 }, { hpt: 30 },
+    ...dataRows.map(() => ({ hpt: 40 }))
+  ];
+  
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, `Payroll ${m}-${y}`);
+  XLSX.writeFile(wb, `Payroll_Report_${y}_${m}.xlsx`);
+  toast('📊 Excel Downloaded');
+}
+
+// =====================================================
+// ✅ PAYROLL REPORT - PDF (HTML Print)
+// =====================================================
+function exportPayrollReportPDF2() {
+  const m = +document.getElementById('payMonth').value;
+  const y = +document.getElementById('payYear').value;
+  const list = DB.payrolls.filter(p => p.period_month === m && p.period_year === y);
+  
+  if (!list.length) {
+    toast('❌ គ្មានទិន្នន័យ', 'error');
+    return;
+  }
+  
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    toast('❌ Browser បិទ Popup', 'error');
+    return;
+  }
+  
+  const html = `
+    <!DOCTYPE html>
+    <html lang="km">
+    <head>
+      <meta charset="UTF-8">
+      <title>Payroll Report - ${m}/${y}</title>
+      <link href="https://fonts.googleapis.com/css2?family=Moul&family=Siemreap&display=swap" rel="stylesheet">
+      <style>
+        @page { size: A4 landscape; margin: 8mm; }
+        * { box-sizing: border-box; }
+        body {
+          font-family: 'Siemreap', sans-serif;
+          margin: 0; padding: 15px;
+          color: #1e293b; font-size: 11px;
+        }
+        .header {
+          display: flex; justify-content: space-between;
+          align-items: flex-start; margin-bottom: 15px;
+          padding-bottom: 12px; border-bottom: 2px solid #1e40af;
+          min-height: 100px;
+        }
+        .header-left {
+          display: flex; flex-direction: column;
+          align-items: center; text-align: center; width: 250px;
+        }
+        .logo-box {
+          width: 70px; height: 70px;
+          display: flex; align-items: center; justify-content: center;
+          margin-bottom: 6px;
+        }
+        .logo-box img { width: 100%; height: 100%; object-fit: contain; }
+        .company-info { text-align: center; width: 100%; }
+        .company-name-kh {
+          font-family: 'Moul', serif; font-size: 12px;
+          color: #1e40af; margin: 0; line-height: 1.5; white-space: nowrap;
+        }
+        .company-name-en {
+          font-family: 'Moul', serif; font-size: 10px;
+          color: #1e40af; margin: 3px 0 0; white-space: nowrap;
+        }
+        .header-right {
+          text-align: center; font-family: 'Moul', serif;
+          font-size: 13px; line-height: 1.8;
+          color: #1e40af; padding-top: 8px;
+        }
+        .title {
+          font-family: 'Moul', serif; font-size: 16px;
+          margin: 15px 0 5px; text-align: center; color: #1e40af;
+        }
+        .subtitle {
+          font-family: 'Moul', serif; font-size: 12px;
+          margin: 0 0 15px; text-align: center; color: #1e40af;
+        }
+        table {
+          width: 100%; border-collapse: collapse;
+          font-family: 'Siemreap', sans-serif; font-size: 11px;
+        }
+        th, td {
+          border: 1px solid #333; padding: 5px 6px;
+          text-align: center; vertical-align: middle;
+        }
+        th {
+          background: #1e40af; color: white;
+          font-family: 'Moul', serif; font-size: 10px; line-height: 1.4;
+        }
+        td.name { text-align: left; padding-left: 8px; }
+        td.money { text-align: right; padding-right: 8px; }
+        table th:last-child, table td:last-child {
+          width: 130px; min-width: 130px;
+        }
+        table td:last-child { height: 50px; background: #fafafa; }
+        .footer {
+          margin-top: 15px; text-align: right;
+          font-family: 'Siemreap', sans-serif; font-size: 11px;
+        }
+        .no-print {
+          text-align: center; margin-top: 25px;
+          padding-top: 15px; border-top: 1px dashed #cbd5e1;
+        }
+        .btn-print {
+          padding: 12px 30px; font-size: 14px; cursor: pointer;
+          background: #1e40af; color: white; border: none;
+          border-radius: 8px; font-family: 'Siemreap', sans-serif;
+          margin: 0 5px;
+        }
+        .btn-close {
+          padding: 12px 30px; font-size: 14px; cursor: pointer;
+          background: #64748b; color: white; border: none;
+          border-radius: 8px; font-family: 'Siemreap', sans-serif;
+          margin: 0 5px;
+        }
+        @media print { .no-print { display: none; } body { padding: 0; } }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div class="header-left">
+          <div class="logo-box">
+            ${DB.settings.companyLogo ? `<img src="${DB.settings.companyLogo}">` : ''}
+          </div>
+          <div class="company-info">
+            <div class="company-name-kh">ក្រុមហ៊ុន សុកន ត្រេនស្ព័ត ឯ.ក</div>
+            <div class="company-name-en">SOKAN TRANSPORT PTE., LTD.</div>
+          </div>
+        </div>
+        <div class="header-right">
+          <div>ព្រះរាជាណាចក្រកម្ពុជា</div>
+          <div>ជាតិ សាសនា ព្រះមហាក្សត្រ</div>
+        </div>
+      </div>
+      <div class="title">បញ្ជីប្រាក់ខែ</div>
+      <div class="subtitle">បញ្ជីប្រាក់ខែ ខែ ${m} ឆ្នាំ ${y}</div>
+      <table>
+        <thead>
+          <tr>
+            <th>ល.រ</th>
+            <th>អត្តលេខ</th>
+            <th>ឈ្មោះបុគ្គលិក</th>
+            <th>ថ្ងៃចូលបម្រើការងារ</th>
+            <th>មុខតំណែង</th>
+            <th>ភេទ</th>
+            <th>ប្រាក់ខែគោល</th>
+            <th>ប្រាក់បានពីការបម្រើការងារ</th>
+            <th>ប្រាក់បានការប្រើប្រាស់ទូទាត់</th>
+            <th>កាត់ប្រាក់ផ្សេងៗ</th>
+            <th>ប្រាក់ខែសរុប</th>
+            <th>ចំណាយសរុប</th>
+            <th>ប្រាក់ខែសុទ្ធ</th>
+            <th>ស្នាមមេដៃ</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${list.map((p, idx) => {
+            const e = DB.employees.find(x => x.id === p.employee_id);
+            return `
+              <tr>
+                <td>${String(idx + 1).padStart(2, '0')}</td>
+                <td>${e?.employee_id || e?.code || ''}</td>
+                <td class="name">${e?.full_name || ''}</td>
+                <td>${e?.hire_date || ''}</td>
+                <td class="name">${getPosName(e?.position_id) || ''}</td>
+                <td>${e?.gender === 'M' ? 'ប្រុស' : 'ស្រី'}</td>
+                <td class="money">$${parseFloat(p.base_salary || 0).toFixed(2)}</td>
+                <td class="money">$${parseFloat(p.gross_salary || 0).toFixed(2)}</td>
+                <td class="money">$0.00</td>
+                <td class="money">$0.00</td>
+                <td class="money">$${parseFloat(p.gross_salary || 0).toFixed(2)}</td>
+                <td class="money">$0.00</td>
+                <td class="money">$${parseFloat(p.net_salary || 0).toFixed(2)}</td>
+                <td></td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+      <div class="footer">
+        បានធ្វើនៅ ថ្ងៃទី ${new Date().getDate()} ខែ ${new Date().getMonth()+1} ឆ្នាំ ${new Date().getFullYear()}
+      </div>
+      <div class="no-print">
+        <button onclick="window.print()" class="btn-print">🖨️ បោះពុម្ព / Save as PDF</button>
+        <button onclick="window.close()" class="btn-close">✖️ បិទ</button>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  printWindow.document.write(html);
+  printWindow.document.close();
+  toast('🖨️ ចុច Print ដើម្បី Save as PDF');
 }
 // ✅ Payroll Report (Print - គាំទ្រខ្មែរ 100%)
 function exportPayrollReportPDF() {
