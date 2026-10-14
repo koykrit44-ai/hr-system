@@ -3266,7 +3266,7 @@ function viewEmpProfile(id) {
   openModal();
 }
 // =====================================================
-// ✅ EMPLOYEE PROFILE PDF (HTML Print - Khmer Font)
+// ✅ EMPLOYEE PROFILE PDF (HTML Print - Khmer Font + QR + Barcode)
 // =====================================================
 function printProfilePDF(id) {
   const e = DB.employees.find(x => x.id === id);
@@ -3281,6 +3281,51 @@ function printProfilePDF(id) {
     return;
   }
   
+  // ✅ ព័ត៌មាន QR Code (Profile URL)
+  const profileUrl = `https://koykrit44-ai.github.io/hr-system/?emp=${e.employee_id || e.code}`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(profileUrl)}`;
+  
+  // ✅ Barcode (Code 128) ពីអត្តលេខ
+  const barcodeData = encodeURIComponent(e.employee_id || e.code || 'EMP0001');
+  const barcodeUrl = `https://barcode.tec-it.com/barcode.ashx?data=${barcodeData}&code=Code128&dpi=96&imagetype=gif&rotation=0&color=%23000000&bgcolor=%23ffffff&quietzone=1&height=60`;
+  
+  // ✅ Education Rows
+  const educationRows = (e.education || []).length ? (e.education || []).map(ed => `
+    <div class="list-item">
+      <div class="list-item-title">${ed.degree || '-'} - ${ed.field || '-'}</div>
+      <div class="list-item-sub">${ed.school || '-'} · ${ed.year || '-'}</div>
+    </div>
+  `).join('') : '<div class="empty-text">មិនមាន</div>';
+  
+  // ✅ Skills
+  const skillsList = (e.skills || []).length 
+    ? (e.skills || []).map(s => `<span class="skill-chip">${s}</span>`).join('')
+    : '<div class="empty-text">មិនមាន</div>';
+  
+  // ✅ Employment History
+  const historyRows = (e.employment_history || []).length ? (e.employment_history || []).map(h => `
+    <div class="list-item">
+      <div class="list-item-title">${h.position || '-'}</div>
+      <div class="list-item-sub">${h.company || '-'} · ${h.from || '-'} → ${h.to || '-'}</div>
+    </div>
+  `).join('') : '<div class="empty-text">មិនមាន</div>';
+  
+  // ✅ Documents
+  const docsRows = (e.documents || []).length ? (e.documents || []).map(d => `
+    <div class="list-item">
+      <div class="list-item-title">📄 ${d.name || '-'}</div>
+      <div class="list-item-sub">${d.size || ''} · ${d.category || 'other'}</div>
+    </div>
+  `).join('') : '<div class="empty-text">មិនមាន</div>';
+  
+  // ✅ Insurances
+  const insuranceRows = (e.insurances || []).length ? (e.insurances || []).map(i => `
+    <div class="list-item">
+      <div class="list-item-title">🛡️ ${i.type || '-'}</div>
+      <div class="list-item-sub">${i.card_no || '-'} · ${i.status || '-'}</div>
+    </div>
+  `).join('') : '<div class="empty-text">មិនមាន</div>';
+  
   const html = `
     <!DOCTYPE html>
     <html lang="km">
@@ -3289,109 +3334,103 @@ function printProfilePDF(id) {
       <title>Employee Profile - ${e.full_name}</title>
       <link href="https://fonts.googleapis.com/css2?family=Moul&family=Siemreap&display=swap" rel="stylesheet">
       <style>
-        @page { size: A4 portrait; margin: 12mm; }
+        @page { size: A4 portrait; margin: 10mm; }
         * { box-sizing: border-box; }
         body {
           font-family: 'Siemreap', sans-serif;
           margin: 0; padding: 15px;
-          color: #1e293b; font-size: 12px;
+          color: #1e293b; font-size: 11px;
         }
         
         /* ✅ Header */
         .header {
           display: flex; justify-content: space-between;
-          align-items: flex-start; margin-bottom: 15px;
-          padding-bottom: 12px; border-bottom: 2px solid #1e40af;
-          min-height: 100px;
+          align-items: flex-start; margin-bottom: 12px;
+          padding-bottom: 10px; border-bottom: 2px solid #1e40af;
+          min-height: 90px;
         }
         .header-left {
           display: flex; flex-direction: column;
-          align-items: center; text-align: center; width: 230px;
+          align-items: center; text-align: center; width: 220px;
         }
         .logo-box {
-          width: 70px; height: 70px;
+          width: 65px; height: 65px;
           display: flex; align-items: center; justify-content: center;
-          margin-bottom: 6px;
+          margin-bottom: 5px;
         }
         .logo-box img { width: 100%; height: 100%; object-fit: contain; }
         .company-info { text-align: center; width: 100%; }
         
         /* ✅ Khmer OS Muol Light */
         .company-name-kh {
-          font-family: 'Moul', serif; font-size: 12px;
+          font-family: 'Moul', serif; font-size: 11px;
           color: #1e40af; margin: 0; line-height: 1.5; white-space: nowrap;
         }
         .company-name-en {
-          font-family: 'Moul', serif; font-size: 10px;
+          font-family: 'Moul', serif; font-size: 9px;
           color: #1e40af; margin: 3px 0 0; white-space: nowrap;
         }
         .header-right {
           text-align: center; font-family: 'Moul', serif;
-          font-size: 13px; line-height: 1.8;
-          color: #1e40af; padding-top: 8px;
+          font-size: 12px; line-height: 1.8;
+          color: #1e40af; padding-top: 6px;
         }
         
         /* ✅ Title */
         .title {
-          font-family: 'Moul', serif; font-size: 18px;
-          margin: 15px 0 5px; text-align: center; color: #1e40af;
+          font-family: 'Moul', serif; font-size: 16px;
+          margin: 12px 0 3px; text-align: center; color: #1e40af;
         }
         .subtitle {
-          font-family: 'Moul', serif; font-size: 12px;
-          margin: 0 0 20px; text-align: center; color: #1e40af;
+          font-family: 'Moul', serif; font-size: 11px;
+          margin: 0 0 15px; text-align: center; color: #1e40af;
         }
         
-        /* ✅ Profile Header */
+        /* ✅ Profile Header with QR + Barcode */
         .profile-header {
-          display: flex; align-items: center; gap: 20px;
+          display: flex; gap: 15px;
           background: linear-gradient(135deg, #eff6ff, #dbeafe);
-          padding: 20px; border-radius: 12px;
-          margin-bottom: 20px;
+          padding: 15px; border-radius: 10px;
+          margin-bottom: 15px;
           border: 1px solid #bfdbfe;
+          align-items: center;
         }
         .profile-photo {
-          width: 100px; height: 100px;
+          width: 90px; height: 90px;
           border-radius: 50%; overflow: hidden;
-          border: 4px solid white;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+          border: 3px solid white;
+          box-shadow: 0 3px 10px rgba(0,0,0,0.15);
           flex-shrink: 0;
         }
-        .profile-photo img {
-          width: 100%; height: 100%; object-fit: cover;
-        }
+        .profile-photo img { width: 100%; height: 100%; object-fit: cover; }
         .avatar-placeholder {
           width: 100%; height: 100%;
           background: linear-gradient(135deg, #3b82f6, #8b5cf6);
           color: white;
           display: flex; align-items: center; justify-content: center;
-          font-size: 40px; font-weight: bold;
+          font-size: 36px; font-weight: bold;
           font-family: 'Moul', serif;
         }
-        .profile-info { flex: 1; }
+        .profile-info { flex: 1; min-width: 0; }
         
         /* ✅ Khmer OS Muol Light */
         .profile-name {
-          font-family: 'Moul', serif; font-size: 22px;
+          font-family: 'Moul', serif; font-size: 18px;
           color: #1e293b; margin: 0 0 5px;
         }
         .profile-id {
-          font-family: 'Siemreap', sans-serif; font-size: 13px;
-          color: #16a34a; margin: 0 0 3px;
-          font-weight: 600;
+          font-family: 'Siemreap', sans-serif; font-size: 12px;
+          color: #16a34a; margin: 0 0 2px; font-weight: 600;
         }
         .profile-code {
-          font-family: 'Siemreap', sans-serif; font-size: 13px;
-          color: #2563eb; margin: 0 0 10px;
-          font-weight: 600;
+          font-family: 'Siemreap', sans-serif; font-size: 12px;
+          color: #2563eb; margin: 0 0 8px; font-weight: 600;
         }
-        .profile-badges {
-          display: flex; gap: 8px; flex-wrap: wrap;
-          margin-top: 10px;
-        }
+        .profile-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
         .badge {
           display: inline-block;
-          padding: 4px 12px; border-radius: 999px;
-          font-size: 11px; font-weight: 600;
+          padding: 3px 10px; border-radius: 999px;
+          font-size: 10px; font-weight: 600;
           font-family: 'Siemreap', sans-serif;
         }
         .badge-green { background: #dcfce7; color: #166534; }
@@ -3399,83 +3438,158 @@ function printProfilePDF(id) {
         .badge-purple { background: #ede9fe; color: #5b21b6; }
         .badge-yellow { background: #fef3c7; color: #92400e; }
         
-        /* ✅ Info Grid */
-        .info-grid {
+        /* ✅ QR + Barcode */
+        .profile-codes {
+          display: flex; flex-direction: column;
+          align-items: center; gap: 8px;
+          flex-shrink: 0;
+        }
+        .qr-box {
+          width: 90px; height: 90px;
+          background: white; padding: 4px;
+          border-radius: 6px;
+          border: 1px solid #cbd5e1;
+        }
+        .qr-box img { width: 100%; height: 100%; }
+        .barcode-box {
+          background: white; padding: 3px 6px;
+          border-radius: 4px;
+          border: 1px solid #cbd5e1;
+          width: 140px;
+          text-align: center;
+        }
+        .barcode-box img { width: 100%; height: 30px; }
+        
+        /* ✅ Section Grid */
+        .section-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 15px;
-          margin-bottom: 20px;
+          gap: 12px;
+          margin-bottom: 12px;
         }
         .info-card {
           background: white;
           border: 1px solid #e2e8f0;
-          border-radius: 10px;
-          padding: 15px;
+          border-radius: 8px;
+          padding: 12px;
         }
         
         /* ✅ Khmer OS Muol Light */
         .info-card h3 {
           font-family: 'Moul', serif;
-          font-size: 13px;
+          font-size: 12px;
           color: #1e40af;
-          margin: 0 0 12px;
-          padding-bottom: 8px;
+          margin: 0 0 10px;
+          padding-bottom: 6px;
           border-bottom: 1px solid #e2e8f0;
         }
         
         .info-row {
           display: flex;
           justify-content: space-between;
-          padding: 6px 0;
-          border-bottom: 1px solid #f1f5f9;
-          font-size: 11px;
+          padding: 4px 0;
+          border-bottom: 1px solid #f8fafc;
+          font-size: 10px;
           font-family: 'Siemreap', sans-serif;
         }
         .info-row:last-child { border-bottom: none; }
-        .info-label {
-          color: #64748b;
-          font-weight: 500;
-        }
+        .info-label { color: #64748b; font-weight: 500; }
         .info-value {
           color: #1e293b;
           font-weight: 600;
           text-align: right;
+          max-width: 60%;
+          word-break: break-word;
         }
-        .info-value.money {
-          color: #16a34a;
-          font-size: 13px;
+        .info-value.money { color: #16a34a; font-size: 12px; }
+        
+        /* ✅ List Items */
+        .list-item {
+          padding: 5px 0;
+          border-bottom: 1px solid #f8fafc;
+        }
+        .list-item:last-child { border-bottom: none; }
+        .list-item-title {
+          font-size: 10px;
+          font-weight: 600;
+          color: #1e293b;
+        }
+        .list-item-sub {
+          font-size: 9px;
+          color: #64748b;
+          margin-top: 2px;
+        }
+        .empty-text {
+          font-size: 10px;
+          color: #cbd5e1;
+          text-align: center;
+          padding: 8px 0;
+        }
+        
+        /* ✅ Skills */
+        .skill-chip {
+          display: inline-block;
+          padding: 3px 8px;
+          background: #eff6ff;
+          color: #1e40af;
+          border-radius: 4px;
+          font-size: 10px;
+          font-weight: 500;
+          margin: 2px;
+        }
+        
+        /* ✅ Full Width Card */
+        .full-card {
+          background: white;
+          border: 1px solid #e2e8f0;
+          border-radius: 8px;
+          padding: 12px;
+          margin-bottom: 12px;
+        }
+        .full-card h3 {
+          font-family: 'Moul', serif;
+          font-size: 12px;
+          color: #1e40af;
+          margin: 0 0 10px;
+          padding-bottom: 6px;
+          border-bottom: 1px solid #e2e8f0;
+        }
+        .list-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 6px 15px;
         }
         
         /* ✅ Footer */
         .footer {
-          margin-top: 30px;
+          margin-top: 20px;
           display: flex;
           justify-content: space-around;
           font-family: 'Siemreap', sans-serif;
-          font-size: 12px;
+          font-size: 11px;
         }
         .signature-box {
           text-align: center;
-          width: 200px;
+          width: 180px;
         }
         .signature-line {
           border-top: 1px solid #333;
-          margin-top: 60px;
+          margin-top: 50px;
           padding-top: 5px;
         }
         
         .footer-note {
           text-align: center;
-          margin-top: 30px;
+          margin-top: 20px;
           font-family: 'Siemreap', sans-serif;
-          font-size: 10px;
+          font-size: 9px;
           color: #94a3b8;
         }
         
         /* ✅ Buttons */
         .no-print {
-          text-align: center; margin-top: 30px;
-          padding-top: 20px; border-top: 1px dashed #cbd5e1;
+          text-align: center; margin-top: 25px;
+          padding-top: 15px; border-top: 1px dashed #cbd5e1;
         }
         .btn-print {
           padding: 12px 30px; font-size: 14px; cursor: pointer;
@@ -3514,7 +3628,7 @@ function printProfilePDF(id) {
       <div class="title">ប្រវត្តិរូបបុគ្គលិក</div>
       <div class="subtitle">Employee Profile</div>
       
-      <!-- ✅ Profile Header -->
+      <!-- ✅ Profile Header with QR + Barcode -->
       <div class="profile-header">
         <div class="profile-photo">
           ${e.photo 
@@ -3531,11 +3645,18 @@ function printProfilePDF(id) {
             <span class="badge badge-purple">${getPosName(e.position_id)}</span>
           </div>
         </div>
+        <div class="profile-codes">
+          <div class="qr-box">
+            <img src="${qrUrl}" alt="QR Code" crossorigin="anonymous">
+          </div>
+          <div class="barcode-box">
+            <img src="${barcodeUrl}" alt="Barcode" crossorigin="anonymous">
+          </div>
+        </div>
       </div>
       
-      <!-- ✅ Info Grid -->
-      <div class="info-grid">
-        <!-- Personal -->
+      <!-- ✅ Section Grid 1: Personal + Contact -->
+      <div class="section-grid">
         <div class="info-card">
           <h3>👤 ព័ត៌មានផ្ទាល់ខ្លួន</h3>
           <div class="info-row">
@@ -3560,11 +3681,10 @@ function printProfilePDF(id) {
           </div>
         </div>
         
-        <!-- Contact -->
         <div class="info-card">
           <h3>📞 ព័ត៌មានទំនាក់ទំនង</h3>
           <div class="info-row">
-            <span class="info-label">លេខទូរស័ព្ទ</span>
+            <span class="info-label">ទូរស័ព្ទ</span>
             <span class="info-value">${e.phone || '-'}</span>
           </div>
           <div class="info-row">
@@ -3580,8 +3700,10 @@ function printProfilePDF(id) {
             <span class="info-value">${e.emergency_name || '-'} (${e.emergency_phone || '-'})</span>
           </div>
         </div>
-        
-        <!-- Employment -->
+      </div>
+      
+      <!-- ✅ Section Grid 2: Employment + Salary -->
+      <div class="section-grid">
         <div class="info-card">
           <h3>💼 ព័ត៌មានការងារ</h3>
           <div class="info-row">
@@ -3602,9 +3724,8 @@ function printProfilePDF(id) {
           </div>
         </div>
         
-        <!-- Salary -->
         <div class="info-card">
-          <h3>💰 ព័ត៌មានប្រាក់ខែ</h3>
+          <h3>💰 ព័ត៌មានប្រាក់ខែ & ធានារ៉ាប់រង</h3>
           <div class="info-row">
             <span class="info-label">ប្រាក់ខែគោល</span>
             <span class="info-value money">$${parseFloat(e.base_salary || 0).toFixed(2)}</span>
@@ -3613,6 +3734,47 @@ function printProfilePDF(id) {
             <span class="info-label">រូបិយប័ណ្ណ</span>
             <span class="info-value">${e.salary_currency || 'USD'}</span>
           </div>
+          <div class="info-row">
+            <span class="info-label">ធានារ៉ាប់រង</span>
+            <span class="info-value">${(e.insurances || []).length} ក្រុមហ៊ុន</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- ✅ Education + Skills -->
+      <div class="section-grid">
+        <div class="info-card">
+          <h3>🎓 ការសិក្សា</h3>
+          ${educationRows}
+        </div>
+        
+        <div class="info-card">
+          <h3>🎯 ជំនាញ</h3>
+          <div>${skillsList}</div>
+        </div>
+      </div>
+      
+      <!-- ✅ Employment History (Full Width) -->
+      <div class="full-card">
+        <h3>📜 ប្រវត្តិការងារ</h3>
+        <div class="list-grid">
+          ${historyRows}
+        </div>
+      </div>
+      
+      <!-- ✅ Documents (Full Width) -->
+      <div class="full-card">
+        <h3>📎 ឯកសារ</h3>
+        <div class="list-grid">
+          ${docsRows}
+        </div>
+      </div>
+      
+      <!-- ✅ Insurance (Full Width) -->
+      <div class="full-card">
+        <h3>🛡️ ធានារ៉ាប់រង</h3>
+        <div class="list-grid">
+          ${insuranceRows}
         </div>
       </div>
       
