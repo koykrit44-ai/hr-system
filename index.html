@@ -4502,26 +4502,366 @@ function deleteOrg(type, id) {
     saveDB(); renderOrganization(); toast('🗑️ Deleted');
   }
 }
+// =====================================================
+// ✅ ORGANIZATION PDF (HTML Print - Khmer Font)
+// =====================================================
 function exportOrgPDF(type) {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  const data = DB.departments.map(d => [d.code, d.name, DB.employees.filter(e => e.department_id === d.id).length]);
+  if (!DB.departments.length && !DB.branches.length && !DB.companies.length) {
+    toast('❌ គ្មានទិន្នន័យ', 'error');
+    return;
+  }
   
-  doc.setFillColor(37, 99, 235);
-  doc.rect(0, 0, 210, 20, 'F');
-  doc.setTextColor(255,255,255);
-  doc.setFontSize(16);
-  doc.text('DEPARTMENTS', 105, 14, { align: 'center' });
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    toast('❌ Browser បិទ Popup', 'error');
+    return;
+  }
   
-  doc.autoTable({
-    startY: 25,
-    head: [['Code', 'Name', 'Employees']],
-    body: data,
-    theme: 'grid',
-    headStyles: { fillColor: [37, 99, 235] }
-  });
-  doc.save('Departments.pdf');
-  toast('📕 Downloaded');
+  // ✅ រៀបចំ Data
+  const companies = DB.companies || [];
+  const branches = DB.branches || [];
+  const departments = DB.departments || [];
+  const positions = DB.positions || [];
+  
+  // ✅ Departments Rows
+  const deptRows = departments.map((d, idx) => {
+    const empCount = DB.employees.filter(e => e.department_id === d.id).length;
+    return `
+      <tr>
+        <td>${String(idx + 1).padStart(2, '0')}</td>
+        <td>${escapeHtml(d.code || '')}</td>
+        <td class="name">${escapeHtml(d.name || '')}</td>
+        <td class="money">${empCount}</td>
+      </tr>
+    `;
+  }).join('');
+  
+  // ✅ Branches Rows
+  const branchRows = branches.map((b, idx) => {
+    const empCount = DB.employees.filter(e => e.branch_id === b.id).length;
+    const deptCount = departments.filter(d => d.branch_id === b.id).length;
+    return `
+      <tr>
+        <td>${String(idx + 1).padStart(2, '0')}</td>
+        <td>${escapeHtml(b.code || '')}</td>
+        <td class="name">${escapeHtml(b.name || '')}</td>
+        <td class="name">${escapeHtml(b.address || '')}</td>
+        <td class="money">${deptCount}</td>
+        <td class="money">${empCount}</td>
+      </tr>
+    `;
+  }).join('');
+  
+  // ✅ Positions Rows
+  const posRows = positions.map((p, idx) => {
+    const empCount = DB.employees.filter(e => e.position_id === p.id).length;
+    return `
+      <tr>
+        <td>${String(idx + 1).padStart(2, '0')}</td>
+        <td>${escapeHtml(p.code || '')}</td>
+        <td class="name">${escapeHtml(p.title || '')}</td>
+        <td class="money">${empCount}</td>
+      </tr>
+    `;
+  }).join('');
+  
+  const html = `
+    <!DOCTYPE html>
+    <html lang="km">
+    <head>
+      <meta charset="UTF-8">
+      <title>Organization Report</title>
+      <link href="https://fonts.googleapis.com/css2?family=Moul&family=Siemreap&display=swap" rel="stylesheet">
+      <style>
+        @page { size: A4 portrait; margin: 10mm; }
+        * { box-sizing: border-box; }
+        body {
+          font-family: 'Siemreap', sans-serif;
+          margin: 0; padding: 15px;
+          color: #1e293b; font-size: 11px;
+        }
+        
+        /* ✅ Header */
+        .header {
+          display: flex; justify-content: space-between;
+          align-items: flex-start; margin-bottom: 12px;
+          padding-bottom: 10px; border-bottom: 2px solid #1e40af;
+          min-height: 90px;
+        }
+        .header-left {
+          display: flex; flex-direction: column;
+          align-items: center; text-align: center; width: 220px;
+        }
+        .logo-box {
+          width: 65px; height: 65px;
+          display: flex; align-items: center; justify-content: center;
+          margin-bottom: 5px;
+        }
+        .logo-box img { width: 100%; height: 100%; object-fit: contain; }
+        .company-info { text-align: center; width: 100%; }
+        
+        /* ✅ Khmer OS Muol Light */
+        .company-name-kh {
+          font-family: 'Moul', serif; font-size: 11px;
+          color: #1e40af; margin: 0; line-height: 1.5; white-space: nowrap;
+        }
+        .company-name-en {
+          font-family: 'Moul', serif; font-size: 9px;
+          color: #1e40af; margin: 3px 0 0; white-space: nowrap;
+        }
+        .header-right {
+          text-align: center; font-family: 'Moul', serif;
+          font-size: 12px; line-height: 1.8;
+          color: #1e40af; padding-top: 6px;
+        }
+        
+        /* ✅ Title */
+        .title {
+          font-family: 'Moul', serif; font-size: 16px;
+          margin: 12px 0 3px; text-align: center; color: #1e40af;
+        }
+        .subtitle {
+          font-family: 'Moul', serif; font-size: 11px;
+          margin: 0 0 15px; text-align: center; color: #1e40af;
+        }
+        
+        /* ✅ Section */
+        .section {
+          margin-bottom: 20px;
+        }
+        .section-title {
+          font-family: 'Moul', serif;
+          font-size: 13px;
+          color: #1e40af;
+          margin: 0 0 10px;
+          padding: 8px 12px;
+          background: #eff6ff;
+          border-left: 4px solid #1e40af;
+          border-radius: 4px;
+        }
+        
+        /* ✅ Table */
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          font-family: 'Siemreap', sans-serif;
+          font-size: 11px;
+        }
+        th, td {
+          border: 1px solid #333;
+          padding: 6px 8px;
+          text-align: center;
+          vertical-align: middle;
+        }
+        th {
+          background: #1e40af;
+          color: white;
+          font-family: 'Moul', serif;
+          font-size: 10px;
+          line-height: 1.4;
+        }
+        td.name { text-align: left; padding-left: 8px; }
+        td.money { text-align: right; padding-right: 8px; font-weight: 600; }
+        
+        /* ✅ Stats Grid */
+        .stats-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 10px;
+          margin-bottom: 15px;
+        }
+        .stat-card {
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
+          border-radius: 6px;
+          padding: 10px;
+          text-align: center;
+        }
+        .stat-value {
+          font-family: 'Moul', serif;
+          font-size: 18px;
+          color: #1e40af;
+          font-weight: bold;
+        }
+        .stat-label {
+          font-family: 'Siemreap', sans-serif;
+          font-size: 9px;
+          color: #64748b;
+          margin-top: 3px;
+        }
+        
+        /* ✅ Footer */
+        .footer {
+          margin-top: 25px;
+          display: flex;
+          justify-content: space-around;
+          font-family: 'Siemreap', sans-serif;
+          font-size: 11px;
+        }
+        .signature-box {
+          text-align: center;
+          width: 200px;
+        }
+        .signature-line {
+          border-top: 1px solid #333;
+          margin-top: 50px;
+          padding-top: 5px;
+        }
+        
+        .footer-note {
+          text-align: center;
+          margin-top: 20px;
+          font-family: 'Siemreap', sans-serif;
+          font-size: 9px;
+          color: #94a3b8;
+        }
+        
+        /* ✅ Buttons */
+        .no-print {
+          text-align: center; margin-top: 25px;
+          padding-top: 15px; border-top: 1px dashed #cbd5e1;
+        }
+        .btn-print {
+          padding: 12px 30px; font-size: 14px; cursor: pointer;
+          background: #1e40af; color: white; border: none;
+          border-radius: 8px; font-family: 'Siemreap', sans-serif;
+          margin: 0 5px;
+        }
+        .btn-close {
+          padding: 12px 30px; font-size: 14px; cursor: pointer;
+          background: #64748b; color: white; border: none;
+          border-radius: 8px; font-family: 'Siemreap', sans-serif;
+          margin: 0 5px;
+        }
+        @media print { .no-print { display: none; } body { padding: 0; } }
+      </style>
+    </head>
+    <body>
+      <!-- ✅ Header -->
+      <div class="header">
+        <div class="header-left">
+          <div class="logo-box">
+            ${DB.settings.companyLogo ? `<img src="${DB.settings.companyLogo}">` : ''}
+          </div>
+          <div class="company-info">
+            <div class="company-name-kh">ក្រុមហ៊ុន សុកន ត្រេនស្ព័ត ឯ.ក</div>
+            <div class="company-name-en">SOKAN TRANSPORT PTE., LTD.</div>
+          </div>
+        </div>
+        <div class="header-right">
+          <div>ព្រះរាជាណាចក្រកម្ពុជា</div>
+          <div>ជាតិ សាសនា ព្រះមហាក្សត្រ</div>
+        </div>
+      </div>
+      
+      <!-- ✅ Title -->
+      <div class="title">រចនាសម្ព័ន្ធអង្គភាព</div>
+      <div class="subtitle">Organization Structure Report</div>
+      
+      <!-- ✅ Statistics -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value">${companies.length}</div>
+          <div class="stat-label">ក្រុមហ៊ុន</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${branches.length}</div>
+          <div class="stat-label">សាខា</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${departments.length}</div>
+          <div class="stat-label">ផ្នែក</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${positions.length}</div>
+          <div class="stat-label">មុខតំណែង</div>
+        </div>
+      </div>
+      
+      <!-- ✅ Departments Table -->
+      <div class="section">
+        <div class="section-title">🏢 បញ្ជីផ្នែក (Departments)</div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 50px;">ល.រ</th>
+              <th style="width: 100px;">កូដ</th>
+              <th>ឈ្មោះផ្នែក</th>
+              <th style="width: 100px;">បុគ្គលិក</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${deptRows || '<tr><td colspan="4" style="text-align: center; color: #94a3b8;">មិនមានទិន្នន័យ</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- ✅ Branches Table -->
+      <div class="section">
+        <div class="section-title">🏬 បញ្ជីសាខា (Branches)</div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 50px;">ល.រ</th>
+              <th style="width: 80px;">កូដ</th>
+              <th>ឈ្មោះសាខា</th>
+              <th>អាសយដ្ឋាន</th>
+              <th style="width: 80px;">ផ្នែក</th>
+              <th style="width: 80px;">បុគ្គលិក</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${branchRows || '<tr><td colspan="6" style="text-align: center; color: #94a3b8;">មិនមានទិន្នន័យ</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- ✅ Positions Table -->
+      <div class="section">
+        <div class="section-title">💼 បញ្ជីមុខតំណែង (Positions)</div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 50px;">ល.រ</th>
+              <th style="width: 100px;">កូដ</th>
+              <th>ចំណងជើង</th>
+              <th style="width: 100px;">បុគ្គលិក</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${posRows || '<tr><td colspan="4" style="text-align: center; color: #94a3b8;">មិនមានទិន្នន័យ</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- ✅ Signatures -->
+      <div class="footer">
+        <div class="signature-box">
+          <div>ហត្ថលេខាអ្នករៀបចំ</div>
+          <div class="signature-line"></div>
+        </div>
+        <div class="signature-box">
+          <div>ហត្ថលេខានាយក</div>
+          <div class="signature-line"></div>
+        </div>
+      </div>
+      
+      <div class="footer-note">
+        បង្កើតនៅ ថ្ងៃទី ${new Date().getDate()} ខែ ${new Date().getMonth()+1} ឆ្នាំ ${new Date().getFullYear()}
+      </div>
+      
+      <!-- ✅ Buttons -->
+      <div class="no-print">
+        <button onclick="window.print()" class="btn-print">🖨️ បោះពុម្ព / Save as PDF</button>
+        <button onclick="window.close()" class="btn-close">✖️ បិទ</button>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  printWindow.document.write(html);
+  printWindow.document.close();
+  toast('🖨️ ចុច Print ដើម្បី Save as PDF');
 }
 
 function exportAssetsPDF() {
