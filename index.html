@@ -10195,10 +10195,14 @@ function renderContracts() {
           <p class="text-xs text-slate-500 mt-1">Contracts Management</p>
         </div>
         <div class="flex gap-2 flex-wrap">
-          <button onclick="exportContractsExcel()" class="btn btn-secondary btn-sm">📊 Excel</button>
-          <button onclick="exportContractsPDF2()" class="btn btn-secondary btn-sm">📕 PDF</button>
-          <button onclick="openContractModal()" class="btn btn-primary btn-sm">+ បន្ថែមកិច្ចសន្យា</button>
-        </div>
+  <label class="btn btn-secondary btn-sm cursor-pointer">
+    📤 Import
+    <input type="file" accept=".xlsx,.xls,.csv" class="hidden" onchange="importContractsExcel(this)">
+  </label>
+  <button onclick="exportContractsExcel()" class="btn btn-secondary btn-sm">📊 Excel</button>
+  <button onclick="exportContractsPDF2()" class="btn btn-secondary btn-sm">📕 PDF</button>
+  <button onclick="openContractModal()" class="btn btn-primary btn-sm">+ បន្ថែមកិច្ចសន្យា</button>
+</div>
       </div>
       
       <!-- ✅ Stats -->
@@ -10253,6 +10257,97 @@ function renderContracts() {
     </div>
   `;
 }
+// =====================================================
+// ✅ IMPORT CONTRACTS FROM EXCEL
+// =====================================================
+function importContractsExcel(input) {
+  const file = input.files[0];
+  if (!file) return;
+  
+  withLoading('កំពុងនាំចូល...', () => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet);
+        
+        if (!rows.length) {
+          return toast('❌ ឯកសារទទេ', 'error');
+        }
+        
+        let added = 0, skipped = 0;
+        
+        rows.forEach(row => {
+          // ✅ អានឈ្មោះ Column (ខ្មែរ ឬ អង់គ្លេស)
+          const title = String(
+            row['ចំណងជើង'] || 
+            row['Title'] || 
+            row['title'] || 
+            ''
+          ).trim();
+          
+          if (!title) { skipped++; return; }
+          
+          const type = String(
+            row['ប្រភេទ'] || 
+            row['Type'] || 
+            row['type'] || 
+            'Employment'
+          ).trim();
+          
+          const value = +(
+            row['តម្លៃ ($)'] || 
+            row['តម្លៃ'] || 
+            row['Value'] || 
+            row['value'] || 
+            0
+          ) || 0;
+          
+          const status = String(
+            row['ស្ថានភាព'] || 
+            row['Status'] || 
+            row['status'] || 
+            'active'
+          ).trim().toLowerCase();
+          
+          // ✅ ពិនិត្យ Duplicate
+          const dup = DB.contracts.find(c => c.title === title);
+          if (dup) { skipped++; return; }
+          
+          // ✅ បន្ថែម
+          const newId = DB.nextId.contract++;
+          DB.contracts.push({
+            id: newId,
+            code: 'CT' + String(newId).padStart(3, '0'),
+            title: title,
+            type: type,
+            value: value,
+            status: status === 'expired' ? 'expired' : 
+                    status === 'cancelled' ? 'cancelled' : 'active',
+            created_at: new Date().toISOString()
+          });
+          
+          added++;
+        });
+        
+        logAudit(currentUser.id, 'BULK_IMPORT_CONTRACTS', 'contract', null, `Imported ${added}, skipped ${skipped}`);
+        saveDB();
+        renderContracts();
+        toast(`✅ នាំចូលបាន ${added} (រំលង ${skipped})`);
+        
+      } catch(err) {
+        console.error(err);
+        toast('❌ ឯកសារមិនត្រឹមត្រូវ', 'error');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  });
+  
+  input.value = '';
+}
+
 
 // =====================================================
 // ✅ CONTRACTS REPORT - EXCEL
