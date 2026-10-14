@@ -5122,26 +5122,368 @@ function exportInventoryPDF() {
   doc.save('Inventory.pdf');
   toast('📕 PDF downloaded');
 }
-
+// =====================================================
+// ✅ SUPPLIERS REPORT - PDF (HTML Print - Khmer Font)
+// =====================================================
 function exportSuppliersPDF() {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF('l', 'mm', 'a4');
-  doc.setFillColor(37, 99, 235);
-  doc.rect(0, 0, 297, 20, 'F');
-  doc.setTextColor(255,255,255);
-  doc.setFontSize(16);
-  doc.text('SUPPLIERS LIST', 148, 14, { align: 'center' });
-  const rows = DB.suppliers.map(s => [s.code, s.name, s.phone || '-', s.email || '-', s.status]);
-  doc.autoTable({
-    startY: 25,
-    head: [['Code', 'Name', 'Phone', 'Email', 'Status']],
-    body: rows,
-    theme: 'grid',
-    headStyles: { fillColor: [37, 99, 235] }
-  });
-  doc.save('Suppliers.pdf');
-  toast('📕 PDF downloaded');
+  if (!DB.suppliers.length) {
+    toast('❌ គ្មានទិន្នន័យ', 'error');
+    return;
+  }
+  
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    toast('❌ Browser បិទ Popup', 'error');
+    return;
+  }
+  
+  // ✅ Stats
+  const totalSuppliers = DB.suppliers.length;
+  const activeSuppliers = DB.suppliers.filter(s => s.status === 'active').length;
+  const withPhone = DB.suppliers.filter(s => s.phone).length;
+  const withEmail = DB.suppliers.filter(s => s.email).length;
+  
+  const html = `
+    <!DOCTYPE html>
+    <html lang="km">
+    <head>
+      <meta charset="UTF-8">
+      <title>Suppliers Report</title>
+      <link href="https://fonts.googleapis.com/css2?family=Moul&family=Siemreap&display=swap" rel="stylesheet">
+      <style>
+        @page { size: A4 portrait; margin: 10mm; }
+        * { box-sizing: border-box; }
+        body { 
+          font-family: 'Siemreap', sans-serif; 
+          margin: 0; 
+          padding: 15px; 
+          color: #1e293b; 
+          font-size: 11px; 
+        }
+        
+        /* ✅ Header */
+        .header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 12px;
+          padding-bottom: 10px;
+          border-bottom: 2px solid #1e40af;
+          min-height: 90px;
+        }
+        
+        .header-left {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+          width: 220px;
+        }
+        
+        .logo-box {
+          width: 65px;
+          height: 65px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 5px;
+        }
+        
+        .logo-box img { width: 100%; height: 100%; object-fit: contain; }
+        
+        /* ✅ Khmer OS Muol Light */
+        .company-name-kh {
+          font-family: 'Moul', serif;
+          font-size: 11px;
+          color: #1e40af;
+          margin: 0;
+          line-height: 1.5;
+          white-space: nowrap;
+        }
+        
+        .company-name-en {
+          font-family: 'Moul', serif;
+          font-size: 9px;
+          color: #1e40af;
+          margin: 3px 0 0;
+          white-space: nowrap;
+        }
+        
+        /* ✅ Khmer OS Muol Light */
+        .header-right {
+          text-align: center;
+          font-family: 'Moul', serif;
+          font-size: 12px;
+          line-height: 1.8;
+          color: #1e40af;
+          padding-top: 6px;
+        }
+        
+        /* ✅ Title */
+        .title {
+          font-family: 'Moul', serif;
+          font-size: 16px;
+          margin: 12px 0 3px;
+          text-align: center;
+          color: #1e40af;
+        }
+        
+        .subtitle {
+          font-family: 'Moul', serif;
+          font-size: 11px;
+          margin: 0 0 15px;
+          text-align: center;
+          color: #1e40af;
+        }
+        
+        /* ✅ Stats Grid */
+        .stats-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 10px;
+          margin-bottom: 15px;
+        }
+        
+        .stat-card {
+          border-radius: 6px;
+          padding: 10px;
+          text-align: center;
+          border: 1px solid;
+        }
+        
+        .stat-blue { background: #eff6ff; border-color: #bfdbfe; }
+        .stat-green { background: #f0fdf4; border-color: #bbf7d0; }
+        .stat-cyan { background: #ecfeff; border-color: #a5f3fc; }
+        .stat-purple { background: #faf5ff; border-color: #e9d5ff; }
+        
+        /* ✅ Khmer OS Muol Light */
+        .stat-value {
+          font-family: 'Moul', serif;
+          font-size: 20px;
+          font-weight: bold;
+          line-height: 1.2;
+        }
+        
+        .stat-blue .stat-value { color: #1e40af; }
+        .stat-green .stat-value { color: #16a34a; }
+        .stat-cyan .stat-value { color: #0891b2; }
+        .stat-purple .stat-value { color: #7c3aed; }
+        
+        /* ✅ Khmer OS Siemreap */
+        .stat-label {
+          font-family: 'Siemreap', sans-serif;
+          font-size: 10px;
+          color: #64748b;
+          margin-top: 3px;
+        }
+        
+        /* ✅ Table */
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          font-family: 'Siemreap', sans-serif;
+          font-size: 10px;
+        }
+        
+        th, td {
+          border: 1px solid #333;
+          padding: 6px 8px;
+          text-align: center;
+          vertical-align: middle;
+        }
+        
+        /* ✅ Khmer OS Muol Light */
+        th {
+          background: #1e40af;
+          color: white;
+          font-family: 'Moul', serif;
+          font-size: 9px;
+          line-height: 1.4;
+        }
+        
+        td.name { text-align: left; padding-left: 8px; }
+        td.money { text-align: right; padding-right: 8px; }
+        
+        /* ✅ Status Badge */
+        .badge {
+          display: inline-block;
+          padding: 2px 8px;
+          border-radius: 999px;
+          font-size: 9px;
+          font-weight: 600;
+        }
+        
+        .badge-active { background: #dcfce7; color: #166534; }
+        .badge-inactive { background: #fee2e2; color: #991b1b; }
+        
+        /* ✅ Footer */
+        .footer {
+          margin-top: 25px;
+          display: flex;
+          justify-content: space-around;
+          font-family: 'Siemreap', sans-serif;
+          font-size: 11px;
+        }
+        
+        .signature-box {
+          text-align: center;
+          width: 200px;
+        }
+        
+        .signature-line {
+          border-top: 1px solid #333;
+          margin-top: 50px;
+          padding-top: 5px;
+        }
+        
+        .footer-note {
+          text-align: center;
+          margin-top: 20px;
+          font-family: 'Siemreap', sans-serif;
+          font-size: 9px;
+          color: #94a3b8;
+        }
+        
+        /* ✅ Buttons */
+        .no-print {
+          text-align: center;
+          margin-top: 25px;
+          padding-top: 15px;
+          border-top: 1px dashed #cbd5e1;
+        }
+        
+        .btn-print {
+          padding: 12px 30px;
+          font-size: 14px;
+          cursor: pointer;
+          background: #1e40af;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-family: 'Siemreap', sans-serif;
+          margin: 0 5px;
+        }
+        
+        .btn-close {
+          padding: 12px 30px;
+          font-size: 14px;
+          cursor: pointer;
+          background: #64748b;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-family: 'Siemreap', sans-serif;
+          margin: 0 5px;
+        }
+        
+        @media print { 
+          .no-print { display: none; } 
+          body { padding: 0; } 
+        }
+      </style>
+    </head>
+    <body>
+      <!-- ✅ Header -->
+      <div class="header">
+        <div class="header-left">
+          <div class="logo-box">
+            ${DB.settings.companyLogo ? `<img src="${DB.settings.companyLogo}">` : ''}
+          </div>
+          <div>
+            <div class="company-name-kh">ក្រុមហ៊ុន សុកន ត្រេនស្ព័ត ឯ.ក</div>
+            <div class="company-name-en">SOKAN TRANSPORT PTE., LTD.</div>
+          </div>
+        </div>
+        <div class="header-right">
+          <div>ព្រះរាជាណាចក្រកម្ពុជា</div>
+          <div>ជាតិ សាសនា ព្រះមហាក្សត្រ</div>
+        </div>
+      </div>
+      
+      <!-- ✅ Title -->
+      <div class="title">របាយការណ៍អ្នកផ្គត់ផ្គង់</div>
+      <div class="subtitle">Suppliers Report</div>
+      
+      <!-- ✅ Stats -->
+      <div class="stats-grid">
+        <div class="stat-card stat-blue">
+          <div class="stat-value">${totalSuppliers}</div>
+          <div class="stat-label">សរុប</div>
+        </div>
+        <div class="stat-card stat-green">
+          <div class="stat-value">${activeSuppliers}</div>
+          <div class="stat-label">សកម្ម</div>
+        </div>
+        <div class="stat-card stat-cyan">
+          <div class="stat-value">${withPhone}</div>
+          <div class="stat-label">មានទូរស័ព្ទ</div>
+        </div>
+        <div class="stat-card stat-purple">
+          <div class="stat-value">${withEmail}</div>
+          <div class="stat-label">មានអ៊ីមែល</div>
+        </div>
+      </div>
+      
+      <!-- ✅ Table -->
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 40px;">ល.រ</th>
+            <th style="width: 80px;">កូដ</th>
+            <th>ឈ្មោះអ្នកផ្គត់ផ្គង់</th>
+            <th style="width: 100px;">ទូរស័ព្ទ</th>
+            <th>អ៊ីមែល</th>
+            <th style="width: 80px;">ស្ថានភាព</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${DB.suppliers.map((s, idx) => `
+            <tr>
+              <td>${String(idx + 1).padStart(2, '0')}</td>
+              <td>${escapeHtml(s.code || '')}</td>
+              <td class="name">${escapeHtml(s.name || '')}</td>
+              <td>${escapeHtml(s.phone || '-')}</td>
+              <td class="name">${escapeHtml(s.email || '-')}</td>
+              <td>
+                <span class="badge ${s.status === 'active' ? 'badge-active' : 'badge-inactive'}">
+                  ${s.status === 'active' ? 'សកម្ម' : 'អសកម្ម'}
+                </span>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      
+      <!-- ✅ Signatures -->
+      <div class="footer">
+        <div class="signature-box">
+          <div>ហត្ថលេខាអ្នករៀបចំ</div>
+          <div class="signature-line"></div>
+        </div>
+        <div class="signature-box">
+          <div>ហត្ថលេខានាយក</div>
+          <div class="signature-line"></div>
+        </div>
+      </div>
+      
+      <div class="footer-note">
+        បង្កើតនៅ ថ្ងៃទី ${new Date().getDate()} ខែ ${new Date().getMonth()+1} ឆ្នាំ ${new Date().getFullYear()}
+      </div>
+      
+      <!-- ✅ Buttons -->
+      <div class="no-print">
+        <button onclick="window.print()" class="btn-print">🖨️ បោះពុម្ព / Save as PDF</button>
+        <button onclick="window.close()" class="btn-close">✖️ បិទ</button>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  printWindow.document.write(html);
+  printWindow.document.close();
+  toast('🖨️ ចុច Print ដើម្បី Save as PDF');
 }
+
 function saveOrg(type) {
   const code = document.getElementById('org_code').value.trim();
   const name = document.getElementById('org_name').value.trim();
