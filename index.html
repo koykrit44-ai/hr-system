@@ -1423,6 +1423,141 @@ function createInitialData() {
   saveDB();
   logAudit(1, 'SYSTEM_INIT', 'system', null, 'Database initialized v5.1');
 }
+  // =====================================================
+  // ✅ SEED DATA - ASSET MANAGEMENT
+  // =====================================================
+  
+  // ✅ Asset Categories
+  DB.assetCategories = [
+    // IT Equipment
+    { id: DB.nextId.assetCategory++, code: 'IT-LAP', name: 'Laptop', group: 'IT Equipment', icon: '💻' },
+    { id: DB.nextId.assetCategory++, code: 'IT-DES', name: 'Desktop', group: 'IT Equipment', icon: '🖥️' },
+    { id: DB.nextId.assetCategory++, code: 'IT-MON', name: 'Monitor', group: 'IT Equipment', icon: '🖥️' },
+    { id: DB.nextId.assetCategory++, code: 'IT-PRN', name: 'Printer', group: 'IT Equipment', icon: '🖨️' },
+    { id: DB.nextId.assetCategory++, code: 'IT-SCN', name: 'Scanner', group: 'IT Equipment', icon: '📠' },
+    { id: DB.nextId.assetCategory++, code: 'IT-SVR', name: 'Server', group: 'IT Equipment', icon: '🖧' },
+    { id: DB.nextId.assetCategory++, code: 'IT-UPS', name: 'UPS', group: 'IT Equipment', icon: '🔋' },
+    { id: DB.nextId.assetCategory++, code: 'IT-RTR', name: 'Router', group: 'IT Equipment', icon: '📡' },
+    { id: DB.nextId.assetCategory++, code: 'IT-SWT', name: 'Switch', group: 'IT Equipment', icon: '🔌' },
+    
+    // Office Equipment
+    { id: DB.nextId.assetCategory++, code: 'OF-DSK', name: 'Desk', group: 'Office Equipment', icon: '🪑' },
+    { id: DB.nextId.assetCategory++, code: 'OF-CHR', name: 'Chair', group: 'Office Equipment', icon: '💺' },
+    { id: DB.nextId.assetCategory++, code: 'OF-CAB', name: 'Cabinet', group: 'Office Equipment', icon: '🗄️' },
+    { id: DB.nextId.assetCategory++, code: 'OF-TBL', name: 'Meeting Table', group: 'Office Equipment', icon: '🪑' },
+    { id: DB.nextId.assetCategory++, code: 'OF-PRJ', name: 'Projector', group: 'Office Equipment', icon: '📽️' },
+    
+    // Communication
+    { id: DB.nextId.assetCategory++, code: 'CM-PHN', name: 'Mobile Phone', group: 'Communication', icon: '📱' },
+    { id: DB.nextId.assetCategory++, code: 'CM-SIM', name: 'SIM Card', group: 'Communication', icon: '📞' },
+    { id: DB.nextId.assetCategory++, code: 'CM-TEL', name: 'Telephone', group: 'Communication', icon: '☎️' },
+    
+    // Safety / Uniform
+    { id: DB.nextId.assetCategory++, code: 'SF-HLM', name: 'Helmet', group: 'Safety/Uniform', icon: '⛑️' },
+    { id: DB.nextId.assetCategory++, code: 'SF-SHO', name: 'Safety Shoes', group: 'Safety/Uniform', icon: '👞' },
+    { id: DB.nextId.assetCategory++, code: 'SF-VST', name: 'Safety Vest', group: 'Safety/Uniform', icon: '🦺' },
+    { id: DB.nextId.assetCategory++, code: 'SF-UNI', name: 'Uniform', group: 'Safety/Uniform', icon: '👕' },
+    { id: DB.nextId.assetCategory++, code: 'SF-GLV', name: 'Gloves', group: 'Safety/Uniform', icon: '🧤' },
+    
+    // Vehicle / Operation
+    { id: DB.nextId.assetCategory++, code: 'VH-TOL', name: 'Tools', group: 'Vehicle/Operation', icon: '🔧' },
+    { id: DB.nextId.assetCategory++, code: 'VH-JCK', name: 'Jack', group: 'Vehicle/Operation', icon: '🔧' },
+    { id: DB.nextId.assetCategory++, code: 'VH-BAT', name: 'Battery', group: 'Vehicle/Operation', icon: '🔋' },
+    { id: DB.nextId.assetCategory++, code: 'VH-SPR', name: 'Spare Parts', group: 'Vehicle/Operation', icon: '⚙️' },
+    { id: DB.nextId.assetCategory++, code: 'VH-EQP', name: 'Equipment', group: 'Vehicle/Operation', icon: '🚜' }
+  ];
+  
+  // ✅ Asset Locations
+  DB.assetLocations = [
+    { id: DB.nextId.assetLocation++, code: 'HQ', name: 'Head Office', parent_id: null, type: 'office' },
+    { id: DB.nextId.assetLocation++, code: 'HQ-FIN', name: 'Finance Department', parent_id: 1, type: 'department' },
+    { id: DB.nextId.assetLocation++, code: 'HQ-HR', name: 'HR Department', parent_id: 1, type: 'department' },
+    { id: DB.nextId.assetLocation++, code: 'HQ-IT', name: 'IT Department', parent_id: 1, type: 'department' },
+    { id: DB.nextId.assetLocation++, code: 'HQ-OPS', name: 'Operations', parent_id: 1, type: 'department' },
+    { id: DB.nextId.assetLocation++, code: 'WH', name: 'Phnom Penh Warehouse', parent_id: null, type: 'warehouse' },
+    { id: DB.nextId.assetLocation++, code: 'BR01', name: 'Branch 01', parent_id: null, type: 'branch' },
+    { id: DB.nextId.assetLocation++, code: 'BR02', name: 'Branch 02', parent_id: null, type: 'branch' }
+  ];
+  
+  // ✅ Sample Assets
+  const sampleAssets = [
+    { code: 'IT-LAP', name: 'Laptop Dell', brand: 'Dell', model: 'Latitude 5440', sn: 'ABC123456', price: 850, status: 'in_use', condition: 'good', location: 'HQ-FIN', holder: 2 },
+    { code: 'IT-LAP', name: 'Laptop HP', brand: 'HP', model: 'ProBook 450', sn: 'HP789456', price: 750, status: 'in_stock', condition: 'new', location: 'WH', holder: null },
+    { code: 'IT-MON', name: 'Monitor Samsung', brand: 'Samsung', model: 'S24R350', sn: 'SM123456', price: 180, status: 'in_use', condition: 'good', location: 'HQ-IT', holder: 3 },
+    { code: 'IT-PRN', name: 'Printer HP', brand: 'HP', model: 'LaserJet M404', sn: 'PRN123456', price: 350, status: 'in_use', condition: 'good', location: 'HQ-HR', holder: 2 },
+    { code: 'IT-PHN', name: 'iPhone 14', brand: 'Apple', model: 'iPhone 14', sn: 'IPH123456', price: 999, status: 'in_use', condition: 'good', location: 'HQ', holder: 1 },
+    { code: 'SF-SHO', name: 'Safety Shoes', brand: 'SafetyPro', model: 'SP-2024', sn: '', price: 45, status: 'in_stock', condition: 'new', location: 'WH', holder: null },
+    { code: 'SF-HLM', name: 'Safety Helmet', brand: 'SafeHead', model: 'SH-001', sn: '', price: 25, status: 'in_stock', condition: 'new', location: 'WH', holder: null }
+  ];
+  
+  sampleAssets.forEach((a, idx) => {
+    const id = DB.nextId.asset++;
+    const cat = DB.assetCategories.find(c => c.code === a.code);
+    DB.assets.push({
+      id: id,
+      asset_id: 'AST-' + String(id).padStart(5, '0'),
+      item_code: a.code,
+      item_name: a.name,
+      category_id: cat?.id || null,
+      category_name: cat?.name || '',
+      category_group: cat?.group || '',
+      brand: a.brand,
+      model: a.model,
+      serial_number: a.sn,
+      purchase_date: '2024-01-15',
+      purchase_price: a.price,
+      supplier_id: null,
+      supplier_name: 'ABC Co., Ltd',
+      warranty_expiry: '2026-01-15',
+      condition: a.condition,
+      status: a.status,
+      location_id: DB.assetLocations.find(l => l.code === a.location)?.id || null,
+      location_name: DB.assetLocations.find(l => l.code === a.location)?.name || '',
+      current_holder_id: a.holder,
+      current_holder_name: a.holder ? DB.employees.find(e => e.id === a.holder)?.full_name : null,
+      remark: '',
+      created_at: new Date().toISOString()
+    });
+    
+    // ✅ History
+    DB.assetHistory.push({
+      id: DB.assetHistory.length + 1,
+      asset_id: id,
+      action: 'created',
+      description: 'Asset created',
+      user_id: 1,
+      created_at: new Date().toISOString()
+    });
+  });
+  
+  // ✅ Sample Inventory
+  const sampleInventory = [
+    { code: 'INV001', name: 'A4 Paper', category: 'Stationery', unit: 'Ream', qty: 145, min: 50, max: 500, price: 5.5, location: 'WH' },
+    { code: 'INV002', name: 'Toner HP 26A', category: 'Printer', unit: 'Piece', qty: 8, min: 10, max: 50, price: 85, location: 'WH' },
+    { code: 'INV003', name: 'Pen Blue', category: 'Stationery', unit: 'Box', qty: 25, min: 10, max: 100, price: 3.5, location: 'WH' },
+    { code: 'INV004', name: 'Safety Gloves', category: 'Safety', unit: 'Pair', qty: 60, min: 20, max: 200, price: 8, location: 'WH' }
+  ];
+  
+  sampleInventory.forEach(inv => {
+    const id = DB.nextId.inv++;
+    DB.inventory.push({
+      id: id,
+      code: inv.code,
+      name: inv.name,
+      category: inv.category,
+      unit: inv.unit,
+      quantity: inv.qty,
+      min_stock: inv.min,
+      max_stock: inv.max,
+      reorder_level: inv.min,
+      unit_price: inv.price,
+      location_id: DB.assetLocations.find(l => l.code === inv.location)?.id || null,
+      location_name: 'Phnom Penh Warehouse',
+      status: inv.qty <= inv.min ? 'low' : 'normal',
+      created_at: new Date().toISOString()
+    });
+  });
+
 
 function saveDB() { 
   try {
