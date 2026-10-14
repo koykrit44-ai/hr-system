@@ -8965,49 +8965,780 @@ function deleteContract(id) {
 // =====================================================
 // INVENTORY
 // =====================================================
+// =====================================================
+// ✅ INVENTORY MANAGEMENT
+// =====================================================
+let invPage = 1;
+let invLimit = 10;
+
 function renderInventory() {
   const lowStock = DB.inventory.filter(i => i.quantity <= i.min_stock).length;
+  const outOfStock = DB.inventory.filter(i => i.quantity === 0).length;
+  const totalValue = DB.inventory.reduce((s,i) => s + (i.quantity * (i.unit_price || 0)), 0);
+  const totalQty = DB.inventory.reduce((s,i) => s + (i.quantity || 0), 0);
+  
   document.getElementById('pageContent').innerHTML = `
-    <div class="grid grid-cols-3 gap-4 mb-4">
-      <div class="card"><div class="text-3xl mb-2">📦</div><div class="text-sm text-slate-500">${t('invTotalItems')}</div><div class="text-2xl font-bold">${DB.inventory.length}</div></div>
-      <div class="card"><div class="text-3xl mb-2">⚠️</div><div class="text-sm text-slate-500">${t('dashLowStock')}</div><div class="text-2xl font-bold text-red-600">${lowStock}</div></div>
-      <div class="card"><div class="text-3xl mb-2">💰</div><div class="text-sm text-slate-500">${t('invValue')}</div><div class="text-2xl font-bold text-green-600">$${DB.inventory.reduce((s,i)=>s+i.quantity*i.unit_price,0).toFixed(0)}</div></div>
-    </div>
     <div class="card">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="font-bold">📦 ${t('inventory')}</h3>
-        <div class="flex gap-2">
-          <button onclick="exportInventoryPDF()" class="btn btn-secondary">📕 PDF</button>
-          <button onclick="openInvModal()" class="btn btn-primary">${t('add')}</button>
+      <!-- ✅ Header -->
+      <div class="flex flex-wrap justify-between items-center gap-3 mb-4 pb-4 border-b">
+        <div>
+          <h3 class="font-bold text-lg">📦 គ្រប់គ្រងស្តុក</h3>
+          <p class="text-xs text-slate-500 mt-1">Inventory Management</p>
+        </div>
+        <div class="flex gap-2 flex-wrap">
+          <button onclick="exportInventoryReportExcel()" class="btn btn-secondary btn-sm">📊 Excel</button>
+          <button onclick="exportInventoryReportPDF2()" class="btn btn-secondary btn-sm">📕 PDF</button>
+          <button onclick="openStockMovementModal()" class="btn btn-warning btn-sm">📥 Stock In/Out</button>
+          <button onclick="openInventoryForm()" class="btn btn-primary btn-sm">+ បន្ថែមទំនិញ</button>
         </div>
       </div>
-      <table class="w-full text-sm">
-        <thead class="bg-slate-50"><tr>
-          <th class="text-left p-3">${t('empCode')}</th>
-          <th class="text-left p-3">${t('empName')}</th>
-          <th class="text-right p-3">${t('invQty')}</th>
-          <th class="text-right p-3">${t('invMin')}</th>
-          <th class="text-right p-3">${t('invPrice')}</th>
-          <th class="text-right p-3">${t('actions')}</th>
-        </tr></thead>
-        <tbody>
-          ${DB.inventory.map(i => `
-            <tr class="border-b table-row ${i.quantity <= i.min_stock ? 'bg-red-50' : ''}">
-              <td class="p-3 font-mono text-xs">${escapeHtml(i.code)}</td>
-              <td class="p-3">${escapeHtml(i.name)}</td>
-              <td class="p-3 text-right font-bold ${i.quantity <= i.min_stock ? 'text-red-600' : ''}">${i.quantity}</td>
-              <td class="p-3 text-right text-slate-400">${i.min_stock}</td>
-              <td class="p-3 text-right">$${i.unit_price}</td>
-              <td class="p-3 text-right">
-                <button onclick="editInventory(${i.id})" class="text-amber-600 hover:bg-amber-50 px-2 py-1 rounded text-xs">✏️</button>
-                <button onclick="deleteInv(${i.id})" class="text-red-600 hover:bg-red-50 px-2 py-1 rounded text-xs">🗑️</button>
-              </td>
+      
+      <!-- ✅ Stats -->
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+        <div class="text-center p-3 bg-blue-50 rounded-lg">
+          <div class="text-xl font-bold text-blue-600">${DB.inventory.length}</div>
+          <div class="text-xs text-slate-500">ប្រភេទទំនិញ</div>
+        </div>
+        <div class="text-center p-3 bg-purple-50 rounded-lg">
+          <div class="text-xl font-bold text-purple-600">${totalQty}</div>
+          <div class="text-xs text-slate-500">ចំនួនសរុប</div>
+        </div>
+        <div class="text-center p-3 bg-green-50 rounded-lg">
+          <div class="text-xl font-bold text-green-600">$${totalValue.toLocaleString()}</div>
+          <div class="text-xs text-slate-500">តម្លៃសរុប</div>
+        </div>
+        <div class="text-center p-3 bg-yellow-50 rounded-lg">
+          <div class="text-xl font-bold text-yellow-600">${lowStock}</div>
+          <div class="text-xs text-slate-500">ស្តុកតិច</div>
+        </div>
+        <div class="text-center p-3 bg-red-50 rounded-lg">
+          <div class="text-xl font-bold text-red-600">${outOfStock}</div>
+          <div class="text-xs text-slate-500">អស់ស្តុក</div>
+        </div>
+      </div>
+      
+      <!-- ✅ Filters -->
+      <div class="flex flex-wrap gap-2 mb-4">
+        <input id="invSearch" oninput="debounceInvFilter()" 
+          placeholder="🔍 ស្វែងរកកូដ ឬឈ្មោះ..." 
+          class="input" style="width:280px;">
+        
+        <select id="invCategoryFilter" onchange="invPage=1;filterInventory()" class="input" style="width:180px;">
+          <option value="">-- គ្រប់ប្រភេទ --</option>
+          ${[...new Set(DB.inventory.map(i => i.category))].map(c => 
+            `<option value="${c}">${c}</option>`
+          ).join('')}
+        </select>
+        
+        <select id="invStatusFilter" onchange="invPage=1;filterInventory()" class="input" style="width:150px;">
+          <option value="">-- គ្រប់ស្ថានភាព --</option>
+          <option value="low">ស្តុកតិច</option>
+          <option value="out">អស់ស្តុក</option>
+          <option value="normal">ធម្មតា</option>
+        </select>
+      </div>
+      
+      <!-- ✅ Table -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50 border-b-2">
+            <tr>
+              <th class="text-left p-2">កូដ</th>
+              <th class="text-left p-2">ឈ្មោះ</th>
+              <th class="text-left p-2">ប្រភេទ</th>
+              <th class="text-left p-2">ឯកតា</th>
+              <th class="text-right p-2">ចំនួន</th>
+              <th class="text-right p-2">Min</th>
+              <th class="text-right p-2">តម្លៃ ($)</th>
+              <th class="text-right p-2">តម្លៃសរុប</th>
+              <th class="text-center p-2">ស្ថានភាព</th>
+              <th class="text-right p-2">សកម្មភាព</th>
             </tr>
-          `).join('')}
-        </tbody>
-      </table>
+          </thead>
+          <tbody id="invTableBody"></tbody>
+        </table>
+      </div>
+      
+      <div class="flex justify-between items-center mt-4" id="invPagination"></div>
     </div>
   `;
+  
+  filterInventory();
+}
+
+const debounceInvFilter = debounce(() => { invPage = 1; filterInventory(); }, 250);
+
+function filterInventory() {
+  const q = (document.getElementById('invSearch')?.value || '').toLowerCase();
+  const cat = document.getElementById('invCategoryFilter')?.value || '';
+  const status = document.getElementById('invStatusFilter')?.value || '';
+  
+  const list = DB.inventory.filter(i => {
+    const matchQ = !q || 
+      (i.code || '').toLowerCase().includes(q) ||
+      (i.name || '').toLowerCase().includes(q);
+    const matchCat = !cat || i.category === cat;
+    
+    let matchStatus = true;
+    if (status === 'low') matchStatus = i.quantity <= i.min_stock && i.quantity > 0;
+    else if (status === 'out') matchStatus = i.quantity === 0;
+    else if (status === 'normal') matchStatus = i.quantity > i.min_stock;
+    
+    return matchQ && matchCat && matchStatus;
+  });
+  
+  const total = list.length;
+  const totalPages = Math.max(1, Math.ceil(total / invLimit));
+  if (invPage > totalPages) invPage = totalPages;
+  const start = (invPage - 1) * invLimit;
+  const paginated = list.slice(start, start + invLimit);
+  
+  document.getElementById('invTableBody').innerHTML = paginated.map(i => {
+    let statusBadge = '';
+    if (i.quantity === 0) {
+      statusBadge = '<span class="badge badge-red">អស់ស្តុក</span>';
+    } else if (i.quantity <= i.min_stock) {
+      statusBadge = '<span class="badge badge-yellow">ស្តុកតិច</span>';
+    } else {
+      statusBadge = '<span class="badge badge-green">ធម្មតា</span>';
+    }
+    
+    const totalValue = i.quantity * (i.unit_price || 0);
+    
+    return `
+      <tr class="border-b hover:bg-slate-50 ${i.quantity === 0 ? 'bg-red-50' : i.quantity <= i.min_stock ? 'bg-yellow-50' : ''}">
+        <td class="p-2 font-mono text-xs text-blue-600 font-bold">${escapeHtml(i.code || '')}</td>
+        <td class="p-2 font-medium">${escapeHtml(i.name || '')}</td>
+        <td class="p-2 text-xs">${escapeHtml(i.category || '')}</td>
+        <td class="p-2 text-xs">${escapeHtml(i.unit || '')}</td>
+        <td class="p-2 text-right font-bold ${i.quantity <= i.min_stock ? 'text-red-600' : ''}">${i.quantity}</td>
+        <td class="p-2 text-right text-slate-400 text-xs">${i.min_stock}</td>
+        <td class="p-2 text-right">$${(i.unit_price || 0).toFixed(2)}</td>
+        <td class="p-2 text-right font-bold text-green-600">$${totalValue.toFixed(2)}</td>
+        <td class="p-2 text-center">${statusBadge}</td>
+        <td class="p-2 text-right whitespace-nowrap">
+          <button onclick="openStockMovementModal(${i.id})" class="text-green-600 hover:bg-green-50 px-2 py-1 rounded text-xs" title="In/Out">📥</button>
+          <button onclick="viewStockMovement(${i.id})" class="text-blue-600 hover:bg-blue-50 px-2 py-1 rounded text-xs" title="History">📜</button>
+          <button onclick="openInventoryForm(${i.id})" class="text-amber-600 hover:bg-amber-50 px-2 py-1 rounded text-xs" title="កែ">✏️</button>
+          <button onclick="deleteInventory(${i.id})" class="text-red-600 hover:bg-red-50 px-2 py-1 rounded text-xs" title="លុប">🗑️</button>
+        </td>
+      </tr>
+    `;
+  }).join('') || '<tr><td colspan="10" class="text-center p-8 text-slate-400">មិនមានទិន្នន័យ</td></tr>';
+  
+  let pag = `<div class="text-sm text-slate-500">បង្ហាញ ${total ? start+1 : 0}-${Math.min(start+invLimit, total)} ក្នុងចំណោម ${total}</div><div class="pagination">`;
+  pag += `<button onclick="invPage=1;filterInventory()" ${invPage===1?'disabled':''}>«</button>`;
+  pag += `<button onclick="invPage=${invPage-1};filterInventory()" ${invPage===1?'disabled':''}>‹</button>`;
+  for (let i = 1; i <= totalPages; i++) {
+    if (i === 1 || i === totalPages || Math.abs(i - invPage) <= 1) {
+      pag += `<button onclick="invPage=${i};filterInventory()" class="${invPage===i?'active':''}">${i}</button>`;
+    } else if (i === invPage - 2 || i === invPage + 2) {
+      pag += `<span>...</span>`;
+    }
+  }
+  pag += `<button onclick="invPage=${invPage+1};filterInventory()" ${invPage===totalPages?'disabled':''}>›</button>`;
+  pag += `<button onclick="invPage=${totalPages};filterInventory()" ${invPage===totalPages?'disabled':''}>»</button>`;
+  pag += '</div>';
+  document.getElementById('invPagination').innerHTML = pag;
+}
+
+// ✅ Open Inventory Form
+function openInventoryForm(id) {
+  const i = id ? DB.inventory.find(x => x.id === id) : {};
+  
+  document.getElementById('modalContainer').classList.add('modal-md');
+  document.getElementById('modalContainer').classList.remove('modal-xl', 'modal-lg');
+  document.getElementById('modalTitle').textContent = id ? `✏️ កែ: ${i.name}` : '➕ បន្ថែមទំនិញថ្មី';
+  
+  document.getElementById('modalBody').innerHTML = `
+    <form onsubmit="saveInventoryForm(event, ${id || 'null'})">
+      <div class="grid grid-cols-2 gap-4">
+        <div class="col-span-2">
+          <label class="text-sm font-medium">ឈ្មោះទំនិញ <span class="text-red-500">*</span></label>
+          <input id="inv_name" class="input" value="${escapeHtml(i.name || '')}" required>
+        </div>
+        <div>
+          <label class="text-sm font-medium">ប្រភេទ</label>
+          <input id="inv_category" class="input" value="${escapeHtml(i.category || '')}" placeholder="Stationery, Printer...">
+        </div>
+        <div>
+          <label class="text-sm font-medium">ឯកតា</label>
+          <select id="inv_unit" class="input">
+            ${['Piece', 'Box', 'Ream', 'Pair', 'Set', 'Roll', 'Kg', 'Litre'].map(u => 
+              `<option value="${u}" ${i.unit === u ? 'selected' : ''}>${u}</option>`
+            ).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="text-sm font-medium">ចំនួនចូលដំបូង</label>
+          <input id="inv_qty" type="number" class="input" value="${i.quantity || 0}" ${id ? 'disabled' : ''}>
+          ${id ? '<p class="text-xs text-slate-500 mt-1">ប្រើ Stock Movement ដើម្បីបន្ថែម/បន្ថយ</p>' : ''}
+        </div>
+        <div>
+          <label class="text-sm font-medium">Min Stock</label>
+          <input id="inv_min" type="number" class="input" value="${i.min_stock || 10}">
+        </div>
+        <div>
+          <label class="text-sm font-medium">Max Stock</label>
+          <input id="inv_max" type="number" class="input" value="${i.max_stock || 100}">
+        </div>
+        <div>
+          <label class="text-sm font-medium">តម្លៃ ($)</label>
+          <input id="inv_price" type="number" step="0.01" class="input" value="${i.unit_price || 0}">
+        </div>
+        <div class="col-span-2">
+          <label class="text-sm font-medium">ទីតាំង</label>
+          <select id="inv_location" class="input">
+            <option value="">-- ជ្រើសទីតាំង --</option>
+            ${DB.assetLocations.filter(l => l.type === 'warehouse' || l.type === 'branch').map(l => 
+              `<option value="${l.id}" ${i.location_id === l.id ? 'selected' : ''}>${l.name}</option>`
+            ).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 mt-6 pt-4 border-t">
+        <button type="button" onclick="closeModal()" class="btn btn-secondary">បោះបង់</button>
+        <button type="submit" class="btn btn-primary">💾 រក្សាទុក</button>
+      </div>
+    </form>
+  `;
+  openModal();
+}
+
+function saveInventoryForm(e, id) {
+  e.preventDefault();
+  
+  const name = document.getElementById('inv_name').value.trim();
+  if (!name) {
+    toast('❌ សូមបំពេញឈ្មោះ', 'error');
+    return;
+  }
+  
+  const locationId = +document.getElementById('inv_location').value || null;
+  const location = locationId ? DB.assetLocations.find(l => l.id === locationId) : null;
+  
+  const data = {
+    name: name,
+    category: document.getElementById('inv_category').value.trim(),
+    unit: document.getElementById('inv_unit').value,
+    min_stock: +document.getElementById('inv_min').value || 0,
+    max_stock: +document.getElementById('inv_max').value || 0,
+    reorder_level: +document.getElementById('inv_min').value || 0,
+    unit_price: +document.getElementById('inv_price').value || 0,
+    location_id: locationId,
+    location_name: location?.name || ''
+  };
+  
+  if (id) {
+    Object.assign(DB.inventory.find(i => i.id === id), data);
+    logAudit(currentUser.id, 'UPDATE_INVENTORY', 'inventory', id, `Updated ${name}`);
+    toast('✅ កែជោគជ័យ');
+  } else {
+    const newId = DB.nextId.inv++;
+    data.id = newId;
+    data.code = 'INV' + String(newId).padStart(3, '0');
+    data.quantity = +document.getElementById('inv_qty').value || 0;
+    data.opening_stock = data.quantity;
+    data.status = data.quantity <= data.min_stock ? 'low' : 'normal';
+    data.created_at = new Date().toISOString();
+    DB.inventory.push(data);
+    
+    // ✅ Add Opening Stock Movement
+    if (data.quantity > 0) {
+      DB.inventoryMovements.push({
+        id: DB.nextId.invMovement++,
+        item_id: newId,
+        code: data.code,
+        name: data.name,
+        type: 'opening',
+        quantity: data.quantity,
+        before_qty: 0,
+        after_qty: data.quantity,
+        note: 'Opening Stock',
+        user_id: currentUser.id,
+        created_at: new Date().toISOString()
+      });
+    }
+    
+    logAudit(currentUser.id, 'CREATE_INVENTORY', 'inventory', newId, `Created ${name}`);
+    toast('✅ បន្ថែមជោគជ័យ');
+  }
+  
+  saveDB();
+  closeModal();
+  renderInventory();
+}
+
+function deleteInventory(id) {
+  const i = DB.inventory.find(x => x.id === id);
+  if (!i) return;
+  if (!confirm(`លុប "${i.name}"?`)) return;
+  
+  DB.inventory = DB.inventory.filter(x => x.id !== id);
+  logAudit(currentUser.id, 'DELETE_INVENTORY', 'inventory', id, `Deleted ${i.name}`);
+  saveDB();
+  renderInventory();
+  toast('🗑️ លុបរួច');
+}
+
+// ✅ Stock Movement Modal
+function openStockMovementModal(itemId) {
+  const items = DB.inventory;
+  if (!items.length) {
+    toast('❌ គ្មានទំនិញ', 'error');
+    return;
+  }
+  
+  document.getElementById('modalContainer').classList.add('modal-md');
+  document.getElementById('modalContainer').classList.remove('modal-xl', 'modal-lg');
+  document.getElementById('modalTitle').textContent = '📥 Stock In/Out';
+  
+  document.getElementById('modalBody').innerHTML = `
+    <form onsubmit="saveStockMovement(event)">
+      <div class="space-y-4">
+        <div>
+          <label class="text-sm font-medium">ទំនិញ <span class="text-red-500">*</span></label>
+          <select id="mov_item" class="input" required onchange="updateStockPreview()">
+            <option value="">-- ជ្រើសទំនិញ --</option>
+            ${items.map(i => `
+              <option value="${i.id}" data-qty="${i.quantity}" ${itemId === i.id ? 'selected' : ''}>
+                ${i.code} - ${i.name} (នៅសល់: ${i.quantity})
+              </option>
+            `).join('')}
+          </select>
+        </div>
+        
+        <div>
+          <label class="text-sm font-medium">ប្រភេទចលនា <span class="text-red-500">*</span></label>
+          <select id="mov_type" class="input" required onchange="updateStockPreview()">
+            <option value="in">📥 Stock In (ចូល)</option>
+            <option value="out">📤 Stock Out (ចេញ)</option>
+            <option value="adjustment">⚙️ Adjustment (កែតម្រូវ)</option>
+            <option value="return">↩️ Return (ត្រឡប់)</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="text-sm font-medium">ចំនួន <span class="text-red-500">*</span></label>
+          <input id="mov_qty" type="number" min="1" class="input" required oninput="updateStockPreview()">
+        </div>
+        
+        <div class="p-3 bg-blue-50 rounded-lg">
+          <div class="flex justify-between text-sm">
+            <span class="text-slate-600">នៅសល់បច្ចុប្បន្ន:</span>
+            <span class="font-bold" id="prevQty">0</span>
+          </div>
+          <div class="flex justify-between text-sm mt-1">
+            <span class="text-slate-600">បន្ទាប់ពី:</span>
+            <span class="font-bold text-green-600" id="newQty">0</span>
+          </div>
+        </div>
+        
+        <div>
+          <label class="text-sm font-medium">ចំណាំ</label>
+          <textarea id="mov_note" rows="2" class="input" placeholder="ឧ. ទិញពី ABC Co., Ltd"></textarea>
+        </div>
+        
+        <div>
+          <label class="text-sm font-medium">អ្នកទទួល/ប្រគល់</label>
+          <select id="mov_person" class="input">
+            <option value="">-- គ្មាន --</option>
+            ${DB.employees.filter(e => e.status === 'active').map(e => 
+              `<option value="${e.id}">${e.full_name}</option>`
+            ).join('')}
+          </select>
+        </div>
+      </div>
+      
+      <div class="flex justify-end gap-2 mt-6 pt-4 border-t">
+        <button type="button" onclick="closeModal()" class="btn btn-secondary">បោះបង់</button>
+        <button type="submit" class="btn btn-primary">💾 រក្សាទុក</button>
+      </div>
+    </form>
+  `;
+  openModal();
+  
+  if (itemId) {
+    updateStockPreview();
+  }
+}
+
+function updateStockPreview() {
+  const itemId = +document.getElementById('mov_item').value;
+  const qty = +document.getElementById('mov_qty').value || 0;
+  const type = document.getElementById('mov_type').value;
+  
+  const item = DB.inventory.find(i => i.id === itemId);
+  if (!item) {
+    document.getElementById('prevQty').textContent = '0';
+    document.getElementById('newQty').textContent = '0';
+    return;
+  }
+  
+  let newQty = item.quantity;
+  if (type === 'in' || type === 'return') newQty += qty;
+  else if (type === 'out') newQty -= qty;
+  else if (type === 'adjustment') newQty = qty;
+  
+  document.getElementById('prevQty').textContent = item.quantity;
+  document.getElementById('newQty').textContent = newQty;
+  document.getElementById('newQty').className = newQty < 0 ? 'font-bold text-red-600' : 'font-bold text-green-600';
+}
+
+function saveStockMovement(e) {
+  e.preventDefault();
+  
+  const itemId = +document.getElementById('mov_item').value;
+  const type = document.getElementById('mov_type').value;
+  const qty = +document.getElementById('mov_qty').value;
+  const note = document.getElementById('mov_note').value.trim();
+  const personId = +document.getElementById('mov_person').value || null;
+  
+  if (!itemId || !qty) {
+    toast('❌ សូមបំពេញព័ត៌មាន', 'error');
+    return;
+  }
+  
+  const item = DB.inventory.find(i => i.id === itemId);
+  if (!item) return;
+  
+  const beforeQty = item.quantity;
+  let afterQty = beforeQty;
+  
+  if (type === 'in' || type === 'return') afterQty = beforeQty + qty;
+  else if (type === 'out') afterQty = beforeQty - qty;
+  else if (type === 'adjustment') afterQty = qty;
+  
+  if (afterQty < 0) {
+    toast('❌ ចំនួនមិនគ្រប់គ្រាន់', 'error');
+    return;
+  }
+  
+  item.quantity = afterQty;
+  item.status = afterQty <= item.min_stock ? 'low' : 'normal';
+  
+  // ✅ Save Movement
+  DB.inventoryMovements.push({
+    id: DB.nextId.invMovement++,
+    item_id: itemId,
+    code: item.code,
+    name: item.name,
+    type: type,
+    quantity: qty,
+    before_qty: beforeQty,
+    after_qty: afterQty,
+    note: note,
+    person_id: personId,
+    person_name: personId ? DB.employees.find(e => e.id === personId)?.full_name : null,
+    user_id: currentUser.id,
+    created_at: new Date().toISOString()
+  });
+  
+  logAudit(currentUser.id, 'STOCK_MOVEMENT', 'inventory', itemId, `${type} ${qty} ${item.name}`);
+  saveDB();
+  closeModal();
+  renderInventory();
+  toast(`✅ Stock ${type === 'in' ? 'ចូល' : type === 'out' ? 'ចេញ' : type} ជោគជ័យ`);
+}
+
+// ✅ View Stock Movement History
+function viewStockMovement(itemId) {
+  const item = DB.inventory.find(i => i.id === itemId);
+  if (!item) return;
+  
+  const movements = DB.inventoryMovements.filter(m => m.item_id === itemId).reverse();
+  
+  document.getElementById('modalContainer').classList.add('modal-lg');
+  document.getElementById('modalContainer').classList.remove('modal-xl', 'modal-md');
+  document.getElementById('modalTitle').textContent = `📜 ប្រវត្តិស្តុក: ${item.name}`;
+  
+  document.getElementById('modalBody').innerHTML = `
+    <div class="p-3 bg-blue-50 rounded-lg mb-4">
+      <div class="grid grid-cols-3 gap-3 text-sm">
+        <div>
+          <div class="text-slate-500 text-xs">កូដ</div>
+          <div class="font-bold">${escapeHtml(item.code)}</div>
+        </div>
+        <div>
+          <div class="text-slate-500 text-xs">ឈ្មោះ</div>
+          <div class="font-bold">${escapeHtml(item.name)}</div>
+        </div>
+        <div>
+          <div class="text-slate-500 text-xs">នៅសល់បច្ចុប្បន្ន</div>
+          <div class="font-bold text-green-600">${item.quantity} ${escapeHtml(item.unit || '')}</div>
+        </div>
+      </div>
+    </div>
+    
+    <table class="w-full text-sm">
+      <thead class="bg-slate-50">
+        <tr>
+          <th class="text-left p-2">កាលបរិច្ឆេទ</th>
+          <th class="text-center p-2">ប្រភេទ</th>
+          <th class="text-right p-2">ចំនួន</th>
+          <th class="text-right p-2">មុន</th>
+          <th class="text-right p-2">ក្រោយ</th>
+          <th class="text-left p-2">ចំណាំ</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${movements.length ? movements.map(m => {
+          const typeLabel = m.type === 'in' ? '📥 ចូល' :
+                           m.type === 'out' ? '📤 ចេញ' :
+                           m.type === 'adjustment' ? '⚙️ កែ' :
+                           m.type === 'return' ? '↩️ ត្រឡប់' :
+                           m.type === 'opening' ? '🎬 ចាប់ផ្ដើម' : m.type;
+          const typeClass = m.type === 'in' || m.type === 'return' ? 'text-green-600' :
+                           m.type === 'out' ? 'text-red-600' : 'text-blue-600';
+          return `
+            <tr class="border-b">
+              <td class="p-2 text-xs">${new Date(m.created_at).toLocaleString()}</td>
+              <td class="p-2 text-center text-xs ${typeClass}">${typeLabel}</td>
+              <td class="p-2 text-right font-bold ${typeClass}">${m.type === 'out' ? '-' : '+'}${m.quantity}</td>
+              <td class="p-2 text-right text-slate-500">${m.before_qty}</td>
+              <td class="p-2 text-right font-bold">${m.after_qty}</td>
+              <td class="p-2 text-xs text-slate-600">${escapeHtml(m.note || '-')}</td>
+            </tr>
+          `;
+        }).join('') : '<tr><td colspan="6" class="text-center p-8 text-slate-400">មិនមានប្រវត្តិ</td></tr>'}
+      </tbody>
+    </table>
+    
+    <div class="flex justify-end mt-6 pt-4 border-t">
+      <button onclick="closeModal()" class="btn btn-secondary">បិទ</button>
+    </div>
+  `;
+  openModal();
+}
+
+// =====================================================
+// ✅ INVENTORY REPORT - EXCEL
+// =====================================================
+function exportInventoryReportExcel() {
+  if (!DB.inventory.length) {
+    toast('❌ គ្មានទិន្នន័យ', 'error');
+    return;
+  }
+  
+  const headerRow = [
+    'កូដ', 'ឈ្មោះ', 'ប្រភេទ', 'ឯកតា', 'ចំនួន',
+    'Min', 'Max', 'តម្លៃ ($)', 'តម្លៃសរុប ($)', 'ទីតាំង', 'ស្ថានភាព'
+  ];
+  
+  const dataRows = DB.inventory.map(i => {
+    let status = 'ធម្មតា';
+    if (i.quantity === 0) status = 'អស់ស្តុក';
+    else if (i.quantity <= i.min_stock) status = 'ស្តុកតិច';
+    
+    return [
+      i.code || '', i.name || '', i.category || '', i.unit || '',
+      i.quantity || 0, i.min_stock || 0, i.max_stock || 0,
+      (i.unit_price || 0).toFixed(2),
+      (i.quantity * (i.unit_price || 0)).toFixed(2),
+      i.location_name || '', status
+    ];
+  });
+  
+  const wsData = [
+    ['ក្រុមហ៊ុន សុកន ត្រេនស្ព័ត ឯ.ក'],
+    ['SOKAN TRANSPORT PTE., LTD.'],
+    ['របាយការណ៍ស្តុក'],
+    [`សរុប: ${DB.inventory.length} ប្រភេទ | តម្លៃសរុប: $${DB.inventory.reduce((s,i) => s + (i.quantity * (i.unit_price || 0)), 0).toFixed(2)}`],
+    [],
+    headerRow,
+    ...dataRows
+  ];
+  
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  ws['!cols'] = [
+    { wch: 10 }, { wch: 25 }, { wch: 15 }, { wch: 10 }, { wch: 10 },
+    { wch: 8 }, { wch: 8 }, { wch: 12 }, { wch: 14 }, { wch: 20 }, { wch: 12 }
+  ];
+  ws['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 10 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 10 } },
+    { s: { r: 2, c: 0 }, e: { r: 2, c: 10 } },
+    { s: { r: 3, c: 0 }, e: { r: 3, c: 10 } }
+  ];
+  
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Inventory');
+  XLSX.writeFile(wb, `Inventory_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+  toast('📊 Excel Downloaded');
+}
+
+// =====================================================
+// ✅ INVENTORY REPORT - PDF
+// =====================================================
+function exportInventoryReportPDF2() {
+  if (!DB.inventory.length) {
+    toast('❌ គ្មានទិន្នន័យ', 'error');
+    return;
+  }
+  
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    toast('❌ Browser បិទ Popup', 'error');
+    return;
+  }
+  
+  const totalQty = DB.inventory.reduce((s,i) => s + (i.quantity || 0), 0);
+  const totalValue = DB.inventory.reduce((s,i) => s + (i.quantity * (i.unit_price || 0)), 0);
+  const lowStock = DB.inventory.filter(i => i.quantity <= i.min_stock && i.quantity > 0).length;
+  const outStock = DB.inventory.filter(i => i.quantity === 0).length;
+  
+  const html = `
+    <!DOCTYPE html>
+    <html lang="km">
+    <head>
+      <meta charset="UTF-8">
+      <title>Inventory Report</title>
+      <link href="https://fonts.googleapis.com/css2?family=Moul&family=Siemreap&display=swap" rel="stylesheet">
+      <style>
+        @page { size: A4 landscape; margin: 8mm; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Siemreap', sans-serif; margin: 0; padding: 15px; color: #1e293b; font-size: 11px; }
+        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 2px solid #1e40af; min-height: 90px; }
+        .header-left { display: flex; flex-direction: column; align-items: center; text-align: center; width: 220px; }
+        .logo-box { width: 65px; height: 65px; display: flex; align-items: center; justify-content: center; margin-bottom: 5px; }
+        .logo-box img { width: 100%; height: 100%; object-fit: contain; }
+        .company-name-kh { font-family: 'Moul', serif; font-size: 11px; color: #1e40af; margin: 0; line-height: 1.5; }
+        .company-name-en { font-family: 'Moul', serif; font-size: 9px; color: #1e40af; margin: 3px 0 0; }
+        .header-right { text-align: center; font-family: 'Moul', serif; font-size: 12px; line-height: 1.8; color: #1e40af; padding-top: 6px; }
+        .title { font-family: 'Moul', serif; font-size: 16px; margin: 12px 0 3px; text-align: center; color: #1e40af; }
+        .subtitle { font-family: 'Moul', serif; font-size: 11px; margin: 0 0 15px; text-align: center; color: #1e40af; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 15px; }
+        .stat-card { border-radius: 6px; padding: 10px; text-align: center; border: 1px solid; }
+        .stat-blue { background: #eff6ff; border-color: #bfdbfe; }
+        .stat-purple { background: #faf5ff; border-color: #e9d5ff; }
+        .stat-green { background: #f0fdf4; border-color: #bbf7d0; }
+        .stat-red { background: #fef2f2; border-color: #fecaca; }
+        .stat-value { font-family: 'Moul', serif; font-size: 18px; font-weight: bold; line-height: 1.2; }
+        .stat-blue .stat-value { color: #1e40af; }
+        .stat-purple .stat-value { color: #7c3aed; }
+        .stat-green .stat-value { color: #16a34a; }
+        .stat-red .stat-value { color: #dc2626; }
+        .stat-label { font-family: 'Siemreap', sans-serif; font-size: 10px; color: #64748b; margin-top: 3px; }
+        table { width: 100%; border-collapse: collapse; font-family: 'Siemreap', sans-serif; font-size: 10px; }
+        th, td { border: 1px solid #333; padding: 5px 6px; text-align: center; vertical-align: middle; }
+        th { background: #1e40af; color: white; font-family: 'Moul', serif; font-size: 9px; }
+        td.name { text-align: left; padding-left: 6px; }
+        td.money { text-align: right; padding-right: 6px; }
+        .footer { margin-top: 25px; display: flex; justify-content: space-around; font-family: 'Siemreap', sans-serif; font-size: 11px; }
+        .signature-box { text-align: center; width: 200px; }
+        .signature-line { border-top: 1px solid #333; margin-top: 50px; padding-top: 5px; }
+        .footer-note { text-align: center; margin-top: 20px; font-family: 'Siemreap', sans-serif; font-size: 9px; color: #94a3b8; }
+        .no-print { text-align: center; margin-top: 25px; padding-top: 15px; border-top: 1px dashed #cbd5e1; }
+        .btn-print { padding: 12px 30px; font-size: 14px; cursor: pointer; background: #1e40af; color: white; border: none; border-radius: 8px; font-family: 'Siemreap', sans-serif; margin: 0 5px; }
+        .btn-close { padding: 12px 30px; font-size: 14px; cursor: pointer; background: #64748b; color: white; border: none; border-radius: 8px; font-family: 'Siemreap', sans-serif; margin: 0 5px; }
+        @media print { .no-print { display: none; } body { padding: 0; } }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div class="header-left">
+          <div class="logo-box">
+            ${DB.settings.companyLogo ? `<img src="${DB.settings.companyLogo}">` : ''}
+          </div>
+          <div>
+            <div class="company-name-kh">ក្រុមហ៊ុន សុកន ត្រេនស្ព័ត ឯ.ក</div>
+            <div class="company-name-en">SOKAN TRANSPORT PTE., LTD.</div>
+          </div>
+        </div>
+        <div class="header-right">
+          <div>ព្រះរាជាណាចក្រកម្ពុជា</div>
+          <div>ជាតិ សាសនា ព្រះមហាក្សត្រ</div>
+        </div>
+      </div>
+      
+      <div class="title">របាយការណ៍ស្តុក</div>
+      <div class="subtitle">Inventory Report</div>
+      
+      <div class="stats-grid">
+        <div class="stat-card stat-blue">
+          <div class="stat-value">${DB.inventory.length}</div>
+          <div class="stat-label">ប្រភេទទំនិញ</div>
+        </div>
+        <div class="stat-card stat-purple">
+          <div class="stat-value">${totalQty}</div>
+          <div class="stat-label">ចំនួនសរុប</div>
+        </div>
+        <div class="stat-card stat-green">
+          <div class="stat-value">$${totalValue.toLocaleString()}</div>
+          <div class="stat-label">តម្លៃសរុប</div>
+        </div>
+        <div class="stat-card stat-red">
+          <div class="stat-value">${lowStock + outStock}</div>
+          <div class="stat-label">ស្តុកតិច/អស់</div>
+        </div>
+      </div>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>កូដ</th>
+            <th>ឈ្មោះ</th>
+            <th>ប្រភេទ</th>
+            <th>ឯកតា</th>
+            <th>ចំនួន</th>
+            <th>Min</th>
+            <th>តម្លៃ ($)</th>
+            <th>តម្លៃសរុប ($)</th>
+            <th>ទីតាំង</th>
+            <th>ស្ថានភាព</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${DB.inventory.map(i => {
+            let status = 'ធម្មតា';
+            let statusClass = 'color: #16a34a;';
+            if (i.quantity === 0) { status = 'អស់ស្តុក'; statusClass = 'color: #dc2626; font-weight: bold;'; }
+            else if (i.quantity <= i.min_stock) { status = 'ស្តុកតិច'; statusClass = 'color: #ca8a04; font-weight: bold;'; }
+            
+            return `
+              <tr>
+                <td>${escapeHtml(i.code)}</td>
+                <td class="name">${escapeHtml(i.name)}</td>
+                <td>${escapeHtml(i.category || '')}</td>
+                <td>${escapeHtml(i.unit || '')}</td>
+                <td style="${statusClass}">${i.quantity}</td>
+                <td>${i.min_stock || 0}</td>
+                <td class="money">$${(i.unit_price || 0).toFixed(2)}</td>
+                <td class="money">$${(i.quantity * (i.unit_price || 0)).toFixed(2)}</td>
+                <td>${escapeHtml(i.location_name || '-')}</td>
+                <td style="${statusClass}">${status}</td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+      
+      <div class="footer">
+        <div class="signature-box">
+          <div>ហត្ថលេខាអ្នករៀបចំ</div>
+          <div class="signature-line"></div>
+        </div>
+        <div class="signature-box">
+          <div>ហត្ថលេខានាយក</div>
+          <div class="signature-line"></div>
+        </div>
+      </div>
+      
+      <div class="footer-note">
+        បង្កើតនៅ ថ្ងៃទី ${new Date().getDate()} ខែ ${new Date().getMonth()+1} ឆ្នាំ ${new Date().getFullYear()}
+      </div>
+      
+      <div class="no-print">
+        <button onclick="window.print()" class="btn-print">🖨️ បោះពុម្ព / Save as PDF</button>
+        <button onclick="window.close()" class="btn-close">✖️ បិទ</button>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  printWindow.document.write(html);
+  printWindow.document.close();
+  toast('🖨️ ចុច Print ដើម្បី Save as PDF');
 }
 
 function openInvModal() {
