@@ -10846,38 +10846,751 @@ function savePO() {
   });
   saveDB(); closeModal(); renderPurchase(); toast('✅ Created');
 }
-
 // =====================================================
-// REPORTS
+// ✅ REPORTS PAGE (13 Reports)
 // =====================================================
 function renderReports() {
+  const reports = [
+    { id: 'stockBalance', icon: '📦', name: 'សមតុល្យស្តុក', nameEn: 'Stock Balance', color: '#3b82f6', group: 'Inventory' },
+    { id: 'assetRegister', icon: '💼', name: 'បញ្ជីសម្ភារៈ', nameEn: 'Asset Register', color: '#8b5cf6', group: 'Assets' },
+    { id: 'assetByEmployee', icon: '👤', name: 'សម្ភារៈតាមបុគ្គលិក', nameEn: 'Asset by Employee', color: '#ec4899', group: 'Assets' },
+    { id: 'assetByDepartment', icon: '🏢', name: 'សម្ភារៈតាមផ្នែក', nameEn: 'Asset by Department', color: '#10b981', group: 'Assets' },
+    { id: 'assetByLocation', icon: '📍', name: 'សម្ភារៈតាមទីតាំង', nameEn: 'Asset by Location', color: '#f59e0b', group: 'Assets' },
+    { id: 'stockMovement', icon: '📊', name: 'ចលនាស្តុក', nameEn: 'Stock Movement', color: '#06b6d4', group: 'Inventory' },
+    { id: 'issueReturn', icon: '📤', name: 'ប្រគល់ & ប្រគល់ត្រឡប់', nameEn: 'Issue & Return', color: '#6366f1', group: 'Assets' },
+    { id: 'lostDamaged', icon: '⚠️', name: 'បាត់/ខូច', nameEn: 'Lost/Damaged', color: '#ef4444', group: 'Assets' },
+    { id: 'repairCost', icon: '🔧', name: 'ថ្លៃជួសជុល', nameEn: 'Repair Cost', color: '#f97316', group: 'Assets' },
+    { id: 'warrantyExpiry', icon: '🛡️', name: 'ការធានាផុតកំណត់', nameEn: 'Warranty Expiry', color: '#14b8a6', group: 'Assets' },
+    { id: 'stockCount', icon: '🔢', name: 'រាប់ស្តុក', nameEn: 'Physical Stock Count', color: '#84cc16', group: 'Inventory' },
+    { id: 'disposal', icon: '🗑️', name: 'បោះបង់', nameEn: 'Disposal', color: '#64748b', group: 'Assets' },
+    { id: 'monthlyInventory', icon: '📅', name: 'ស្តុកប្រចាំខែ', nameEn: 'Monthly Inventory', color: '#0891b2', group: 'Inventory' }
+  ];
+  
   document.getElementById('pageContent').innerHTML = `
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-      <button onclick="exportReport('employees')" class="card card-click text-left">
-        <div class="text-4xl mb-2">👥</div><div class="font-bold">${t('employees')}</div>
-      </button>
-      <button onclick="exportReport('attendance')" class="card card-click text-left">
-        <div class="text-4xl mb-2">⏰</div><div class="font-bold">${t('attendance')}</div>
-      </button>
-      <button onclick="exportReport('leave')" class="card card-click text-left">
-        <div class="text-4xl mb-2">🏖️</div><div class="font-bold">${t('leave')}</div>
-      </button>
-      <button onclick="exportReport('payroll')" class="card card-click text-left">
-        <div class="text-4xl mb-2">💰</div><div class="font-bold">${t('payroll')}</div>
-      </button>
-    </div>
     <div class="card">
-      <h3 class="font-bold mb-3">📊 ${t('repStatistics')}</h3>
-      <div class="grid grid-cols-5 gap-3">
-        <div class="p-3 bg-blue-50 rounded-lg"><div class="text-xs">${t('dashTotalEmp')}</div><div class="text-2xl font-bold text-blue-600">${DB.employees.length}</div></div>
-        <div class="p-3 bg-green-50 rounded-lg"><div class="text-xs">${t('dashActiveEmp')}</div><div class="text-2xl font-bold text-green-600">${DB.employees.filter(e=>e.status==='active').length}</div></div>
-        <div class="p-3 bg-yellow-50 rounded-lg"><div class="text-xs">${t('dashPendingLeave')}</div><div class="text-2xl font-bold text-yellow-600">${DB.leaves.filter(l=>l.status==='pending').length}</div></div>
-        <div class="p-3 bg-purple-50 rounded-lg"><div class="text-xs">${t('dashDept')}</div><div class="text-2xl font-bold text-purple-600">${DB.departments.length}</div></div>
-        <div class="p-3 bg-red-50 rounded-lg"><div class="text-xs">${t('repTotalPayrolls')}</div><div class="text-2xl font-bold text-red-600">${DB.payrolls.length}</div></div>
+      <div class="mb-6 pb-4 border-b">
+        <h3 class="font-bold text-lg">📈 របាយការណ៍</h3>
+        <p class="text-xs text-slate-500 mt-1">Reports - សូមជ្រើសរបាយការណ៍ដែលអ្នកចង់មើល</p>
+      </div>
+      
+      <!-- ✅ Quick Stats -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <div class="text-center p-3 bg-blue-50 rounded-lg">
+          <div class="text-2xl font-bold text-blue-600">${DB.assets.length}</div>
+          <div class="text-xs text-slate-500">សម្ភារៈសរុប</div>
+        </div>
+        <div class="text-center p-3 bg-purple-50 rounded-lg">
+          <div class="text-2xl font-bold text-purple-600">${DB.inventory.length}</div>
+          <div class="text-xs text-slate-500">ប្រភេទទំនិញ</div>
+        </div>
+        <div class="text-center p-3 bg-green-50 rounded-lg">
+          <div class="text-2xl font-bold text-green-600">$${DB.assets.reduce((s,a) => s + (a.purchase_price || 0), 0).toLocaleString()}</div>
+          <div class="text-xs text-slate-500">តម្លៃសម្ភារៈ</div>
+        </div>
+        <div class="text-center p-3 bg-yellow-50 rounded-lg">
+          <div class="text-2xl font-bold text-yellow-600">$${DB.inventory.reduce((s,i) => s + (i.quantity * (i.unit_price || 0)), 0).toLocaleString()}</div>
+          <div class="text-xs text-slate-500">តម្លៃស្តុក</div>
+        </div>
+      </div>
+      
+      <!-- ✅ Reports Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        ${reports.map(r => `
+          <div class="border-2 rounded-xl p-4 hover:shadow-lg transition cursor-pointer" 
+            style="border-color: ${r.color}30;"
+            onclick="runReport('${r.id}')">
+            <div class="flex items-start gap-3">
+              <div class="w-12 h-12 rounded-lg flex items-center justify-center text-2xl flex-shrink-0" 
+                style="background: ${r.color}20;">
+                ${r.icon}
+              </div>
+              <div class="flex-1 min-w-0">
+                <h4 class="font-bold text-sm">${r.name}</h4>
+                <p class="text-xs text-slate-500 mt-0.5">${r.nameEn}</p>
+                <span class="badge mt-2 inline-block" style="background: ${r.color}20; color: ${r.color}; font-size: 10px;">
+                  ${r.group}
+                </span>
+              </div>
+            </div>
+            <div class="flex gap-2 mt-3 pt-3 border-t">
+              <button onclick="event.stopPropagation();runReport('${r.id}', 'excel')" 
+                class="flex-1 btn btn-secondary btn-sm">📊 Excel</button>
+              <button onclick="event.stopPropagation();runReport('${r.id}', 'pdf')" 
+                class="flex-1 btn btn-secondary btn-sm">📕 PDF</button>
+            </div>
+          </div>
+        `).join('')}
       </div>
     </div>
   `;
 }
+
+// ✅ Run Report
+function runReport(reportId, format = 'pdf') {
+  const reportFunctions = {
+    stockBalance: { excel: exportStockBalanceExcel, pdf: exportStockBalancePDF },
+    assetRegister: { excel: exportAssetRegisterExcel, pdf: exportAssetRegisterPDF },
+    assetByEmployee: { excel: exportAssetByEmployeeExcel, pdf: exportAssetByEmployeePDF },
+    assetByDepartment: { excel: exportAssetByDepartmentExcel, pdf: exportAssetByDepartmentPDF },
+    assetByLocation: { excel: exportAssetByLocationExcel, pdf: exportAssetByLocationPDF },
+    stockMovement: { excel: exportStockMovementExcel, pdf: exportStockMovementPDF },
+    issueReturn: { excel: exportIssueReturnExcel, pdf: exportIssueReturnPDF },
+    lostDamaged: { excel: exportLostDamagedExcel, pdf: exportLostDamagedPDF },
+    repairCost: { excel: exportRepairCostExcel, pdf: exportRepairCostPDF },
+    warrantyExpiry: { excel: exportWarrantyExpiryExcel, pdf: exportWarrantyExpiryPDF },
+    stockCount: { excel: exportStockCountExcel, pdf: exportStockCountPDF },
+    disposal: { excel: exportDisposalExcel, pdf: exportDisposalPDF },
+    monthlyInventory: { excel: exportMonthlyInventoryExcel, pdf: exportMonthlyInventoryPDF }
+  };
+  
+  const fn = reportFunctions[reportId]?.[format];
+  if (fn) {
+    fn();
+  } else {
+    toast(`❌ របាយការណ៍ ${reportId} (${format})`, 'error');
+  }
+}
+
+// =====================================================
+// ✅ 1. STOCK BALANCE REPORT
+// =====================================================
+function exportStockBalanceExcel() {
+  if (!DB.inventory.length) return toast('❌ គ្មានទិន្នន័យ', 'error');
+  
+  const data = DB.inventory.map(i => ({
+    'កូដ': i.code, 'ឈ្មោះ': i.name, 'ប្រភេទ': i.category || '',
+    'ឯកតា': i.unit || '', 'ចំនួន': i.quantity, 'Min': i.min_stock,
+    'Max': i.max_stock, 'តម្លៃ ($)': i.unit_price,
+    'តម្លៃសរុប ($)': i.quantity * i.unit_price,
+    'ទីតាំង': i.location_name || ''
+  }));
+  
+  exportXLSX(data, 'Stock_Balance');
+}
+
+function exportStockBalancePDF() {
+  openStockBalancePDF();
+}
+
+function openStockBalancePDF() {
+  if (!DB.inventory.length) return toast('❌ គ្មានទិន្នន័យ', 'error');
+  
+  const totalValue = DB.inventory.reduce((s,i) => s + (i.quantity * i.unit_price), 0);
+  
+  openGenericReportPDF(
+    'របាយការណ៍សមតុល្យស្តុក',
+    'Stock Balance Report',
+    [
+      { label: 'ប្រភេទទំនិញ', value: DB.inventory.length, color: '#1e40af' },
+      { label: 'តម្លៃសរុប', value: '$' + totalValue.toLocaleString(), color: '#16a34a' },
+      { label: 'ស្តុកតិច', value: DB.inventory.filter(i => i.quantity <= i.min_stock).length, color: '#ca8a04' },
+      { label: 'អស់ស្តុក', value: DB.inventory.filter(i => i.quantity === 0).length, color: '#dc2626' }
+    ],
+    [['កូដ', 'ឈ្មោះ', 'ចំនួន', 'Min', 'តម្លៃ', 'តម្លៃសរុប', 'ទីតាំង']],
+    DB.inventory.map(i => [
+      i.code, i.name, i.quantity, i.min_stock,
+      '$' + i.unit_price.toFixed(2), '$' + (i.quantity * i.unit_price).toFixed(2),
+      i.location_name || '-'
+    ])
+  );
+}
+
+// =====================================================
+// ✅ 2. ASSET REGISTER REPORT
+// =====================================================
+function exportAssetRegisterExcel() {
+  if (!DB.assets.length) return toast('❌ គ្មានទិន្នន័យ', 'error');
+  
+  const data = DB.assets.map(a => ({
+    'Asset ID': a.asset_id, 'ឈ្មោះ': a.item_name, 'ប្រភេទ': a.category_name,
+    'Brand': a.brand, 'Model': a.model, 'Serial': a.serial_number,
+    'ថ្ងៃទិញ': a.purchase_date, 'តម្លៃ ($)': a.purchase_price,
+    'ស្ថានភាព': a.status, 'ទីតាំង': a.location_name,
+    'អ្នកកាន់': a.current_holder_name
+  }));
+  
+  exportXLSX(data, 'Asset_Register');
+}
+
+function exportAssetRegisterPDF() {
+  if (!DB.assets.length) return toast('❌ គ្មានទិន្នន័យ', 'error');
+  
+  const totalValue = DB.assets.reduce((s,a) => s + (a.purchase_price || 0), 0);
+  
+  openGenericReportPDF(
+    'របាយការណ៍បញ្ជីសម្ភារៈ',
+    'Asset Register',
+    [
+      { label: 'សម្ភារៈសរុប', value: DB.assets.length, color: '#1e40af' },
+      { label: 'កំពុងប្រើ', value: DB.assets.filter(a => a.status === 'in_use').length, color: '#16a34a' },
+      { label: 'ក្នុងស្តុក', value: DB.assets.filter(a => a.status === 'in_stock').length, color: '#0891b2' },
+      { label: 'តម្លៃសរុប', value: '$' + totalValue.toLocaleString(), color: '#7c3aed' }
+    ],
+    [['Asset ID', 'ឈ្មោះ', 'ប្រភេទ', 'Serial', 'តម្លៃ', 'ស្ថានភាព', 'ទីតាំង']],
+    DB.assets.map(a => [
+      a.asset_id, a.item_name, a.category_name,
+      a.serial_number || '-', '$' + (a.purchase_price || 0).toFixed(2),
+      DB.assetStatuses.find(s => s.code === a.status)?.name || a.status,
+      a.location_name || '-'
+    ])
+  );
+}
+
+// =====================================================
+// ✅ 3. ASSET BY EMPLOYEE
+// =====================================================
+function exportAssetByEmployeeExcel() {
+  const data = [];
+  DB.employees.forEach(emp => {
+    const assets = DB.assets.filter(a => a.current_holder_id === emp.id);
+    if (assets.length) {
+      assets.forEach(a => {
+        data.push({
+          'Employee': emp.full_name, 'Employee ID': emp.employee_id,
+          'Department': getDeptName(emp.department_id),
+          'Asset ID': a.asset_id, 'Asset': a.item_name,
+          'Serial': a.serial_number, 'តម្លៃ ($)': a.purchase_price
+        });
+      });
+    }
+  });
+  
+  if (!data.length) return toast('❌ គ្មានទិន្នន័យ', 'error');
+  exportXLSX(data, 'Asset_by_Employee');
+}
+
+function exportAssetByEmployeePDF() {
+  const rows = [];
+  DB.employees.forEach(emp => {
+    const assets = DB.assets.filter(a => a.current_holder_id === emp.id);
+    if (assets.length) {
+      rows.push([emp.full_name, getDeptName(emp.department_id), assets.length, 
+        assets.map(a => a.asset_id).join(', ')]);
+    }
+  });
+  
+  if (!rows.length) return toast('❌ គ្មានទិន្នន័យ', 'error');
+  
+  openGenericReportPDF(
+    'របាយការណ៍សម្ភារៈតាមបុគ្គលិក',
+    'Asset by Employee',
+    [{ label: 'បុគ្គលិកកាន់', value: rows.length, color: '#1e40af' }],
+    [['បុគ្គលិក', 'ផ្នែក', 'ចំនួន', 'Asset IDs']],
+    rows
+  );
+}
+
+// =====================================================
+// ✅ 4. ASSET BY DEPARTMENT
+// =====================================================
+function exportAssetByDepartmentExcel() {
+  const data = [];
+  DB.departments.forEach(dept => {
+    const emps = DB.employees.filter(e => e.department_id === dept.id);
+    const assetCount = DB.assets.filter(a => 
+      emps.some(e => e.id === a.current_holder_id)
+    ).length;
+    if (assetCount) {
+      data.push({
+        'Department': dept.name, 'Code': dept.code,
+        'Employees': emps.length, 'Assets': assetCount
+      });
+    }
+  });
+  
+  if (!data.length) return toast('❌ គ្មានទិន្នន័យ', 'error');
+  exportXLSX(data, 'Asset_by_Department');
+}
+
+function exportAssetByDepartmentPDF() {
+  const rows = [];
+  DB.departments.forEach(dept => {
+    const emps = DB.employees.filter(e => e.department_id === dept.id);
+    const assets = DB.assets.filter(a => emps.some(e => e.id === a.current_holder_id));
+    if (assets.length) {
+      rows.push([dept.name, dept.code, emps.length, assets.length]);
+    }
+  });
+  
+  if (!rows.length) return toast('❌ គ្មានទិន្នន័យ', 'error');
+  
+  openGenericReportPDF(
+    'របាយការណ៍សម្ភារៈតាមផ្នែក',
+    'Asset by Department',
+    [{ label: 'ផ្នែក', value: rows.length, color: '#1e40af' }],
+    [['ផ្នែក', 'កូដ', 'បុគ្គលិក', 'សម្ភារៈ']],
+    rows
+  );
+}
+
+// =====================================================
+// ✅ 5. ASSET BY LOCATION
+// =====================================================
+function exportAssetByLocationExcel() {
+  const data = [];
+  DB.assetLocations.forEach(loc => {
+    const assets = DB.assets.filter(a => a.location_id === loc.id);
+    if (assets.length) {
+      data.push({
+        'Location': loc.name, 'Code': loc.code, 'Type': loc.type,
+        'Asset Count': assets.length,
+        'Total Value ($)': assets.reduce((s,a) => s + (a.purchase_price || 0), 0)
+      });
+    }
+  });
+  
+  if (!data.length) return toast('❌ គ្មានទិន្នន័យ', 'error');
+  exportXLSX(data, 'Asset_by_Location');
+}
+
+function exportAssetByLocationPDF() {
+  const rows = [];
+  DB.assetLocations.forEach(loc => {
+    const assets = DB.assets.filter(a => a.location_id === loc.id);
+    if (assets.length) {
+      const total = assets.reduce((s,a) => s + (a.purchase_price || 0), 0);
+      rows.push([loc.name, loc.code, loc.type, assets.length, '$' + total.toFixed(2)]);
+    }
+  });
+  
+  if (!rows.length) return toast('❌ គ្មានទិន្នន័យ', 'error');
+  
+  openGenericReportPDF(
+    'របាយការណ៍សម្ភារៈតាមទីតាំង',
+    'Asset by Location',
+    [{ label: 'ទីតាំង', value: rows.length, color: '#1e40af' }],
+    [['ទីតាំង', 'កូដ', 'ប្រភេទ', 'ចំនួន', 'តម្លៃ']],
+    rows
+  );
+}
+
+// =====================================================
+// ✅ 6. STOCK MOVEMENT REPORT
+// =====================================================
+function exportStockMovementExcel() {
+  const movements = DB.inventoryMovements || [];
+  if (!movements.length) return toast('❌ គ្មានទិន្នន័យ', 'error');
+  
+  const data = movements.map(m => ({
+    'កូដទំនិញ': m.code, 'ឈ្មោះ': m.name, 'ប្រភេទ': m.type,
+    'ចំនួន': m.quantity, 'មុន': m.before_qty, 'ក្រោយ': m.after_qty,
+    'ចំណាំ': m.note, 'កាលបរិច្ឆេទ': new Date(m.created_at).toLocaleString()
+  }));
+  
+  exportXLSX(data, 'Stock_Movement');
+}
+
+function exportStockMovementPDF() {
+  const movements = DB.inventoryMovements || [];
+  if (!movements.length) return toast('❌ គ្មានទិន្នន័យ', 'error');
+  
+  openGenericReportPDF(
+    'របាយការណ៍ចលនាស្តុក',
+    'Stock Movement Report',
+    [
+      { label: 'ចលនាសរុប', value: movements.length, color: '#1e40af' },
+      { label: 'Stock In', value: movements.filter(m => m.type === 'in').length, color: '#16a34a' },
+      { label: 'Stock Out', value: movements.filter(m => m.type === 'out').length, color: '#dc2626' }
+    ],
+    [['កាលបរិច្ឆេទ', 'កូដ', 'ឈ្មោះ', 'ប្រភេទ', 'ចំនួន', 'ក្រោយ']],
+    movements.slice(0, 100).map(m => [
+      new Date(m.created_at).toLocaleDateString(),
+      m.code, m.name, m.type, m.quantity, m.after_qty
+    ])
+  );
+}
+
+// =====================================================
+// ✅ 7. ISSUE & RETURN REPORT
+// =====================================================
+function exportIssueReturnExcel() {
+  const data = [];
+  (DB.assetIssues || []).forEach(i => {
+    data.push({
+      'Type': 'ISSUE', 'កូដ': i.code, 'សម្ភារៈ': i.asset_name,
+      'បុគ្គលិក': i.employee_name, 'ថ្ងៃ': i.issue_date,
+      'ស្ថានភាព': i.status
+    });
+  });
+  (DB.assetReturns || []).forEach(r => {
+    data.push({
+      'Type': 'RETURN', 'កូដ': r.code, 'សម្ភារៈ': r.asset_name,
+      'បុគ្គលិក': r.employee_name, 'ថ្ងៃ': r.return_date,
+      'ស្ថានភាព': r.condition
+    });
+  });
+  
+  if (!data.length) return toast('❌ គ្មានទិន្នន័យ', 'error');
+  exportXLSX(data, 'Issue_Return');
+}
+
+function exportIssueReturnPDF() {
+  const issues = DB.assetIssues || [];
+  const returns = DB.assetReturns || [];
+  if (!issues.length && !returns.length) return toast('❌ គ្មានទិន្នន័យ', 'error');
+  
+  openGenericReportPDF(
+    'របាយការណ៍ប្រគល់ & ប្រគល់ត្រឡប់',
+    'Issue & Return Report',
+    [
+      { label: 'ប្រគល់សរុប', value: issues.length, color: '#1e40af' },
+      { label: 'កំពុងកាន់', value: issues.filter(i => i.status === 'active').length, color: '#16a34a' },
+      { label: 'ប្រគល់ត្រឡប់', value: returns.length, color: '#ca8a04' }
+    ],
+    [['ប្រភេទ', 'កូដ', 'សម្ភារៈ', 'បុគ្គលិក', 'ថ្ងៃ']],
+    [
+      ...issues.map(i => ['ISSUE', i.code, i.asset_name, i.employee_name, i.issue_date]),
+      ...returns.map(r => ['RETURN', r.code, r.asset_name, r.employee_name, r.return_date])
+    ]
+  );
+}
+
+// =====================================================
+// ✅ 8. LOST / DAMAGED REPORT
+// =====================================================
+function exportLostDamagedExcel() {
+  const lost = DB.assetLost || [];
+  const damaged = DB.assetDamages || [];
+  const data = [];
+  
+  lost.forEach(l => data.push({
+    'Type': 'LOST', 'Asset': l.asset_name, 'បុគ្គលិក': l.employee_name,
+    'ថ្ងៃ': l.date_lost, 'មូលហេតុ': l.description, 'តម្លៃ ($)': l.cost
+  }));
+  damaged.forEach(d => data.push({
+    'Type': 'DAMAGED', 'Asset': d.asset_name, 'បុគ្គលិក': d.user_name,
+    'ថ្ងៃ': d.damage_date, 'មូលហេតុ': d.description, 'តម្លៃ ($)': d.repair_cost
+  }));
+  
+  if (!data.length) return toast('❌ គ្មានទិន្នន័យ', 'error');
+  exportXLSX(data, 'Lost_Damaged');
+}
+
+function exportLostDamagedPDF() {
+  const lost = DB.assetLost || [];
+  const damaged = DB.assetDamages || [];
+  if (!lost.length && !damaged.length) return toast('❌ គ្មានទិន្នន័យ', 'error');
+  
+  openGenericReportPDF(
+    'របាយការណ៍បាត់/ខូច',
+    'Lost & Damaged Report',
+    [
+      { label: 'បាត់', value: lost.length, color: '#dc2626' },
+      { label: 'ខូច', value: damaged.length, color: '#f97316' }
+    ],
+    [['ប្រភេទ', 'Asset', 'បុគ្គលិក', 'ថ្ងៃ', 'តម្លៃ ($)']],
+    [
+      ...lost.map(l => ['LOST', l.asset_name, l.employee_name, l.date_lost, l.cost]),
+      ...damaged.map(d => ['DAMAGED', d.asset_name, d.user_name, d.damage_date, d.repair_cost])
+    ]
+  );
+}
+
+// =====================================================
+// ✅ 9. REPAIR COST REPORT
+// =====================================================
+function exportRepairCostExcel() {
+  const maintenance = DB.assetMaintenance || [];
+  if (!maintenance.length) return toast('❌ គ្មានទិន្នន័យ', 'error');
+  
+  const data = maintenance.map(m => ({
+    'Asset ID': m.asset_code, 'Asset': m.asset_name,
+    'បញ្ហា': m.problem, 'អ្នកជួសជុល': m.technician,
+    'ថ្លៃ ($)': m.cost, 'ថ្ងៃ': m.repair_date, 'ស្ថានភាព': m.status
+  }));
+  
+  exportXLSX(data, 'Repair_Cost');
+}
+
+function exportRepairCostPDF() {
+  const maintenance = DB.assetMaintenance || [];
+  if (!maintenance.length) return toast('❌ គ្មានទិន្នន័យ', 'error');
+  
+  const totalCost = maintenance.reduce((s,m) => s + (m.cost || 0), 0);
+  
+  openGenericReportPDF(
+    'របាយការណ៍ថ្លៃជួសជុល',
+    'Repair Cost Report',
+    [
+      { label: 'ការជួសជុល', value: maintenance.length, color: '#1e40af' },
+      { label: 'ថ្លៃសរុប', value: '$' + totalCost.toFixed(2), color: '#dc2626' }
+    ],
+    [['Asset ID', 'Asset', 'បញ្ហា', 'អ្នកជួសជុល', 'ថ្លៃ ($)', 'ថ្ងៃ']],
+    maintenance.map(m => [
+      m.asset_code, m.asset_name, m.problem, m.technician || '-',
+      '$' + (m.cost || 0).toFixed(2), m.repair_date || '-'
+    ])
+  );
+}
+
+// =====================================================
+// ✅ 10. WARRANTY EXPIRY REPORT
+// =====================================================
+function exportWarrantyExpiryExcel() {
+  const assets = DB.assets.filter(a => a.warranty_expiry);
+  if (!assets.length) return toast('❌ គ្មានទិន្នន័យ', 'error');
+  
+  const data = assets.map(a => {
+    const daysLeft = Math.ceil((new Date(a.warranty_expiry) - new Date()) / (1000*60*60*24));
+    return {
+      'Asset ID': a.asset_id, 'ឈ្មោះ': a.item_name,
+      'Serial': a.serial_number, 'Warranty Expiry': a.warranty_expiry,
+      'ថ្ងៃនៅសល់': daysLeft, 'ស្ថានភាព': daysLeft < 0 ? 'Expired' : daysLeft < 30 ? 'Urgent' : daysLeft < 90 ? 'Warning' : 'OK'
+    };
+  }).sort((a,b) => a['ថ្ងៃនៅសល់'] - b['ថ្ងៃនៅសល់']);
+  
+  exportXLSX(data, 'Warranty_Expiry');
+}
+
+function exportWarrantyExpiryPDF() {
+  const assets = DB.assets.filter(a => a.warranty_expiry);
+  if (!assets.length) return toast('❌ គ្មានទិន្នន័យ', 'error');
+  
+  const sorted = assets.map(a => {
+    const days = Math.ceil((new Date(a.warranty_expiry) - new Date()) / (1000*60*60*24));
+    return { ...a, daysLeft: days };
+  }).sort((a,b) => a.daysLeft - b.daysLeft);
+  
+  openGenericReportPDF(
+    'របាយការណ៍ការធានាផុតកំណត់',
+    'Warranty Expiry Report',
+    [
+      { label: 'សរុប', value: assets.length, color: '#1e40af' },
+      { label: 'ផុតកំណត់', value: sorted.filter(a => a.daysLeft < 0).length, color: '#dc2626' },
+      { label: 'ជិតផុត', value: sorted.filter(a => a.daysLeft >= 0 && a.daysLeft < 30).length, color: '#f59e0b' }
+    ],
+    [['Asset ID', 'ឈ្មោះ', 'Serial', 'Expiry', 'ថ្ងៃនៅសល់']],
+    sorted.map(a => [
+      a.asset_id, a.item_name, a.serial_number || '-',
+      a.warranty_expiry, a.daysLeft < 0 ? 'EXPIRED' : a.daysLeft + ' ថ្ងៃ'
+    ])
+  );
+}
+
+// =====================================================
+// ✅ 11. PHYSICAL STOCK COUNT
+// =====================================================
+function exportStockCountExcel() {
+  const counts = DB.assetStockCounts || [];
+  if (!counts.length) return toast('❌ គ្មានទិន្នន័យ', 'error');
+  
+  const data = counts.map(c => ({
+    'កូដទំនិញ': c.item_code, 'ឈ្មោះ': c.item_name,
+    'System Qty': c.system_qty, 'Physical Qty': c.physical_qty,
+    'ខុសគ្នា': c.physical_qty - c.system_qty,
+    'មូលហេតុ': c.reason, 'ថ្ងៃ': c.count_date
+  }));
+  
+  exportXLSX(data, 'Stock_Count');
+}
+
+function exportStockCountPDF() {
+  const counts = DB.assetStockCounts || [];
+  if (!counts.length) return toast('❌ គ្មានទិន្នន័យ', 'error');
+  
+  openGenericReportPDF(
+    'របាយការណ៍រាប់ស្តុក',
+    'Physical Stock Count Report',
+    [
+      { label: 'ការរាប់សរុប', value: counts.length, color: '#1e40af' },
+      { label: 'ខុសគ្នា', value: counts.filter(c => c.system_qty !== c.physical_qty).length, color: '#dc2626' }
+    ],
+    [['កូដ', 'ឈ្មោះ', 'System', 'Physical', 'ខុសគ្នា', 'ថ្ងៃ']],
+    counts.map(c => [
+      c.item_code, c.item_name, c.system_qty, c.physical_qty,
+      c.physical_qty - c.system_qty, c.count_date
+    ])
+  );
+}
+
+// =====================================================
+// ✅ 12. DISPOSAL REPORT
+// =====================================================
+function exportDisposalExcel() {
+  const disposals = DB.assetDisposals || [];
+  if (!disposals.length) return toast('❌ គ្មានទិន្នន័យ', 'error');
+  
+  const data = disposals.map(d => ({
+    'Asset ID': d.asset_code, 'ឈ្មោះ': d.asset_name,
+    'តម្លៃទិញ ($)': d.purchase_value, 'តម្លៃបោះបង់ ($)': d.disposal_value,
+    'ថ្ងៃបោះបង់': d.disposal_date, 'មូលហេតុ': d.reason,
+    'វិធី': d.disposal_method
+  }));
+  
+  exportXLSX(data, 'Disposal');
+}
+
+function exportDisposalPDF() {
+  const disposals = DB.assetDisposals || [];
+  if (!disposals.length) return toast('❌ គ្មានទិន្នន័យ', 'error');
+  
+  openGenericReportPDF(
+    'របាយការណ៍បោះបង់',
+    'Disposal Report',
+    [
+      { label: 'សរុប', value: disposals.length, color: '#1e40af' },
+      { label: 'តម្លៃទិញ', value: '$' + disposals.reduce((s,d) => s + (d.purchase_value || 0), 0).toLocaleString(), color: '#dc2626' }
+    ],
+    [['Asset ID', 'ឈ្មោះ', 'តម្លៃទិញ', 'ថ្ងៃបោះបង់', 'មូលហេតុ']],
+    disposals.map(d => [
+      d.asset_code, d.asset_name, '$' + (d.purchase_value || 0).toFixed(2),
+      d.disposal_date, d.reason || '-'
+    ])
+  );
+}
+
+// =====================================================
+// ✅ 13. MONTHLY INVENTORY REPORT
+// =====================================================
+function exportMonthlyInventoryExcel() {
+  const now = new Date();
+  const data = DB.inventory.map(i => ({
+    'កូដ': i.code, 'ឈ្មោះ': i.name, 'ប្រភេទ': i.category,
+    'ចំនួន': i.quantity, 'តម្លៃ ($)': i.unit_price,
+    'តម្លៃសរុប ($)': i.quantity * i.unit_price,
+    'ខែ': now.getMonth() + 1, 'ឆ្នាំ': now.getFullYear()
+  }));
+  
+  if (!data.length) return toast('❌ គ្មានទិន្នន័យ', 'error');
+  exportXLSX(data, `Monthly_Inventory_${now.getFullYear()}_${now.getMonth()+1}`);
+}
+
+function exportMonthlyInventoryPDF() {
+  if (!DB.inventory.length) return toast('❌ គ្មានទិន្នន័យ', 'error');
+  
+  const now = new Date();
+  const totalValue = DB.inventory.reduce((s,i) => s + (i.quantity * i.unit_price), 0);
+  
+  openGenericReportPDF(
+    `របាយការណ៍ស្តុកប្រចាំខែ ${now.getMonth()+1}/${now.getFullYear()}`,
+    'Monthly Inventory Report',
+    [
+      { label: 'ប្រភេទទំនិញ', value: DB.inventory.length, color: '#1e40af' },
+      { label: 'តម្លៃសរុប', value: '$' + totalValue.toLocaleString(), color: '#16a34a' }
+    ],
+    [['កូដ', 'ឈ្មោះ', 'ចំនួន', 'តម្លៃ', 'តម្លៃសរុប']],
+    DB.inventory.map(i => [
+      i.code, i.name, i.quantity,
+      '$' + i.unit_price.toFixed(2),
+      '$' + (i.quantity * i.unit_price).toFixed(2)
+    ])
+  );
+}
+
+// =====================================================
+// ✅ GENERIC REPORT PDF (Reusable)
+// =====================================================
+function openGenericReportPDF(title, titleEn, stats, headers, rows) {
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    toast('❌ Browser បិទ Popup', 'error');
+    return;
+  }
+  
+  const html = `
+    <!DOCTYPE html>
+    <html lang="km">
+    <head>
+      <meta charset="UTF-8">
+      <title>${titleEn}</title>
+      <link href="https://fonts.googleapis.com/css2?family=Moul&family=Siemreap&display=swap" rel="stylesheet">
+      <style>
+        @page { size: A4 landscape; margin: 8mm; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Siemreap', sans-serif; margin: 0; padding: 15px; color: #1e293b; font-size: 11px; }
+        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 2px solid #1e40af; min-height: 90px; }
+        .header-left { display: flex; flex-direction: column; align-items: center; text-align: center; width: 220px; }
+        .logo-box { width: 65px; height: 65px; display: flex; align-items: center; justify-content: center; margin-bottom: 5px; }
+        .logo-box img { width: 100%; height: 100%; object-fit: contain; }
+        .company-name-kh { font-family: 'Moul', serif; font-size: 11px; color: #1e40af; }
+        .company-name-en { font-family: 'Moul', serif; font-size: 9px; color: #1e40af; margin-top: 3px; }
+        .header-right { text-align: center; font-family: 'Moul', serif; font-size: 12px; line-height: 1.8; color: #1e40af; padding-top: 6px; }
+        .title { font-family: 'Moul', serif; font-size: 16px; margin: 12px 0 3px; text-align: center; color: #1e40af; }
+        .subtitle { font-family: 'Moul', serif; font-size: 11px; margin: 0 0 15px; text-align: center; color: #1e40af; }
+        .stats-grid { display: grid; grid-template-columns: repeat(${stats.length}, 1fr); gap: 10px; margin-bottom: 15px; }
+        .stat-card { border-radius: 6px; padding: 10px; text-align: center; background: #f8fafc; border: 1px solid #e2e8f0; }
+        .stat-value { font-family: 'Moul', serif; font-size: 18px; font-weight: bold; line-height: 1.2; }
+        .stat-label { font-family: 'Siemreap', sans-serif; font-size: 10px; color: #64748b; margin-top: 3px; }
+        table { width: 100%; border-collapse: collapse; font-family: 'Siemreap', sans-serif; font-size: 10px; }
+        th, td { border: 1px solid #333; padding: 5px 6px; text-align: center; }
+        th { background: #1e40af; color: white; font-family: 'Moul', serif; font-size: 9px; }
+        td.name { text-align: left; padding-left: 6px; }
+        .footer { margin-top: 25px; display: flex; justify-content: space-around; font-family: 'Siemreap', sans-serif; font-size: 11px; }
+        .signature-box { text-align: center; width: 200px; }
+        .signature-line { border-top: 1px solid #333; margin-top: 50px; padding-top: 5px; }
+        .footer-note { text-align: center; margin-top: 20px; font-family: 'Siemreap', sans-serif; font-size: 9px; color: #94a3b8; }
+        .no-print { text-align: center; margin-top: 25px; padding-top: 15px; border-top: 1px dashed #cbd5e1; }
+        .btn-print { padding: 12px 30px; font-size: 14px; cursor: pointer; background: #1e40af; color: white; border: none; border-radius: 8px; font-family: 'Siemreap', sans-serif; margin: 0 5px; }
+        .btn-close { padding: 12px 30px; font-size: 14px; cursor: pointer; background: #64748b; color: white; border: none; border-radius: 8px; font-family: 'Siemreap', sans-serif; margin: 0 5px; }
+        @media print { .no-print { display: none; } body { padding: 0; } }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div class="header-left">
+          <div class="logo-box">${DB.settings.companyLogo ? `<img src="${DB.settings.companyLogo}">` : ''}</div>
+          <div>
+            <div class="company-name-kh">ក្រុមហ៊ុន សុកន ត្រេនស្ព័ត ឯ.ក</div>
+            <div class="company-name-en">SOKAN TRANSPORT PTE., LTD.</div>
+          </div>
+        </div>
+        <div class="header-right">
+          <div>ព្រះរាជាណាចក្រកម្ពុជា</div>
+          <div>ជាតិ សាសនា ព្រះមហាក្សត្រ</div>
+        </div>
+      </div>
+      
+      <div class="title">${title}</div>
+      <div class="subtitle">${titleEn}</div>
+      
+      <div class="stats-grid">
+        ${stats.map(s => `
+          <div class="stat-card">
+            <div class="stat-value" style="color: ${s.color || '#1e40af'};">${s.value}</div>
+            <div class="stat-label">${s.label}</div>
+          </div>
+        `).join('')}
+      </div>
+      
+      <table>
+        <thead>
+          <tr>${headers[0].map(h => `<th>${h}</th>`).join('')}</tr>
+        </thead>
+        <tbody>
+          ${rows.length ? rows.map(row => `
+            <tr>${row.map(cell => `<td>${escapeHtml(String(cell || ''))}</td>`).join('')}</tr>
+          `).join('') : `<tr><td colspan="${headers[0].length}" style="text-align: center; padding: 20px; color: #94a3b8;">មិនមានទិន្នន័យ</td></tr>`}
+        </tbody>
+      </table>
+      
+      <div class="footer">
+        <div class="signature-box">
+          <div>ហត្ថលេខាអ្នករៀបចំ</div>
+          <div class="signature-line"></div>
+        </div>
+        <div class="signature-box">
+          <div>ហត្ថលេខានាយក</div>
+          <div class="signature-line"></div>
+        </div>
+      </div>
+      
+      <div class="footer-note">
+        បង្កើតនៅ ថ្ងៃទី ${new Date().getDate()} ខែ ${new Date().getMonth()+1} ឆ្នាំ ${new Date().getFullYear()}
+      </div>
+      
+      <div class="no-print">
+        <button onclick="window.print()" class="btn-print">🖨️ បោះពុម្ព / Save as PDF</button>
+        <button onclick="window.close()" class="btn-close">✖️ បិទ</button>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  printWindow.document.write(html);
+  printWindow.document.close();
+  toast('🖨️ ចុះ Print ដើម្បី Save as PDF');
+}
+
 function exportReport(type) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF('l');
