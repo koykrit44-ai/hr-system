@@ -10182,45 +10182,293 @@ function deleteAsset(id) {
   DB.assets = DB.assets.filter(a => a.id !== id);
   saveDB(); renderAssets(); toast('🗑️ Deleted');
 }
-
 // =====================================================
-// CONTRACTS
+// ✅ CONTRACTS MANAGEMENT
 // =====================================================
 function renderContracts() {
   document.getElementById('pageContent').innerHTML = `
     <div class="card">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="font-bold">📝 ${t('contracts')}</h3>
-        <div class="flex gap-2">
-          <button onclick="exportContractsPDF()" class="btn btn-secondary">📕 PDF</button>
-          <button onclick="openContractModal()" class="btn btn-primary">${t('add')}</button>
+      <!-- ✅ Header -->
+      <div class="flex flex-wrap justify-between items-center gap-3 mb-4 pb-4 border-b">
+        <div>
+          <h3 class="font-bold text-lg">📝 គ្រប់គ្រងកិច្ចសន្យា</h3>
+          <p class="text-xs text-slate-500 mt-1">Contracts Management</p>
+        </div>
+        <div class="flex gap-2 flex-wrap">
+          <button onclick="exportContractsExcel()" class="btn btn-secondary btn-sm">📊 Excel</button>
+          <button onclick="exportContractsPDF2()" class="btn btn-secondary btn-sm">📕 PDF</button>
+          <button onclick="openContractModal()" class="btn btn-primary btn-sm">+ បន្ថែមកិច្ចសន្យា</button>
         </div>
       </div>
-      <table class="w-full text-sm">
-        <thead class="bg-slate-50"><tr>
-          <th class="text-left p-3">${t('empCode')}</th>
-          <th class="text-left p-3">${t('empName')}</th>
-          <th class="text-right p-3">${t('salary')}</th>
-          <th class="text-center p-3">${t('status')}</th>
-          <th class="text-right p-3">${t('actions')}</th>
-        </tr></thead>
-        <tbody>
-          ${DB.contracts.map(c => `
-            <tr class="border-b table-row">
-              <td class="p-3 font-mono text-xs">${escapeHtml(c.code)}</td>
-              <td class="p-3">${escapeHtml(c.title)}</td>
-              <td class="p-3 text-right">$${c.value.toLocaleString()}</td>
-              <td class="p-3 text-center">${statusBadge(c.status)}</td>
-              <td class="p-3 text-right">
-                <button onclick="deleteContract(${c.id})" class="text-red-600 hover:bg-red-50 px-2 py-1 rounded text-xs">🗑️</button>
-              </td>
+      
+      <!-- ✅ Stats -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+        <div class="text-center p-3 bg-blue-50 rounded-lg">
+          <div class="text-xl font-bold text-blue-600">${DB.contracts.length}</div>
+          <div class="text-xs text-slate-500">សរុប</div>
+        </div>
+        <div class="text-center p-3 bg-green-50 rounded-lg">
+          <div class="text-xl font-bold text-green-600">${DB.contracts.filter(c => c.status === 'active').length}</div>
+          <div class="text-xs text-slate-500">សកម្ម</div>
+        </div>
+        <div class="text-center p-3 bg-red-50 rounded-lg">
+          <div class="text-xl font-bold text-red-600">${DB.contracts.filter(c => c.status === 'expired').length}</div>
+          <div class="text-xs text-slate-500">ផុតកំណត់</div>
+        </div>
+        <div class="text-center p-3 bg-purple-50 rounded-lg">
+          <div class="text-xl font-bold text-purple-600">$${DB.contracts.reduce((s,c) => s + (c.value || 0), 0).toLocaleString()}</div>
+          <div class="text-xs text-slate-500">តម្លៃសរុប</div>
+        </div>
+      </div>
+      
+      <!-- ✅ Table -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50 border-b-2">
+            <tr>
+              <th class="text-left p-2">កូដ</th>
+              <th class="text-left p-2">ចំណងជើង</th>
+              <th class="text-left p-2">ប្រភេទ</th>
+              <th class="text-right p-2">តម្លៃ ($)</th>
+              <th class="text-center p-2">ស្ថានភាព</th>
+              <th class="text-right p-2">សកម្មភាព</th>
             </tr>
-          `).join('') || `<tr><td colspan="5" class="text-center p-8 text-slate-400">${t('empNoData')}</td></tr>`}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            ${DB.contracts.length ? DB.contracts.map(c => `
+              <tr class="border-b hover:bg-slate-50">
+                <td class="p-2 font-mono text-xs text-blue-600 font-bold">${escapeHtml(c.code || '')}</td>
+                <td class="p-2 font-medium">${escapeHtml(c.title || '')}</td>
+                <td class="p-2 text-xs">${escapeHtml(c.type || '')}</td>
+                <td class="p-2 text-right font-bold text-green-600">$${(c.value || 0).toLocaleString()}</td>
+                <td class="p-2 text-center">${statusBadge(c.status)}</td>
+                <td class="p-2 text-right whitespace-nowrap">
+                  <button onclick="deleteContract(${c.id})" class="text-red-600 hover:bg-red-50 px-2 py-1 rounded text-xs" title="លុប">🗑️</button>
+                </td>
+              </tr>
+            `).join('') : '<tr><td colspan="6" class="text-center p-8 text-slate-400">មិនមានទិន្នន័យ</td></tr>'}
+          </tbody>
+        </table>
+      </div>
     </div>
   `;
 }
+
+// =====================================================
+// ✅ CONTRACTS REPORT - EXCEL
+// =====================================================
+function exportContractsExcel() {
+  if (!DB.contracts.length) {
+    toast('❌ គ្មានទិន្នន័យ', 'error');
+    return;
+  }
+  
+  const headerRow = ['ល.រ', 'កូដ', 'ចំណងជើង', 'ប្រភេទ', 'តម្លៃ ($)', 'ស្ថានភាព', 'ថ្ងៃបង្កើត'];
+  
+  const dataRows = DB.contracts.map((c, idx) => [
+    String(idx + 1).padStart(2, '0'),
+    c.code || '',
+    c.title || '',
+    c.type || '',
+    (c.value || 0).toFixed(2),
+    c.status || '',
+    c.created_at ? new Date(c.created_at).toLocaleDateString('en-GB') : ''
+  ]);
+  
+  const wsData = [
+    ['ក្រុមហ៊ុន សុកន ត្រេនស្ព័ត ឯ.ក'],
+    ['SOKAN TRANSPORT PTE., LTD.'],
+    ['របាយការណ៍កិច្ចសន្យា'],
+    [`សរុប: ${DB.contracts.length} | តម្លៃសរុប: $${DB.contracts.reduce((s,c) => s + (c.value || 0), 0).toLocaleString()}`],
+    [],
+    headerRow,
+    ...dataRows
+  ];
+  
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  ws['!cols'] = [
+    { wch: 6 }, { wch: 12 }, { wch: 35 }, { wch: 15 },
+    { wch: 15 }, { wch: 12 }, { wch: 15 }
+  ];
+  ws['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } },
+    { s: { r: 2, c: 0 }, e: { r: 2, c: 6 } },
+    { s: { r: 3, c: 0 }, e: { r: 3, c: 6 } }
+  ];
+  ws['!rows'] = [
+    { hpt: 25 }, { hpt: 22 }, { hpt: 22 }, { hpt: 20 }, { hpt: 5 },
+    { hpt: 30 },
+    ...dataRows.map(() => ({ hpt: 25 }))
+  ];
+  
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Contracts');
+  XLSX.writeFile(wb, `Contracts_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+  toast('📊 Excel Downloaded');
+}
+
+// =====================================================
+// ✅ CONTRACTS REPORT - PDF (HTML Print)
+// =====================================================
+function exportContractsPDF2() {
+  if (!DB.contracts.length) {
+    toast('❌ គ្មានទិន្នន័យ', 'error');
+    return;
+  }
+  
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    toast('❌ Browser បិទ Popup', 'error');
+    return;
+  }
+  
+  const stats = {
+    total: DB.contracts.length,
+    active: DB.contracts.filter(c => c.status === 'active').length,
+    expired: DB.contracts.filter(c => c.status === 'expired').length,
+    totalValue: DB.contracts.reduce((s,c) => s + (c.value || 0), 0)
+  };
+  
+  const html = `
+    <!DOCTYPE html>
+    <html lang="km">
+    <head>
+      <meta charset="UTF-8">
+      <title>Contracts Report</title>
+      <link href="https://fonts.googleapis.com/css2?family=Moul&family=Siemreap&display=swap" rel="stylesheet">
+      <style>
+        @page { size: A4 landscape; margin: 8mm; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Siemreap', sans-serif; margin: 0; padding: 15px; color: #1e293b; font-size: 11px; }
+        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 2px solid #1e40af; min-height: 90px; }
+        .header-left { display: flex; flex-direction: column; align-items: center; text-align: center; width: 220px; }
+        .logo-box { width: 65px; height: 65px; display: flex; align-items: center; justify-content: center; margin-bottom: 5px; }
+        .logo-box img { width: 100%; height: 100%; object-fit: contain; }
+        .company-name-kh { font-family: 'Moul', serif; font-size: 11px; color: #1e40af; }
+        .company-name-en { font-family: 'Moul', serif; font-size: 9px; color: #1e40af; margin-top: 3px; }
+        .header-right { text-align: center; font-family: 'Moul', serif; font-size: 12px; line-height: 1.8; color: #1e40af; padding-top: 6px; }
+        .title { font-family: 'Moul', serif; font-size: 16px; margin: 12px 0 3px; text-align: center; color: #1e40af; }
+        .subtitle { font-family: 'Moul', serif; font-size: 11px; margin: 0 0 15px; text-align: center; color: #1e40af; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 15px; }
+        .stat-card { border-radius: 6px; padding: 10px; text-align: center; border: 1px solid; }
+        .stat-blue { background: #eff6ff; border-color: #bfdbfe; }
+        .stat-green { background: #f0fdf4; border-color: #bbf7d0; }
+        .stat-red { background: #fef2f2; border-color: #fecaca; }
+        .stat-purple { background: #faf5ff; border-color: #e9d5ff; }
+        .stat-value { font-family: 'Moul', serif; font-size: 18px; font-weight: bold; line-height: 1.2; }
+        .stat-blue .stat-value { color: #1e40af; }
+        .stat-green .stat-value { color: #16a34a; }
+        .stat-red .stat-value { color: #dc2626; }
+        .stat-purple .stat-value { color: #7c3aed; }
+        .stat-label { font-family: 'Siemreap', sans-serif; font-size: 10px; color: #64748b; margin-top: 3px; }
+        table { width: 100%; border-collapse: collapse; font-family: 'Siemreap', sans-serif; font-size: 10px; }
+        th, td { border: 1px solid #333; padding: 5px 6px; text-align: center; }
+        th { background: #1e40af; color: white; font-family: 'Moul', serif; font-size: 9px; }
+        td.name { text-align: left; padding-left: 6px; }
+        td.money { text-align: right; padding-right: 6px; }
+        .footer { margin-top: 25px; display: flex; justify-content: space-around; font-family: 'Siemreap', sans-serif; font-size: 11px; }
+        .signature-box { text-align: center; width: 200px; }
+        .signature-line { border-top: 1px solid #333; margin-top: 50px; padding-top: 5px; }
+        .footer-note { text-align: center; margin-top: 20px; font-family: 'Siemreap', sans-serif; font-size: 9px; color: #94a3b8; }
+        .no-print { text-align: center; margin-top: 25px; padding-top: 15px; border-top: 1px dashed #cbd5e1; }
+        .btn-print { padding: 12px 30px; font-size: 14px; cursor: pointer; background: #1e40af; color: white; border: none; border-radius: 8px; font-family: 'Siemreap', sans-serif; margin: 0 5px; }
+        .btn-close { padding: 12px 30px; font-size: 14px; cursor: pointer; background: #64748b; color: white; border: none; border-radius: 8px; font-family: 'Siemreap', sans-serif; margin: 0 5px; }
+        @media print { .no-print { display: none; } body { padding: 0; } }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div class="header-left">
+          <div class="logo-box">${DB.settings.companyLogo ? `<img src="${DB.settings.companyLogo}">` : ''}</div>
+          <div>
+            <div class="company-name-kh">ក្រុមហ៊ុន សុកន ត្រេនស្ព័ត ឯ.ក</div>
+            <div class="company-name-en">SOKAN TRANSPORT PTE., LTD.</div>
+          </div>
+        </div>
+        <div class="header-right">
+          <div>ព្រះរាជាណាចក្រកម្ពុជា</div>
+          <div>ជាតិ សាសនា ព្រះមហាក្សត្រ</div>
+        </div>
+      </div>
+      
+      <div class="title">របាយការណ៍កិច្ចសន្យា</div>
+      <div class="subtitle">Contracts Report</div>
+      
+      <div class="stats-grid">
+        <div class="stat-card stat-blue">
+          <div class="stat-value">${stats.total}</div>
+          <div class="stat-label">សរុប</div>
+        </div>
+        <div class="stat-card stat-green">
+          <div class="stat-value">${stats.active}</div>
+          <div class="stat-label">សកម្ម</div>
+        </div>
+        <div class="stat-card stat-red">
+          <div class="stat-value">${stats.expired}</div>
+          <div class="stat-label">ផុតកំណត់</div>
+        </div>
+        <div class="stat-card stat-purple">
+          <div class="stat-value">$${stats.totalValue.toLocaleString()}</div>
+          <div class="stat-label">តម្លៃសរុប</div>
+        </div>
+      </div>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>ល.រ</th>
+            <th>កូដ</th>
+            <th>ចំណងជើង</th>
+            <th>ប្រភេទ</th>
+            <th>តម្លៃ ($)</th>
+            <th>ស្ថានភាព</th>
+            <th>ថ្ងៃបង្កើត</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${DB.contracts.map((c, idx) => `
+            <tr>
+              <td>${String(idx + 1).padStart(2, '0')}</td>
+              <td>${escapeHtml(c.code || '')}</td>
+              <td class="name">${escapeHtml(c.title || '')}</td>
+              <td>${escapeHtml(c.type || '')}</td>
+              <td class="money">$${(c.value || 0).toFixed(2)}</td>
+              <td>${escapeHtml(c.status || '')}</td>
+              <td>${c.created_at ? new Date(c.created_at).toLocaleDateString('en-GB') : ''}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      
+      <div class="footer">
+        <div class="signature-box">
+          <div>ហត្ថលេខាអ្នករៀបចំ</div>
+          <div class="signature-line"></div>
+        </div>
+        <div class="signature-box">
+          <div>ហត្ថលេខានាយក</div>
+          <div class="signature-line"></div>
+        </div>
+      </div>
+      
+      <div class="footer-note">
+        បង្កើតនៅ ថ្ងៃទី ${new Date().getDate()} ខែ ${new Date().getMonth()+1} ឆ្នាំ ${new Date().getFullYear()}
+      </div>
+      
+      <div class="no-print">
+        <button onclick="window.print()" class="btn-print">🖨️ បោះពុម្ព / Save as PDF</button>
+        <button onclick="window.close()" class="btn-close">✖️ បិទ</button>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  printWindow.document.write(html);
+  printWindow.document.close();
+  toast('🖨️ ចុច Print ដើម្បី Save as PDF');
+}
+
 
 function openContractModal() {
   document.getElementById('modalContainer').classList.add('modal-md');
