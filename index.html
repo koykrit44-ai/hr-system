@@ -4546,102 +4546,424 @@ function generatePayroll() {
 // =====================================================
 // PRINT PAYSLIP (moved outside generatePayroll)
 // =====================================================
+// ✅ Print Payslip (HTML Print - គាំទ្រខ្មែរ 100%)
 function printPayslip(payrollId) {
   const p = DB.payrolls.find(x => x.id === payrollId);
-  if (!p) return toast('❌ រកមិនឃើញ', 'error');
+  if (!p) {
+    toast('❌ រកមិនឃើញ', 'error');
+    return;
+  }
+  
   const e = DB.employees.find(x => x.id === p.employee_id);
-  if (!e) return;
+  if (!e) {
+    toast('❌ រកមិនឃើញបុគ្គលិក', 'error');
+    return;
+  }
   
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF('p', 'mm', 'a4');
+  // បង្កើត Window ថ្មី
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    toast('❌ Browser បិទ Popup', 'error');
+    return;
+  }
   
-  // Header
-  doc.setFillColor(37, 99, 235);
-  doc.rect(0, 0, 210, 35, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(20);
-  doc.text('PAYSLIP', 105, 18, { align: 'center' });
-  doc.setFontSize(11);
-  doc.text(`ខែ ${p.period_month}/${p.period_year}`, 105, 28, { align: 'center' });
+  // គណនា
+  const baseSalary = parseFloat(p.base_salary || 0);
+  const grossSalary = parseFloat(p.gross_salary || p.base_salary || 0);
+  const nssfEmployee = parseFloat(p.nssf_employee || 0);
+  const taxAmount = parseFloat(p.tax_amount || 0);
+  const netSalary = parseFloat(p.net_salary || 0);
+  const totalDeduction = nssfEmployee + taxAmount;
   
-  // Company Info
-  doc.setTextColor(0, 0, 0);
-  doc.setFontSize(12);
-  doc.setFont(undefined, 'bold');
-  doc.text(DB.settings.companyName || 'HR Company', 14, 50);
-  doc.setFont(undefined, 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(100, 100, 100);
-  doc.text('Phnom Penh, Cambodia', 14, 55);
+  // HTML Content
+  const html = `
+    <!DOCTYPE html>
+    <html lang="km">
+    <head>
+      <meta charset="UTF-8">
+      <title>Payslip - ${e.full_name}</title>
+      <link href="https://fonts.googleapis.com/css2?family=Moul&family=Siemreap&display=swap" rel="stylesheet">
+      <style>
+        @page { size: A4 portrait; margin: 15mm; }
+        
+        * {
+          box-sizing: border-box;
+        }
+        
+        body { 
+          font-family: 'Siemreap', sans-serif; 
+          margin: 0;
+          padding: 20px;
+          color: #1e293b;
+        }
+        
+        /* ✅ Header Layout */
+        .header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 20px;
+          padding-bottom: 15px;
+          border-bottom: 2px solid #1e40af;
+          min-height: 120px;
+        }
+        
+        /* ខាងឆ្វេង */
+        .header-left {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+          width: 250px;
+        }
+        
+        .logo-box {
+          width: 80px;
+          height: 80px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 6px;
+        }
+        
+        .logo-box img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+        }
+        
+        .company-info {
+          text-align: center;
+          width: 100%;
+        }
+        
+        .company-name-kh {
+          font-family: 'Moul', serif;
+          font-size: 12px;
+          color: #1e40af;
+          margin: 0;
+          line-height: 1.5;
+          white-space: nowrap;
+        }
+        
+        .company-name-en {
+          font-family: 'Moul', serif;
+          font-size: 10px;
+          color: #1e40af;
+          margin: 3px 0 0;
+          white-space: nowrap;
+        }
+        
+        /* ខាងស្តាំ */
+        .header-right {
+          text-align: center;
+          font-family: 'Moul', serif;
+          font-size: 14px;
+          line-height: 1.8;
+          color: #1e40af;
+          padding-top: 10px;
+        }
+        
+        /* Title */
+        .title {
+          font-family: 'Moul', serif;
+          font-size: 20px;
+          margin: 20px 0 5px;
+          text-align: center;
+          color: #1e40af;
+        }
+        
+        .subtitle {
+          font-family: 'Moul', serif;
+          font-size: 14px;
+          margin: 0 0 25px;
+          text-align: center;
+          color: #1e40af;
+        }
+        
+        /* Employee Info Box */
+        .info-box {
+          background: #f8fafc;
+          border: 1px solid #cbd5e1;
+          border-radius: 8px;
+          padding: 15px;
+          margin-bottom: 20px;
+          font-family: 'Siemreap', sans-serif;
+          font-size: 12px;
+        }
+        
+        .info-box h3 {
+          font-family: 'Moul', serif;
+          font-size: 13px;
+          color: #1e40af;
+          margin: 0 0 10px;
+          padding-bottom: 8px;
+          border-bottom: 1px solid #cbd5e1;
+        }
+        
+        .info-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 8px 20px;
+        }
+        
+        .info-row {
+          display: flex;
+          justify-content: space-between;
+          padding: 4px 0;
+        }
+        
+        .info-label {
+          color: #64748b;
+          font-weight: 500;
+        }
+        
+        .info-value {
+          color: #1e293b;
+          font-weight: 600;
+        }
+        
+        /* Table */
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          font-family: 'Siemreap', sans-serif;
+          font-size: 12px;
+          margin-bottom: 20px;
+        }
+        
+        th, td {
+          border: 1px solid #333;
+          padding: 8px 12px;
+        }
+        
+        th {
+          background: #1e40af;
+          color: white;
+          font-family: 'Moul', serif;
+          font-size: 12px;
+          text-align: center;
+        }
+        
+        td {
+          text-align: right;
+        }
+        
+        td:first-child {
+          text-align: left;
+        }
+        
+        .row-total {
+          background: #f1f5f9;
+          font-weight: bold;
+        }
+        
+        .row-net {
+          background: #dcfce7;
+          font-weight: bold;
+          font-size: 13px;
+        }
+        
+        .row-net td {
+          color: #166534;
+          padding: 12px;
+        }
+        
+        .text-red {
+          color: #dc2626;
+        }
+        
+        .text-green {
+          color: #16a34a;
+        }
+        
+        /* Signature */
+        .signature {
+          display: flex;
+          justify-content: space-around;
+          margin-top: 40px;
+          font-family: 'Siemreap', sans-serif;
+          font-size: 12px;
+        }
+        
+        .signature-box {
+          text-align: center;
+          width: 200px;
+        }
+        
+        .signature-line {
+          border-top: 1px solid #333;
+          margin-top: 60px;
+          padding-top: 5px;
+        }
+        
+        /* Footer */
+        .footer {
+          margin-top: 30px;
+          text-align: center;
+          font-family: 'Siemreap', sans-serif;
+          font-size: 10px;
+          color: #94a3b8;
+        }
+        
+        /* Buttons */
+        .no-print {
+          text-align: center;
+          margin-top: 30px;
+          padding-top: 20px;
+          border-top: 1px dashed #cbd5e1;
+        }
+        
+        .btn-print {
+          padding: 12px 30px;
+          font-size: 14px;
+          cursor: pointer;
+          background: #1e40af;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-family: 'Siemreap', sans-serif;
+          margin: 0 5px;
+        }
+        
+        .btn-close {
+          padding: 12px 30px;
+          font-size: 14px;
+          cursor: pointer;
+          background: #64748b;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-family: 'Siemreap', sans-serif;
+          margin: 0 5px;
+        }
+        
+        @media print {
+          .no-print { display: none; }
+          body { padding: 0; }
+        }
+      </style>
+    </head>
+    <body>
+      <!-- ✅ Header -->
+      <div class="header">
+        <div class="header-left">
+          <div class="logo-box">
+            ${DB.settings.companyLogo ? `<img src="${DB.settings.companyLogo}">` : ''}
+          </div>
+          <div class="company-info">
+            <div class="company-name-kh">ក្រុមហ៊ុន សុកន ត្រេនស្ព័ត ឯ.ក</div>
+            <div class="company-name-en">SOKAN TRANSPORT PTE., LTD.</div>
+          </div>
+        </div>
+        
+        <div class="header-right">
+          <div>ព្រះរាជាណាចក្រកម្ពុជា</div>
+          <div>ជាតិ សាសនា ព្រះមហាក្សត្រ</div>
+        </div>
+      </div>
+      
+      <!-- ✅ Title -->
+      <div class="title">ប័ណ្ណប្រាក់ខែ</div>
+      <div class="subtitle">សម្រាប់ខែ ${p.period_month} ឆ្នាំ ${p.period_year}</div>
+      
+      <!-- ✅ Employee Info -->
+      <div class="info-box">
+        <h3>📋 ព័ត៌មានបុគ្គលិក</h3>
+        <div class="info-grid">
+          <div class="info-row">
+            <span class="info-label">ឈ្មោះ:</span>
+            <span class="info-value">${e.full_name}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">អត្តលេខ:</span>
+            <span class="info-value">${e.employee_id || e.code}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">មុខតំណែង:</span>
+            <span class="info-value">${getPosName(e.position_id)}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">ផ្នែក:</span>
+            <span class="info-value">${getDeptName(e.department_id)}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">ថ្ងៃចូល:</span>
+            <span class="info-value">${e.hire_date || '-'}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">ភេទ:</span>
+            <span class="info-value">${e.gender === 'M' ? 'ប្រុស' : 'ស្រី'}</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- ✅ Salary Table -->
+      <table>
+        <thead>
+          <tr>
+            <th style="text-align: left;">ពិពណ៌នា</th>
+            <th style="text-align: right;">ចំនួន ($)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>ប្រាក់ខែគោល</td>
+            <td>$${baseSalary.toFixed(2)}</td>
+          </tr>
+          <tr>
+            <td>ប្រាក់ខែសរុប</td>
+            <td>$${grossSalary.toFixed(2)}</td>
+          </tr>
+          <tr>
+            <td class="text-red">NSSF (បុគ្គលិក 4%)</td>
+            <td class="text-red">-$${nssfEmployee.toFixed(2)}</td>
+          </tr>
+          <tr>
+            <td class="text-red">ពន្ធលើប្រាក់ខែ</td>
+            <td class="text-red">-$${taxAmount.toFixed(2)}</td>
+          </tr>
+          <tr class="row-total">
+            <td>ចំណាយសរុប</td>
+            <td class="text-red">-$${totalDeduction.toFixed(2)}</td>
+          </tr>
+          <tr class="row-net">
+            <td>ប្រាក់ខែសុទ្ធ</td>
+            <td>$${netSalary.toFixed(2)}</td>
+          </tr>
+        </tbody>
+      </table>
+      
+      <!-- ✅ Signature -->
+      <div class="signature">
+        <div class="signature-box">
+          <div>ហត្ថលេខាបុគ្គលិក</div>
+          <div class="signature-line"></div>
+        </div>
+        <div class="signature-box">
+          <div>ហត្ថលេខានាយក</div>
+          <div class="signature-line"></div>
+        </div>
+      </div>
+      
+      <!-- ✅ Footer -->
+      <div class="footer">
+        បង្កើតនៅ ថ្ងៃទី ${new Date().getDate()} ខែ ${new Date().getMonth()+1} ឆ្នាំ ${new Date().getFullYear()}
+      </div>
+      
+      <!-- ✅ Buttons -->
+      <div class="no-print">
+        <button onclick="window.print()" class="btn-print">🖨️ បោះពុម្ព / Save as PDF</button>
+        <button onclick="window.close()" class="btn-close">✖️ បិទ</button>
+      </div>
+    </body>
+    </html>
+  `;
   
-  // Employee Info
-  doc.setDrawColor(200, 200, 200);
-  doc.setFillColor(248, 250, 252);
-  doc.roundedRect(14, 62, 182, 40, 3, 3, 'FD');
+  printWindow.document.write(html);
+  printWindow.document.close();
   
-  doc.setTextColor(0, 0, 0);
-  doc.setFontSize(10);
-  doc.setFont(undefined, 'bold');
-  doc.text('ព័ត៌មានបុគ្គលិក', 18, 70);
-  doc.setFont(undefined, 'normal');
-  doc.setFontSize(9);
-  
-  const infoRows = [
-    ['ឈ្មោះ:', e.full_name, 'អត្តលេខ:', e.employee_id || e.code],
-    ['មុខតំណែង:', getPosName(e.position_id), 'ផ្នែក:', getDeptName(e.department_id)],
-    ['ថ្ងៃចូល:', e.hire_date || '-', 'ភេទ:', e.gender === 'M' ? 'ប្រុស' : 'ស្រី']
-  ];
-  
-  let y = 78;
-  infoRows.forEach(row => {
-    doc.text(row[0], 18, y);
-    doc.setFont(undefined, 'bold');
-    doc.text(String(row[1] || '-'), 45, y);
-    doc.setFont(undefined, 'normal');
-    doc.text(row[2], 110, y);
-    doc.setFont(undefined, 'bold');
-    doc.text(String(row[3] || '-'), 140, y);
-    doc.setFont(undefined, 'normal');
-    y += 7;
-  });
-  
-  // Earnings & Deductions
-  const deduction = p.unpaid_deduction || 0;
-  const gross = p.gross_salary || p.base_salary;
-  
-  doc.autoTable({
-    startY: 110,
-    head: [['ពិពណ៌នា', 'ចំនួន ($)']],
-    body: [
-      ['ប្រាក់ខែគោល', parseFloat(p.base_salary).toFixed(2)],
-      ...(deduction > 0 ? [['ការកាត់ប្រាក់', `-${deduction.toFixed(2)}`]] : []),
-      ['ប្រាក់ខែសរុប', parseFloat(gross).toFixed(2)],
-      ['NSSF (បុគ្គលិក 4%)', `-${parseFloat(p.nssf_employee).toFixed(2)}`],
-      ['ពន្ធលើប្រាក់ខែ', `-${parseFloat(p.tax_amount).toFixed(2)}`],
-      [{ content: 'ប្រាក់ខែសុទ្ធ', styles: { fontStyle: 'bold', fontSize: 12 } }, 
-       { content: `$${parseFloat(p.net_salary).toFixed(2)}`, styles: { fontStyle: 'bold', fontSize: 12, textColor: [22, 163, 74] } }]
-    ],
-    theme: 'grid',
-    headStyles: { fillColor: [37, 99, 235], textColor: 255, fontStyle: 'bold' },
-    styles: { fontSize: 10, cellPadding: 4 },
-    columnStyles: { 0: { cellWidth: 140 }, 1: { cellWidth: 42, halign: 'right' } }
-  });
-  
-  // Signature
-  const finalY = doc.lastAutoTable.finalY + 20;
-  doc.setFontSize(10);
-  doc.text('ហត្ថលេខាបុគ្គលិក', 40, finalY, { align: 'center' });
-  doc.text('ហត្ថលេខានាយក', 170, finalY, { align: 'center' });
-  doc.line(20, finalY + 15, 60, finalY + 15);
-  doc.line(150, finalY + 15, 190, finalY + 15);
-  
-  // Footer
-  doc.setFontSize(8);
-  doc.setTextColor(150, 150, 150);
-  doc.text(`Generated: ${new Date().toLocaleString()}`, 105, 290, { align: 'center' });
-  
-  doc.save(`Payslip_${e.code}_${p.period_year}_${p.period_month}.pdf`);
-  toast('📕 Payslip downloaded');
+  toast('🖨️ ចុច Print ដើម្បី Save as PDF');
 }
 
 function exportPayrollPDF() {
