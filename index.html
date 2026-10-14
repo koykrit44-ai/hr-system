@@ -4365,6 +4365,25 @@ function exportPayrollReportPDF() {
         td.name {
           text-align: left;
         }
+        /* ✅ Column ស្នាមមេដៃ - ធំជាងមុន */
+table th:last-child,
+table td:last-child {
+  width: 120px;
+  min-width: 120px;
+  height: 60px;
+  min-height: 60px;
+}
+
+table th:last-child {
+  padding: 8px 4px;
+  background: #e5e7eb;
+}
+
+table td:last-child {
+  padding: 20px 4px;
+  border: 1px solid #000;
+  background: #fafafa;
+}
         
         .footer {
           margin-top: 20px;
