@@ -1566,16 +1566,15 @@ function createInitialData() {
       created_at: new Date().toISOString()
     });
   });
-
-
-function saveDB() { 
+  function saveDB() { 
   try {
-    // Save to localStorage (backup)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(DB));
+    // ✅ Sanitize - លុប undefined ចេញ
+    const cleanDB = JSON.parse(JSON.stringify(DB));
     
-    // Save to Firebase (shared)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanDB));
+    
     if (typeof fbDB !== 'undefined') {
-      fbDB.ref('hr_data').set(DB).then(() => {
+      fbDB.ref('hr_data').set(cleanDB).then(() => {
         console.log('✅ Saved to Firebase');
       }).catch((error) => {
         console.error('❌ Firebase save error:', error);
@@ -9216,7 +9215,6 @@ function openAssetForm(id) {
 function updateAssetCategoryInfo() {
   // គ្រាន់តែជា Visual feedback
 }
-
 // ✅ Save Asset
 function saveAssetForm(e, id) {
   e.preventDefault();
@@ -9236,25 +9234,26 @@ function saveAssetForm(e, id) {
   const holderId = +document.getElementById('a_holder').value || null;
   const holder = holderId ? DB.employees.find(e => e.id === holderId) : null;
   
+  // ✅ Sanitize - កុំឱ្យមាន undefined
   const data = {
     item_code: category?.code || '',
     item_name: name,
-    category_id: categoryId,
+    category_id: categoryId || null,
     category_name: category?.name || '',
     category_group: category?.group || '',
-    brand: document.getElementById('a_brand').value.trim(),
-    model: document.getElementById('a_model').value.trim(),
-    serial_number: document.getElementById('a_serial').value.trim(),
-    purchase_date: document.getElementById('a_purchase_date').value,
+    brand: document.getElementById('a_brand').value.trim() || '',
+    model: document.getElementById('a_model').value.trim() || '',
+    serial_number: document.getElementById('a_serial').value.trim() || '',
+    purchase_date: document.getElementById('a_purchase_date').value || '',
     purchase_price: +document.getElementById('a_price').value || 0,
-    warranty_expiry: document.getElementById('a_warranty').value,
-    condition: document.getElementById('a_condition').value,
-    status: document.getElementById('a_status').value,
-    location_id: locationId,
+    warranty_expiry: document.getElementById('a_warranty').value || '',
+    condition: document.getElementById('a_condition').value || 'good',
+    status: document.getElementById('a_status').value || 'in_stock',
+    location_id: locationId || null,
     location_name: location?.name || '',
-    current_holder_id: holderId,
-    current_holder_name: holder?.full_name || null,
-    remark: document.getElementById('a_remark').value.trim()
+    current_holder_id: holderId || null,
+    current_holder_name: holder?.full_name || '',
+    remark: document.getElementById('a_remark').value.trim() || ''
   };
   
   if (id) {
@@ -9302,6 +9301,7 @@ function saveAssetForm(e, id) {
   closeModal();
   renderAssets();
 }
+
 
 // ✅ View Asset
 function viewAsset(id) {
