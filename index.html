@@ -11612,40 +11612,73 @@ function removeContractFile(index) {
   toast('🗑️ លុបរួច');
 }
 
-// ✅ Save Contract (Updated)
+// =====================================================
+// ✅ SAVE CONTRACT
+// =====================================================
 function saveContract(e) {
   if (e) e.preventDefault();
   
-  const title = document.getElementById('c_title').value.trim();
-  if (!title) {
-    toast('❌ សូមបំពេញចំណងជើង', 'error');
-    return;
+  console.log('🔵 saveContract called');
+  
+  try {
+    const titleEl = document.getElementById('c_title');
+    if (!titleEl) {
+      toast('❌ រកមិនឃើញ Form', 'error');
+      return;
+    }
+    
+    const title = titleEl.value.trim();
+    if (!title) {
+      toast('❌ សូមបំពេញចំណងជើង', 'error');
+      return;
+    }
+    
+    const data = {
+      title: title,
+      type: document.getElementById('c_type')?.value || 'Employment',
+      value: +(document.getElementById('c_value')?.value || 0),
+      start_date: document.getElementById('c_start_date')?.value || '',
+      end_date: document.getElementById('c_end_date')?.value || '',
+      status: document.getElementById('c_status')?.value || 'active',
+      remark: document.getElementById('c_remark')?.value || '',
+      attachments: Array.isArray(_contractFiles) ? _contractFiles : [],
+      created_at: new Date().toISOString()
+    };
+    
+    console.log('🔵 Data to save:', data);
+    console.log('🔵 DB.contracts before:', DB.contracts.length);
+    
+    // ✅ បន្ថែម Contract ថ្មី
+    const newId = DB.nextId.contract++;
+    data.id = newId;
+    data.code = 'CT' + String(newId).padStart(3, '0');
+    DB.contracts.push(data);
+    
+    console.log('🔵 DB.contracts after:', DB.contracts.length);
+    
+    logAudit(currentUser.id, 'CREATE_CONTRACT', 'contract', newId, `Created ${title}`);
+    
+    // ✅ Save ទៅ Firebase
+    saveDB();
+    console.log('🔵 saveDB called');
+    
+    // ✅ បិទ Modal និង Refresh
+    closeModal();
+    renderContracts();
+    
+    toast('✅ បន្ថែមជោគជ័យ');
+    
+  } catch (err) {
+    console.error('🔴 Error in saveContract:', err);
+    toast('❌ មានបញ្ហា: ' + err.message, 'error');
   }
-  
-  const data = {
-    title: title,
-    type: document.getElementById('c_type').value,
-    value: +document.getElementById('c_value').value || 0,
-    start_date: document.getElementById('c_start_date').value || '',
-    end_date: document.getElementById('c_end_date').value || '',
-    status: document.getElementById('c_status').value,
-    remark: document.getElementById('c_remark').value.trim() || '',
-    attachments: _contractFiles || [],
-    created_at: new Date().toISOString()
-  };
-  
-  const newId = DB.nextId.contract++;
-  data.id = newId;
-  data.code = 'CT' + String(newId).padStart(3, '0');
-  DB.contracts.push(data);
-  
-  logAudit(currentUser.id, 'CREATE_CONTRACT', 'contract', newId, `Created ${title}`);
-  saveDB();
-  closeModal();
-  renderContracts();
-  toast('✅ បន្ថែមជោគជ័យ');
 }
 
+// ✅ Reset _contractFiles
+function resetContractFiles() {
+  _contractFiles = [];
+  renderContractFiles();
+}
 
 function saveContract() {
   const title = document.getElementById('c_title').value.trim();
