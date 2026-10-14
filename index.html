@@ -4178,49 +4178,91 @@ function exportEmployeesReportPDF2() {
   printWindow.document.close();
   toast('🖨️ ចុច Print ដើម្បី Save as PDF');
 }
-
 // =====================================================
-// ORG CHART
+// ✅ ORGANIZATION CHART (បង្ហាញបុគ្គលិកទាំងអស់)
 // =====================================================
 function renderOrgChart() {
-  const ceo = DB.employees.find(e => e.position_id === 1) || DB.employees[0];
+  // ✅ ចាត់ថ្នាក់តាម Position Level
+  const employeesByLevel = {};
+  DB.employees.forEach(e => {
+    const pos = DB.positions.find(p => p.id === e.position_id);
+    const level = pos?.level || 1;
+    if (!employeesByLevel[level]) employeesByLevel[level] = [];
+    employeesByLevel[level].push(e);
+  });
+  
+  // ✅ រក CEO (Level ខ្ពស់បំផុត)
+  const maxLevel = Math.max(...Object.keys(employeesByLevel).map(Number), 0);
+  const ceo = employeesByLevel[maxLevel]?.[0] || DB.employees[0];
+  
+  // ✅ Managers = បុគ្គលិកដែលមាន manager_id = CEO
   const managers = DB.employees.filter(e => e.manager_id === ceo?.id);
-
+  
+  // ✅ បុគ្គលិកដែលមិនមាន manager (ឬ manager_id ខុស)
+  const unassigned = DB.employees.filter(e => 
+    e.id !== ceo?.id && 
+    !managers.some(m => m.id === e.id) &&
+    e.manager_id !== ceo?.id
+  );
+  
+  // ✅ Function បង្ហាញ Avatar
   function nodeAvatar(emp, size = 'w-16 h-16') {
-    if (emp.photo) return `<img src="${emp.photo}" class="${size} rounded-full object-cover mx-auto" loading="lazy">`;
-    return `<div class="avatar-circle ${size} text-xl mx-auto">${escapeHtml(emp.full_name.charAt(0))}</div>`;
+    if (!emp) return `<div class="avatar-circle ${size} text-xl mx-auto">?</div>`;
+    if (emp.photo) {
+      return `<img src="${emp.photo}" class="${size} rounded-full object-cover mx-auto" loading="lazy">`;
+    }
+    return `<div class="avatar-circle ${size} text-xl mx-auto">${escapeHtml((emp.full_name || 'E').charAt(0))}</div>`;
   }
-
+  
+  // ✅ Function បង្ហាញ Node
+  function orgNode(emp, color = 'white', textColor = '#1e293b', borderColor = '#3b82f6') {
+    if (!emp) return '';
+    return `
+      <div class="org-node" style="background: ${color}; color: ${textColor}; border-color: ${borderColor};">
+        ${nodeAvatar(emp, 'w-16 h-16')}
+        <div class="font-bold mt-2 text-sm">${escapeHtml(emp.full_name || '-')}</div>
+        <div class="text-xs opacity-90">${escapeHtml(getPosName(emp.position_id))}</div>
+        <div class="text-xs mt-1 opacity-70">${escapeHtml(getDeptName(emp.department_id))}</div>
+      </div>
+    `;
+  }
+  
   document.getElementById('pageContent').innerHTML = `
     <div class="card">
       <h3 class="font-bold mb-6 text-center text-xl">🌳 Organization Chart</h3>
       <div class="overflow-x-auto p-6">
         <div class="flex flex-col items-center min-w-max">
-          <div class="org-node" style="background: linear-gradient(135deg, #3b82f6, #1e40af); color: white; border-color: #1e40af;">
-            ${nodeAvatar(ceo, 'w-20 h-20')}
-            <div class="font-bold mt-2">${escapeHtml(ceo?.full_name || 'CEO')}</div>
-            <div class="text-xs opacity-90">${escapeHtml(getPosName(ceo?.position_id))}</div>
-          </div>
+          
+          <!-- ✅ CEO -->
+          ${ceo ? `
+            <div class="org-node" style="background: linear-gradient(135deg, #3b82f6, #1e40af); color: white; border-color: #1e40af; min-width: 220px;">
+              ${nodeAvatar(ceo, 'w-20 h-20')}
+              <div class="font-bold mt-2">${escapeHtml(ceo.full_name || '-')}</div>
+              <div class="text-xs opacity-90">${escapeHtml(getPosName(ceo.position_id))}</div>
+              <div class="text-xs mt-1 opacity-70">${escapeHtml(getDeptName(ceo.department_id))}</div>
+              <div class="text-xs mt-1 opacity-80">👥 ${DB.employees.length} នាក់</div>
+            </div>
+          ` : ''}
+          
           <div style="width:2px;height:30px;background:#3b82f6;"></div>
+          
+          <!-- ✅ Managers Level -->
           ${managers.length ? `
-            <div class="flex gap-8">
+            <div class="flex gap-6 flex-wrap justify-center">
               ${managers.map(m => {
                 const subs = DB.employees.filter(e => e.manager_id === m.id);
                 return `
                   <div class="flex flex-col items-center">
-                    <div style="width:2px;height:20px;background:#3b82f6;"></div>
-                    <div class="org-node">
-                      ${nodeAvatar(m, 'w-14 h-14')}
-                      <div class="font-bold text-sm mt-2">${escapeHtml(m.full_name)}</div>
-                      <div class="text-xs text-slate-500">${escapeHtml(getPosName(m.position_id))}</div>
-                    </div>
+                    ${orgNode(m, 'white', '#1e293b', '#3b82f6')}
+                    
                     ${subs.length ? `
-                      <div style="width:2px;height:15px;background:#3b82f6;"></div>
-                      <div class="flex gap-2">
-                        ${subs.slice(0, 3).map(s => `
-                          <div class="org-node" style="min-width: 140px; padding: 10px;">
-                            ${nodeAvatar(s, 'w-10 h-10')}
-                            <div class="text-xs font-medium mt-1">${escapeHtml(s.full_name)}</div>
+                      <div style="width:2px;height:20px;background:#3b82f6;"></div>
+                      <div class="flex gap-3 flex-wrap justify-center">
+                        ${subs.map(s => `
+                          <div class="org-node" style="min-width: 160px; padding: 12px; border-color: #10b981;">
+                            ${nodeAvatar(s, 'w-12 h-12')}
+                            <div class="text-xs font-bold mt-1">${escapeHtml(s.full_name || '-')}</div>
+                            <div class="text-xs text-slate-500">${escapeHtml(getPosName(s.position_id))}</div>
                           </div>
                         `).join('')}
                       </div>
@@ -4229,7 +4271,59 @@ function renderOrgChart() {
                 `;
               }).join('')}
             </div>
-          ` : '<p class="text-slate-400 py-4">មិនមាន Subordinates</p>'}
+          ` : ''}
+          
+          <!-- ✅ បុគ្គលិកដែលមិនមាន Manager -->
+          ${unassigned.length ? `
+            <div style="margin-top: 40px;">
+              <div class="text-center mb-4">
+                <div style="display: inline-block; padding: 8px 20px; background: #f1f5f9; border-radius: 999px; font-weight: 600; color: #475569;">
+                  👥 បុគ្គលិកទូទៅ (${unassigned.length} នាក់)
+                </div>
+              </div>
+              <div class="flex gap-3 flex-wrap justify-center">
+                ${unassigned.map(u => `
+                  <div class="org-node" style="min-width: 160px; padding: 12px; border-color: #94a3b8; background: #f8fafc;">
+                    ${nodeAvatar(u, 'w-12 h-12')}
+                    <div class="text-xs font-bold mt-1">${escapeHtml(u.full_name || '-')}</div>
+                    <div class="text-xs text-slate-500">${escapeHtml(getPosName(u.position_id))}</div>
+                    <div class="text-xs mt-1">
+                      ${statusBadge(u.status)}
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
+          
+          <!-- ✅ បើគ្មានបុគ្គលិក -->
+          ${!DB.employees.length ? `
+            <div class="text-center py-12 text-slate-400">
+              <div class="text-4xl mb-3">👥</div>
+              <p>មិនមានបុគ្គលិក</p>
+            </div>
+          ` : ''}
+          
+        </div>
+      </div>
+      
+      <!-- ✅ Statistics -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t">
+        <div class="text-center p-3 bg-blue-50 rounded-lg">
+          <div class="text-2xl font-bold text-blue-600">${DB.employees.length}</div>
+          <div class="text-xs text-slate-500">បុគ្គលិកសរុប</div>
+        </div>
+        <div class="text-center p-3 bg-green-50 rounded-lg">
+          <div class="text-2xl font-bold text-green-600">${DB.employees.filter(e => e.status === 'active').length}</div>
+          <div class="text-xs text-slate-500">សកម្ម</div>
+        </div>
+        <div class="text-center p-3 bg-purple-50 rounded-lg">
+          <div class="text-2xl font-bold text-purple-600">${DB.departments.length}</div>
+          <div class="text-xs text-slate-500">ផ្នែក</div>
+        </div>
+        <div class="text-center p-3 bg-yellow-50 rounded-lg">
+          <div class="text-2xl font-bold text-yellow-600">${DB.positions.length}</div>
+          <div class="text-xs text-slate-500">មុខតំណែង</div>
         </div>
       </div>
     </div>
