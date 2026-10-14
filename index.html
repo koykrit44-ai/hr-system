@@ -393,6 +393,9 @@ body.dark-mode .lang-btn.active {
         <span>💼</span><span>សម្ភារៈ</span>
         <span class="nav-badge blue hidden" id="badge-assets">0</span>
       </a>
+      <a href="#" onclick="showPage('assetIssues');return false;" data-page="assetIssues" class="sidebar-link flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition text-sm">
+  <span>📤</span><span>ប្រគល់/ផ្ទេរ</span>
+</a>
       <a href="#" onclick="showPage('contracts');return false;" data-page="contracts" class="sidebar-link flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition text-sm">
         <span>📝</span><span>កិច្ចសន្យា</span>
         <span class="nav-badge yellow hidden" id="badge-contracts">0</span>
@@ -1975,7 +1978,7 @@ const PAGE_META = {
     dashboard: renderDashboard, employees: renderEmployees, orgchart: renderOrgChart,
     organization: renderOrganization, positions: renderPositions,
     attendance: renderAttendance, leave: renderLeave, payroll: renderPayroll,
-    documents: renderDocuments, assets: renderAssets, contracts: renderContracts,
+    documents: renderDocuments, assets: renderAssets, assetIssues: renderAssetIssues, contracts: renderContracts,
     inventory: renderInventory, suppliers: renderSuppliers, purchase: renderPurchase,
     reports: renderReports, audit: renderAudit, settings: renderSettings
   };
@@ -8116,10 +8119,411 @@ function deleteDocument(id) {
   DB.documents = DB.documents.filter(d => d.id !== id);
   saveDB(); renderDocuments(); toast('🗑️ Deleted');
 }
+// =====================================================
+// ✅ ASSET ISSUES PAGE (ប្រគល់/ផ្ទេរ/ប្រគល់ត្រឡប់)
+// =====================================================
+function renderAssetIssues() {
+  const issues = DB.assetIssues || [];
+  const returns = DB.assetReturns || [];
+  const transfers = DB.assetTransfers || [];
+  
+  // ✅ Active Issues (កំពុងកាន់)
+  const activeIssues = issues.filter(i => i.status === 'active');
+  
+  document.getElementById('pageContent').innerHTML = `
+    <div class="card">
+      <!-- ✅ Header -->
+      <div class="flex flex-wrap justify-between items-center gap-3 mb-4 pb-4 border-b">
+        <div>
+          <h3 class="font-bold text-lg">📤 ប្រគល់ / ផ្ទេរ / ប្រគល់ត្រឡប់</h3>
+          <p class="text-xs text-slate-500 mt-1">Asset Issues, Transfers & Returns</p>
+        </div>
+        <div class="flex gap-2 flex-wrap">
+          <button onclick="exportIssueReportExcel()" class="btn btn-secondary btn-sm">📊 Excel</button>
+          <button onclick="exportIssueReportPDF2()" class="btn btn-secondary btn-sm">📕 PDF</button>
+          <button onclick="openIssueModal()" class="btn btn-success btn-sm">📤 ប្រគល់សម្ភារៈ</button>
+          <button onclick="openReturnModal()" class="btn btn-warning btn-sm">📥 ប្រគល់ត្រឡប់</button>
+          <button onclick="openTransferModal()" class="btn btn-primary btn-sm">🔄 ផ្ទេរ</button>
+        </div>
+      </div>
+      
+      <!-- ✅ Stats -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+        <div class="text-center p-3 bg-blue-50 rounded-lg">
+          <div class="text-xl font-bold text-blue-600">${issues.length}</div>
+          <div class="text-xs text-slate-500">ប្រគល់សរុប</div>
+        </div>
+        <div class="text-center p-3 bg-green-50 rounded-lg">
+          <div class="text-xl font-bold text-green-600">${activeIssues.length}</div>
+          <div class="text-xs text-slate-500">កំពុងកាន់</div>
+        </div>
+        <div class="text-center p-3 bg-purple-50 rounded-lg">
+          <div class="text-xl font-bold text-purple-600">${transfers.length}</div>
+          <div class="text-xs text-slate-500">ផ្ទេរសរុប</div>
+        </div>
+        <div class="text-center p-3 bg-yellow-50 rounded-lg">
+          <div class="text-xl font-bold text-yellow-600">${returns.length}</div>
+          <div class="text-xs text-slate-500">ប្រគល់ត្រឡប់</div>
+        </div>
+      </div>
+      
+      <!-- ✅ Tabs -->
+      <div class="flex gap-2 border-b mb-4">
+        <button onclick="switchIssueTab('issues')" id="tab-issues" class="tab-btn active">📤 ប្រគល់ (${issues.length})</button>
+        <button onclick="switchIssueTab('transfers')" id="tab-transfers" class="tab-btn">🔄 ផ្ទេរ (${transfers.length})</button>
+        <button onclick="switchIssueTab('returns')" id="tab-returns" class="tab-btn">📥 ប្រគល់ត្រឡប់ (${returns.length})</button>
+      </div>
+      
+      <!-- ✅ Issues Table -->
+      <div id="content-issues" class="tab-content">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-50 border-b-2">
+              <tr>
+                <th class="text-left p-2">កូដ</th>
+                <th class="text-left p-2">សម្ភារៈ</th>
+                <th class="text-left p-2">បុគ្គលិក</th>
+                <th class="text-left p-2">ផ្នែក</th>
+                <th class="text-left p-2">ថ្ងៃប្រគល់</th>
+                <th class="text-center p-2">ស្ថានភាព</th>
+                <th class="text-right p-2">សកម្មភាព</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${issues.length ? issues.slice().reverse().map(i => `
+                <tr class="border-b hover:bg-slate-50">
+                  <td class="p-2 font-mono text-xs text-blue-600">${escapeHtml(i.code)}</td>
+                  <td class="p-2">
+                    <div class="font-medium">${escapeHtml(i.asset_name)}</div>
+                    <div class="text-xs text-slate-500 font-mono">${escapeHtml(i.asset_code)}</div>
+                  </td>
+                  <td class="p-2">${escapeHtml(i.employee_name)}</td>
+                  <td class="p-2 text-xs">${escapeHtml(i.department_name || '-')}</td>
+                  <td class="p-2 text-xs">${i.issue_date}</td>
+                  <td class="p-2 text-center">
+                    ${i.status === 'active' 
+                      ? '<span class="badge badge-green">កំពុងកាន់</span>' 
+                      : '<span class="badge badge-gray">ប្រគល់ត្រឡប់</span>'}
+                  </td>
+                  <td class="p-2 text-right">
+                    ${i.status === 'active' 
+                      ? `<button onclick="openReturnModal(${i.asset_id})" class="text-amber-600 hover:bg-amber-50 px-2 py-1 rounded text-xs">📥 Return</button>` 
+                      : ''}
+                  </td>
+                </tr>
+              `).join('') : '<tr><td colspan="7" class="text-center p-8 text-slate-400">មិនមានទិន្នន័យ</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      <!-- ✅ Transfers Table -->
+      <div id="content-transfers" class="tab-content hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-50 border-b-2">
+              <tr>
+                <th class="text-left p-2">កូដ</th>
+                <th class="text-left p-2">សម្ភារៈ</th>
+                <th class="text-left p-2">ពី</th>
+                <th class="text-left p-2">ទៅ</th>
+                <th class="text-left p-2">ថ្ងៃផ្ទេរ</th>
+                <th class="text-left p-2">មូលហេតុ</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${transfers.length ? transfers.slice().reverse().map(t => `
+                <tr class="border-b hover:bg-slate-50">
+                  <td class="p-2 font-mono text-xs text-purple-600">${escapeHtml(t.code)}</td>
+                  <td class="p-2">
+                    <div class="font-medium">${escapeHtml(t.asset_name)}</div>
+                    <div class="text-xs text-slate-500 font-mono">${escapeHtml(t.asset_code)}</div>
+                  </td>
+                  <td class="p-2 text-xs">
+                    <div>${escapeHtml(t.from_employee_name || 'Warehouse')}</div>
+                    <div class="text-slate-500">${escapeHtml(t.from_location_name || '')}</div>
+                  </td>
+                  <td class="p-2 text-xs">
+                    <div>${escapeHtml(t.to_employee_name)}</div>
+                    <div class="text-slate-500">${escapeHtml(t.to_department_name || '')}</div>
+                  </td>
+                  <td class="p-2 text-xs">${t.transfer_date}</td>
+                  <td class="p-2 text-xs">${escapeHtml(t.reason || '-')}</td>
+                </tr>
+              `).join('') : '<tr><td colspan="6" class="text-center p-8 text-slate-400">មិនមានទិន្នន័យ</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      <!-- ✅ Returns Table -->
+      <div id="content-returns" class="tab-content hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-50 border-b-2">
+              <tr>
+                <th class="text-left p-2">កូដ</th>
+                <th class="text-left p-2">សម្ភារៈ</th>
+                <th class="text-left p-2">ពីបុគ្គលិក</th>
+                <th class="text-left p-2">ថ្ងៃប្រគល់ត្រឡប់</th>
+                <th class="text-center p-2">ស្ថានភាព</th>
+                <th class="text-left p-2">គ្រឿងខ្វះ</th>
+                <th class="text-left p-2">ការខូចខាត</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${returns.length ? returns.slice().reverse().map(r => `
+                <tr class="border-b hover:bg-slate-50">
+                  <td class="p-2 font-mono text-xs text-amber-600">${escapeHtml(r.code)}</td>
+                  <td class="p-2">
+                    <div class="font-medium">${escapeHtml(r.asset_name)}</div>
+                    <div class="text-xs text-slate-500 font-mono">${escapeHtml(r.asset_code)}</div>
+                  </td>
+                  <td class="p-2 text-xs">${escapeHtml(r.employee_name || '-')}</td>
+                  <td class="p-2 text-xs">${r.return_date}</td>
+                  <td class="p-2 text-center">
+                    <span class="badge badge-gray">${escapeHtml(r.condition || 'good')}</span>
+                  </td>
+                  <td class="p-2 text-xs text-red-600">${escapeHtml(r.missing_parts || '-')}</td>
+                  <td class="p-2 text-xs text-red-600">${escapeHtml(r.damage || '-')}</td>
+                </tr>
+              `).join('') : '<tr><td colspan="7" class="text-center p-8 text-slate-400">មិនមានទិន្នន័យ</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function switchIssueTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+  document.getElementById('content-' + tab).classList.remove('hidden');
+}
 
 // =====================================================
-// ASSETS
+// ✅ ISSUE REPORT - EXCEL
 // =====================================================
+function exportIssueReportExcel() {
+  const issues = DB.assetIssues || [];
+  if (!issues.length) {
+    toast('❌ គ្មានទិន្នន័យ', 'error');
+    return;
+  }
+  
+  const headerRow = [
+    'កូដ', 'សម្ភារៈ', 'Asset ID', 'បុគ្គលិក', 'ផ្នែក',
+    'ថ្ងៃប្រគល់', 'ស្ថានភាព', 'ចំណាំ'
+  ];
+  
+  const dataRows = issues.map(i => [
+    i.code || '', i.asset_name || '', i.asset_code || '',
+    i.employee_name || '', i.department_name || '',
+    i.issue_date || '', i.status === 'active' ? 'កំពុងកាន់' : 'ប្រគល់ត្រឡប់',
+    i.note || ''
+  ]);
+  
+  const wsData = [
+    ['ក្រុមហ៊ុន សុកន ត្រេនស្ព័ត ឯ.ក'],
+    ['SOKAN TRANSPORT PTE., LTD.'],
+    ['របាយការណ៍ប្រគល់សម្ភារៈ'],
+    [`សរុប: ${issues.length}`],
+    [],
+    headerRow,
+    ...dataRows
+  ];
+  
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  ws['!cols'] = [{ wch: 12 }, { wch: 25 }, { wch: 12 }, { wch: 20 }, { wch: 25 }, { wch: 12 }, { wch: 15 }, { wch: 25 }];
+  ws['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 7 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 7 } },
+    { s: { r: 2, c: 0 }, e: { r: 2, c: 7 } },
+    { s: { r: 3, c: 0 }, e: { r: 3, c: 7 } }
+  ];
+  
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Issues');
+  XLSX.writeFile(wb, `Issue_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+  toast('📊 Excel Downloaded');
+}
+
+// =====================================================
+// ✅ ISSUE REPORT - PDF
+// =====================================================
+function exportIssueReportPDF2() {
+  const issues = DB.assetIssues || [];
+  const returns = DB.assetReturns || [];
+  const transfers = DB.assetTransfers || [];
+  
+  if (!issues.length && !returns.length && !transfers.length) {
+    toast('❌ គ្មានទិន្នន័យ', 'error');
+    return;
+  }
+  
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    toast('❌ Browser បិទ Popup', 'error');
+    return;
+  }
+  
+  const html = `
+    <!DOCTYPE html>
+    <html lang="km">
+    <head>
+      <meta charset="UTF-8">
+      <title>Issue Report</title>
+      <link href="https://fonts.googleapis.com/css2?family=Moul&family=Siemreap&display=swap" rel="stylesheet">
+      <style>
+        @page { size: A4 landscape; margin: 8mm; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Siemreap', sans-serif; margin: 0; padding: 15px; color: #1e293b; font-size: 11px; }
+        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 2px solid #1e40af; min-height: 90px; }
+        .header-left { display: flex; flex-direction: column; align-items: center; text-align: center; width: 220px; }
+        .logo-box { width: 65px; height: 65px; display: flex; align-items: center; justify-content: center; margin-bottom: 5px; }
+        .logo-box img { width: 100%; height: 100%; object-fit: contain; }
+        .company-name-kh { font-family: 'Moul', serif; font-size: 11px; color: #1e40af; }
+        .company-name-en { font-family: 'Moul', serif; font-size: 9px; color: #1e40af; margin-top: 3px; }
+        .header-right { text-align: center; font-family: 'Moul', serif; font-size: 12px; line-height: 1.8; color: #1e40af; padding-top: 6px; }
+        .title { font-family: 'Moul', serif; font-size: 16px; margin: 12px 0 3px; text-align: center; color: #1e40af; }
+        .subtitle { font-family: 'Moul', serif; font-size: 11px; margin: 0 0 15px; text-align: center; color: #1e40af; }
+        .section { margin-bottom: 20px; }
+        .section-title { font-family: 'Moul', serif; font-size: 13px; color: white; padding: 8px 12px; background: #1e40af; border-radius: 4px; margin-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; font-family: 'Siemreap', sans-serif; font-size: 10px; }
+        th, td { border: 1px solid #333; padding: 5px 6px; text-align: center; }
+        th { background: #f1f5f9; font-family: 'Moul', serif; }
+        td.name { text-align: left; padding-left: 6px; }
+        .footer { margin-top: 25px; display: flex; justify-content: space-around; font-family: 'Siemreap', sans-serif; font-size: 11px; }
+        .signature-box { text-align: center; width: 200px; }
+        .signature-line { border-top: 1px solid #333; margin-top: 50px; padding-top: 5px; }
+        .no-print { text-align: center; margin-top: 25px; padding-top: 15px; border-top: 1px dashed #cbd5e1; }
+        .btn-print { padding: 12px 30px; font-size: 14px; cursor: pointer; background: #1e40af; color: white; border: none; border-radius: 8px; font-family: 'Siemreap', sans-serif; margin: 0 5px; }
+        .btn-close { padding: 12px 30px; font-size: 14px; cursor: pointer; background: #64748b; color: white; border: none; border-radius: 8px; font-family: 'Siemreap', sans-serif; margin: 0 5px; }
+        @media print { .no-print { display: none; } body { padding: 0; } }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div class="header-left">
+          <div class="logo-box">${DB.settings.companyLogo ? `<img src="${DB.settings.companyLogo}">` : ''}</div>
+          <div>
+            <div class="company-name-kh">ក្រុមហ៊ុន សុកន ត្រេនស្ព័ត ឯ.ក</div>
+            <div class="company-name-en">SOKAN TRANSPORT PTE., LTD.</div>
+          </div>
+        </div>
+        <div class="header-right">
+          <div>ព្រះរាជាណាចក្រកម្ពុជា</div>
+          <div>ជាតិ សាសនា ព្រះមហាក្សត្រ</div>
+        </div>
+      </div>
+      
+      <div class="title">របាយការណ៍ប្រគល់/ផ្ទេរ/ប្រគល់ត្រឡប់</div>
+      <div class="subtitle">Asset Movement Report</div>
+      
+      ${issues.length ? `
+        <div class="section">
+          <div class="section-title">📤 ប្រគល់សម្ភារៈ (${issues.length})</div>
+          <table>
+            <thead>
+              <tr>
+                <th>កូដ</th><th>សម្ភារៈ</th><th>Asset ID</th><th>បុគ្គលិក</th>
+                <th>ផ្នែក</th><th>ថ្ងៃប្រគល់</th><th>ស្ថានភាព</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${issues.map(i => `
+                <tr>
+                  <td>${escapeHtml(i.code)}</td>
+                  <td class="name">${escapeHtml(i.asset_name)}</td>
+                  <td>${escapeHtml(i.asset_code)}</td>
+                  <td class="name">${escapeHtml(i.employee_name)}</td>
+                  <td>${escapeHtml(i.department_name || '')}</td>
+                  <td>${i.issue_date}</td>
+                  <td>${i.status === 'active' ? 'កំពុងកាន់' : 'ប្រគល់ត្រឡប់'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      ` : ''}
+      
+      ${transfers.length ? `
+        <div class="section">
+          <div class="section-title">🔄 ផ្ទេរសម្ភារៈ (${transfers.length})</div>
+          <table>
+            <thead>
+              <tr>
+                <th>កូដ</th><th>សម្ភារៈ</th><th>ពី</th><th>ទៅ</th><th>ថ្ងៃផ្ទេរ</th><th>មូលហេតុ</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${transfers.map(t => `
+                <tr>
+                  <td>${escapeHtml(t.code)}</td>
+                  <td class="name">${escapeHtml(t.asset_name)}</td>
+                  <td class="name">${escapeHtml(t.from_employee_name || 'Warehouse')}</td>
+                  <td class="name">${escapeHtml(t.to_employee_name)}</td>
+                  <td>${t.transfer_date}</td>
+                  <td>${escapeHtml(t.reason || '')}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      ` : ''}
+      
+      ${returns.length ? `
+        <div class="section">
+          <div class="section-title">📥 ប្រគល់ត្រឡប់ (${returns.length})</div>
+          <table>
+            <thead>
+              <tr>
+                <th>កូដ</th><th>សម្ភារៈ</th><th>ពីបុគ្គលិក</th><th>ថ្ងៃប្រគល់ត្រឡប់</th><th>គ្រឿងខ្វះ</th><th>ការខូចខាត</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${returns.map(r => `
+                <tr>
+                  <td>${escapeHtml(r.code)}</td>
+                  <td class="name">${escapeHtml(r.asset_name)}</td>
+                  <td class="name">${escapeHtml(r.employee_name || '')}</td>
+                  <td>${r.return_date}</td>
+                  <td>${escapeHtml(r.missing_parts || '-')}</td>
+                  <td>${escapeHtml(r.damage || '-')}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      ` : ''}
+      
+      <div class="footer">
+        <div class="signature-box">
+          <div>ហត្ថលេខាអ្នករៀបចំ</div>
+          <div class="signature-line"></div>
+        </div>
+        <div class="signature-box">
+          <div>ហត្ថលេខានាយក</div>
+          <div class="signature-line"></div>
+        </div>
+      </div>
+      
+      <div class="no-print">
+        <button onclick="window.print()" class="btn-print">🖨️ បោះពុម្ព / Save as PDF</button>
+        <button onclick="window.close()" class="btn-close">✖️ បិទ</button>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  printWindow.document.write(html);
+  printWindow.document.close();
+  toast('🖨️ ចុច Print ដើម្បី Save as PDF');
+}
+
+
 // =====================================================
 // ✅ ASSETS MASTER LIST
 // =====================================================
@@ -8607,6 +9011,508 @@ function viewAsset(id) {
   `;
   openModal();
 }
+// =====================================================
+// ✅ ASSET ISSUE (ប្រគល់សម្ភារៈ)
+// =====================================================
+function openIssueModal(assetId) {
+  const asset = assetId ? DB.assets.find(a => a.id === assetId) : null;
+  
+  document.getElementById('modalContainer').classList.add('modal-md');
+  document.getElementById('modalContainer').classList.remove('modal-xl', 'modal-lg');
+  document.getElementById('modalTitle').textContent = '📤 ប្រគល់សម្ភារៈ';
+  
+  // ✅ ជ្រើសតែ Asset ដែលក្នុងស្តុក
+  const availableAssets = DB.assets.filter(a => a.status === 'in_stock' || a.id === assetId);
+  
+  document.getElementById('modalBody').innerHTML = `
+    <form onsubmit="saveIssue(event)">
+      <div class="space-y-4">
+        <div>
+          <label class="text-sm font-medium">សម្ភារៈ <span class="text-red-500">*</span></label>
+          <select id="iss_asset" class="input" required>
+            <option value="">-- ជ្រើសសម្ភារៈ --</option>
+            ${availableAssets.map(a => `
+              <option value="${a.id}" ${assetId === a.id ? 'selected' : ''}>
+                ${a.asset_id} - ${a.item_name} (${a.serial_number || 'No SN'})
+              </option>
+            `).join('')}
+          </select>
+        </div>
+        
+        <div>
+          <label class="text-sm font-medium">ប្រគល់ទៅបុគ្គលិក <span class="text-red-500">*</span></label>
+          <select id="iss_employee" class="input" required>
+            <option value="">-- ជ្រើសបុគ្គលិក --</option>
+            ${DB.employees.filter(e => e.status === 'active').map(e => `
+              <option value="${e.id}">${e.full_name} (${e.employee_id || e.code}) - ${getDeptName(e.department_id)}</option>
+            `).join('')}
+          </select>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="text-sm font-medium">ថ្ងៃប្រគល់ <span class="text-red-500">*</span></label>
+            <input id="iss_date" type="date" class="input" value="${new Date().toISOString().split('T')[0]}" required>
+          </div>
+          <div>
+            <label class="text-sm font-medium">ស្ថានភាពសម្ភារៈ</label>
+            <select id="iss_condition" class="input">
+              ${DB.assetConditions.map(c => `
+                <option value="${c.code}">${c.name}</option>
+              `).join('')}
+            </select>
+          </div>
+        </div>
+        
+        <div>
+          <label class="text-sm font-medium">ទីតាំង</label>
+          <select id="iss_location" class="input">
+            <option value="">-- ជ្រើសទីតាំង --</option>
+            ${DB.assetLocations.map(l => `
+              <option value="${l.id}">${l.name}</option>
+            `).join('')}
+          </select>
+        </div>
+        
+        <div>
+          <label class="text-sm font-medium">ចំណាំ</label>
+          <textarea id="iss_note" rows="2" class="input" placeholder="ឧ. ប្រគល់សម្រាប់ការងារ..."></textarea>
+        </div>
+        
+        <div>
+          <label class="text-sm font-medium">អ្នកអនុម័ត</label>
+          <select id="iss_approver" class="input">
+            <option value="">-- គ្មាន --</option>
+            ${DB.users.map(u => `<option value="${u.id}">${u.name} (${u.role})</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      
+      <div class="flex justify-end gap-2 mt-6 pt-4 border-t">
+        <button type="button" onclick="closeModal()" class="btn btn-secondary">បោះបង់</button>
+        <button type="submit" class="btn btn-primary">📤 ប្រគល់</button>
+      </div>
+    </form>
+  `;
+  openModal();
+}
+
+function saveIssue(e) {
+  e.preventDefault();
+  
+  const assetId = +document.getElementById('iss_asset').value;
+  const employeeId = +document.getElementById('iss_employee').value;
+  const date = document.getElementById('iss_date').value;
+  const condition = document.getElementById('iss_condition').value;
+  const locationId = +document.getElementById('iss_location').value || null;
+  const note = document.getElementById('iss_note').value.trim();
+  const approverId = +document.getElementById('iss_approver').value || null;
+  
+  if (!assetId || !employeeId) {
+    toast('❌ សូមបំពេញព័ត៌មាន', 'error');
+    return;
+  }
+  
+  const asset = DB.assets.find(a => a.id === assetId);
+  const employee = DB.employees.find(e => e.id === employeeId);
+  const location = locationId ? DB.assetLocations.find(l => l.id === locationId) : null;
+  const approver = approverId ? DB.users.find(u => u.id === approverId) : null;
+  
+  if (!asset || !employee) return;
+  
+  if (asset.status === 'in_use') {
+    toast('❌ សម្ភារៈនេះកំពុងប្រើរួចហើយ', 'error');
+    return;
+  }
+  
+  const issueCode = 'ISS-' + String(DB.nextId.issue++).padStart(4, '0');
+  
+  // ✅ Save Issue Record
+  DB.assetIssues.push({
+    id: DB.nextId.issue++,
+    code: issueCode,
+    asset_id: assetId,
+    asset_code: asset.asset_id,
+    asset_name: asset.item_name,
+    employee_id: employeeId,
+    employee_name: employee.full_name,
+    department_id: employee.department_id,
+    department_name: getDeptName(employee.department_id),
+    issue_date: date,
+    condition: condition,
+    location_id: locationId,
+    location_name: location?.name || '',
+    note: note,
+    approver_id: approverId,
+    approver_name: approver?.name || null,
+    status: 'active',
+    user_id: currentUser.id,
+    created_at: new Date().toISOString()
+  });
+  
+  // ✅ Update Asset
+  asset.status = 'in_use';
+  asset.condition = condition;
+  asset.current_holder_id = employeeId;
+  asset.current_holder_name = employee.full_name;
+  if (locationId) {
+    asset.location_id = locationId;
+    asset.location_name = location?.name || '';
+  }
+  
+  // ✅ Add History
+  DB.assetHistory.push({
+    id: DB.assetHistory.length + 1,
+    asset_id: assetId,
+    action: 'issued',
+    description: `Issued to ${employee.full_name} (${getDeptName(employee.department_id)})`,
+    user_id: currentUser.id,
+    created_at: new Date().toISOString()
+  });
+  
+  logAudit(currentUser.id, 'ISSUE_ASSET', 'asset', assetId, `Issued ${asset.item_name} to ${employee.full_name}`);
+  saveDB();
+  closeModal();
+  renderAssets();
+  toast(`✅ ប្រគល់ជោគជ័យ (${issueCode})`);
+}
+
+// =====================================================
+// ✅ ASSET RETURN (ប្រគល់ត្រឡប់)
+// =====================================================
+function openReturnModal(assetId) {
+  // ✅ ជ្រើសតែ Asset ដែលកំពុងប្រើ
+  const inUseAssets = DB.assets.filter(a => a.status === 'in_use');
+  
+  if (!inUseAssets.length) {
+    toast('❌ គ្មានសម្ភារៈកំពុងប្រើ', 'error');
+    return;
+  }
+  
+  document.getElementById('modalContainer').classList.add('modal-md');
+  document.getElementById('modalContainer').classList.remove('modal-xl', 'modal-lg');
+  document.getElementById('modalTitle').textContent = '📥 ប្រគល់ត្រឡប់';
+  
+  document.getElementById('modalBody').innerHTML = `
+    <form onsubmit="saveReturn(event)">
+      <div class="space-y-4">
+        <div>
+          <label class="text-sm font-medium">សម្ភារៈ <span class="text-red-500">*</span></label>
+          <select id="ret_asset" class="input" required>
+            <option value="">-- ជ្រើសសម្ភារៈ --</option>
+            ${inUseAssets.map(a => `
+              <option value="${a.id}" ${assetId === a.id ? 'selected' : ''}>
+                ${a.asset_id} - ${a.item_name} (កាន់ដោយ: ${a.current_holder_name || 'N/A'})
+              </option>
+            `).join('')}
+          </select>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="text-sm font-medium">ថ្ងៃប្រគល់ត្រឡប់ <span class="text-red-500">*</span></label>
+            <input id="ret_date" type="date" class="input" value="${new Date().toISOString().split('T')[0]}" required>
+          </div>
+          <div>
+            <label class="text-sm font-medium">ស្ថានភាពពេលប្រគល់</label>
+            <select id="ret_condition" class="input">
+              ${DB.assetConditions.map(c => `
+                <option value="${c.code}">${c.name}</option>
+              `).join('')}
+            </select>
+          </div>
+        </div>
+        
+        <div>
+          <label class="text-sm font-medium">ទីតាំងដាក់ត្រឡប់</label>
+          <select id="ret_location" class="input">
+            <option value="">-- ជ្រើសទីតាំង --</option>
+            ${DB.assetLocations.filter(l => l.type === 'warehouse' || l.type === 'office').map(l => `
+              <option value="${l.id}">${l.name}</option>
+            `).join('')}
+          </select>
+        </div>
+        
+        <div>
+          <label class="text-sm font-medium">គ្រឿងបន្ថែមដែលខ្វះ</label>
+          <input id="ret_missing" class="input" placeholder="ឧ. Charger, Mouse, Bag...">
+        </div>
+        
+        <div>
+          <label class="text-sm font-medium">ការខូចខាត</label>
+          <textarea id="ret_damage" rows="2" class="input" placeholder="បើមាន..."></textarea>
+        </div>
+        
+        <div>
+          <label class="text-sm font-medium">ចំណាំ</label>
+          <textarea id="ret_note" rows="2" class="input"></textarea>
+        </div>
+        
+        <div>
+          <label class="text-sm font-medium">អ្នកទទួល</label>
+          <select id="ret_receiver" class="input">
+            <option value="">-- គ្មាន --</option>
+            ${DB.users.map(u => `<option value="${u.id}">${u.name} (${u.role})</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      
+      <div class="flex justify-end gap-2 mt-6 pt-4 border-t">
+        <button type="button" onclick="closeModal()" class="btn btn-secondary">បោះបង់</button>
+        <button type="submit" class="btn btn-primary">📥 ប្រគល់ត្រឡប់</button>
+      </div>
+    </form>
+  `;
+  openModal();
+}
+
+function saveReturn(e) {
+  e.preventDefault();
+  
+  const assetId = +document.getElementById('ret_asset').value;
+  const date = document.getElementById('ret_date').value;
+  const condition = document.getElementById('ret_condition').value;
+  const locationId = +document.getElementById('ret_location').value || null;
+  const missing = document.getElementById('ret_missing').value.trim();
+  const damage = document.getElementById('ret_damage').value.trim();
+  const note = document.getElementById('ret_note').value.trim();
+  const receiverId = +document.getElementById('ret_receiver').value || null;
+  
+  const asset = DB.assets.find(a => a.id === assetId);
+  if (!asset) return;
+  
+  const location = locationId ? DB.assetLocations.find(l => l.id === locationId) : null;
+  const receiver = receiverId ? DB.users.find(u => u.id === receiverId) : null;
+  
+  const returnCode = 'RET-' + String(DB.nextId.return++).padStart(4, '0');
+  const previousHolder = asset.current_holder_name;
+  
+  // ✅ Save Return Record
+  DB.assetReturns.push({
+    id: DB.nextId.return++,
+    code: returnCode,
+    asset_id: assetId,
+    asset_code: asset.asset_id,
+    asset_name: asset.item_name,
+    employee_id: asset.current_holder_id,
+    employee_name: previousHolder,
+    return_date: date,
+    condition: condition,
+    location_id: locationId,
+    location_name: location?.name || '',
+    missing_parts: missing,
+    damage: damage,
+    note: note,
+    receiver_id: receiverId,
+    receiver_name: receiver?.name || null,
+    user_id: currentUser.id,
+    created_at: new Date().toISOString()
+  });
+  
+  // ✅ Update Asset
+  asset.status = 'in_stock';
+  asset.condition = condition;
+  asset.current_holder_id = null;
+  asset.current_holder_name = null;
+  if (locationId) {
+    asset.location_id = locationId;
+    asset.location_name = location?.name || '';
+  }
+  
+  // ✅ Add History
+  DB.assetHistory.push({
+    id: DB.assetHistory.length + 1,
+    asset_id: assetId,
+    action: 'returned',
+    description: `Returned from ${previousHolder}${missing ? ` (Missing: ${missing})` : ''}`,
+    user_id: currentUser.id,
+    created_at: new Date().toISOString()
+  });
+  
+  logAudit(currentUser.id, 'RETURN_ASSET', 'asset', assetId, `Returned ${asset.item_name}`);
+  saveDB();
+  closeModal();
+  renderAssets();
+  toast(`✅ ប្រគល់ត្រឡប់ជោគជ័យ (${returnCode})`);
+}
+
+// =====================================================
+// ✅ ASSET TRANSFER (ផ្ទេរសម្ភារៈ)
+// =====================================================
+function openTransferModal(assetId) {
+  const inUseAssets = DB.assets.filter(a => a.status === 'in_use' || a.status === 'in_stock');
+  
+  if (!inUseAssets.length) {
+    toast('❌ គ្មានសម្ភារៈ', 'error');
+    return;
+  }
+  
+  document.getElementById('modalContainer').classList.add('modal-md');
+  document.getElementById('modalContainer').classList.remove('modal-xl', 'modal-lg');
+  document.getElementById('modalTitle').textContent = '🔄 ផ្ទេរសម្ភារៈ';
+  
+  document.getElementById('modalBody').innerHTML = `
+    <form onsubmit="saveTransfer(event)">
+      <div class="space-y-4">
+        <div>
+          <label class="text-sm font-medium">សម្ភារៈ <span class="text-red-500">*</span></label>
+          <select id="trf_asset" class="input" required onchange="updateTransferInfo()">
+            <option value="">-- ជ្រើសសម្ភារៈ --</option>
+            ${inUseAssets.map(a => `
+              <option value="${a.id}" 
+                data-holder="${escapeHtml(a.current_holder_name || '')}"
+                data-location="${escapeHtml(a.location_name || '')}"
+                ${assetId === a.id ? 'selected' : ''}>
+                ${a.asset_id} - ${a.item_name}
+              </option>
+            `).join('')}
+          </select>
+        </div>
+        
+        <div id="trf_current_info" class="p-3 bg-slate-50 rounded-lg hidden">
+          <div class="text-xs space-y-1">
+            <div class="flex justify-between"><span class="text-slate-500">អ្នកកាន់បច្ចុប្បន្ន:</span><span class="font-medium" id="trf_current_holder">-</span></div>
+            <div class="flex justify-between"><span class="text-slate-500">ទីតាំងបច្ចុប្បន្ន:</span><span class="font-medium" id="trf_current_location">-</span></div>
+          </div>
+        </div>
+        
+        <div>
+          <label class="text-sm font-medium">ផ្ទេរទៅបុគ្គលិកថ្មី <span class="text-red-500">*</span></label>
+          <select id="trf_employee" class="input" required>
+            <option value="">-- ជ្រើសបុគ្គលិក --</option>
+            ${DB.employees.filter(e => e.status === 'active').map(e => `
+              <option value="${e.id}">${e.full_name} (${e.employee_id || e.code}) - ${getDeptName(e.department_id)}</option>
+            `).join('')}
+          </select>
+        </div>
+        
+        <div>
+          <label class="text-sm font-medium">ផ្ទេរទៅទីតាំងថ្មី</label>
+          <select id="trf_location" class="input">
+            <option value="">-- ជ្រើសទីតាំង --</option>
+            ${DB.assetLocations.map(l => `
+              <option value="${l.id}">${l.name}</option>
+            `).join('')}
+          </select>
+        </div>
+        
+        <div>
+          <label class="text-sm font-medium">ថ្ងៃផ្ទេរ <span class="text-red-500">*</span></label>
+          <input id="trf_date" type="date" class="input" value="${new Date().toISOString().split('T')[0]}" required>
+        </div>
+        
+        <div>
+          <label class="text-sm font-medium">មូលហេតុ</label>
+          <textarea id="trf_reason" rows="2" class="input" placeholder="ឧ. ផ្លាស់ប្តូរផ្នែក..."></textarea>
+        </div>
+        
+        <div>
+          <label class="text-sm font-medium">អ្នកអនុម័ត</label>
+          <select id="trf_approver" class="input">
+            <option value="">-- គ្មាន --</option>
+            ${DB.users.map(u => `<option value="${u.id}">${u.name} (${u.role})</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      
+      <div class="flex justify-end gap-2 mt-6 pt-4 border-t">
+        <button type="button" onclick="closeModal()" class="btn btn-secondary">បោះបង់</button>
+        <button type="submit" class="btn btn-primary">🔄 ផ្ទេរ</button>
+      </div>
+    </form>
+  `;
+  openModal();
+  
+  if (assetId) updateTransferInfo();
+}
+
+function updateTransferInfo() {
+  const assetId = +document.getElementById('trf_asset').value;
+  const infoBox = document.getElementById('trf_current_info');
+  
+  if (!assetId) {
+    infoBox.classList.add('hidden');
+    return;
+  }
+  
+  const asset = DB.assets.find(a => a.id === assetId);
+  if (!asset) return;
+  
+  document.getElementById('trf_current_holder').textContent = asset.current_holder_name || 'គ្មាន';
+  document.getElementById('trf_current_location').textContent = asset.location_name || 'គ្មាន';
+  infoBox.classList.remove('hidden');
+}
+
+function saveTransfer(e) {
+  e.preventDefault();
+  
+  const assetId = +document.getElementById('trf_asset').value;
+  const newEmployeeId = +document.getElementById('trf_employee').value;
+  const newLocationId = +document.getElementById('trf_location').value || null;
+  const date = document.getElementById('trf_date').value;
+  const reason = document.getElementById('trf_reason').value.trim();
+  const approverId = +document.getElementById('trf_approver').value || null;
+  
+  const asset = DB.assets.find(a => a.id === assetId);
+  const newEmployee = DB.employees.find(e => e.id === newEmployeeId);
+  const newLocation = newLocationId ? DB.assetLocations.find(l => l.id === newLocationId) : null;
+  const approver = approverId ? DB.users.find(u => u.id === approverId) : null;
+  
+  if (!asset || !newEmployee) return;
+  
+  const transferCode = 'TRF-' + String(DB.nextId.transfer++).padStart(4, '0');
+  const fromEmployee = asset.current_holder_name || 'Warehouse';
+  const fromLocation = asset.location_name || 'N/A';
+  
+  // ✅ Save Transfer Record
+  DB.assetTransfers.push({
+    id: DB.nextId.transfer++,
+    code: transferCode,
+    asset_id: assetId,
+    asset_code: asset.asset_id,
+    asset_name: asset.item_name,
+    from_employee_id: asset.current_holder_id,
+    from_employee_name: fromEmployee,
+    from_location_id: asset.location_id,
+    from_location_name: fromLocation,
+    to_employee_id: newEmployeeId,
+    to_employee_name: newEmployee.full_name,
+    to_department_name: getDeptName(newEmployee.department_id),
+    to_location_id: newLocationId,
+    to_location_name: newLocation?.name || '',
+    transfer_date: date,
+    reason: reason,
+    approver_id: approverId,
+    approver_name: approver?.name || null,
+    user_id: currentUser.id,
+    created_at: new Date().toISOString()
+  });
+  
+  // ✅ Update Asset
+  asset.current_holder_id = newEmployeeId;
+  asset.current_holder_name = newEmployee.full_name;
+  asset.status = 'in_use';
+  if (newLocationId) {
+    asset.location_id = newLocationId;
+    asset.location_name = newLocation?.name || '';
+  }
+  
+  // ✅ Add History
+  DB.assetHistory.push({
+    id: DB.assetHistory.length + 1,
+    asset_id: assetId,
+    action: 'transferred',
+    description: `Transferred from ${fromEmployee} to ${newEmployee.full_name}`,
+    user_id: currentUser.id,
+    created_at: new Date().toISOString()
+  });
+  
+  logAudit(currentUser.id, 'TRANSFER_ASSET', 'asset', assetId, `Transferred ${asset.item_name}`);
+  saveDB();
+  closeModal();
+  renderAssets();
+  toast(`✅ ផ្ទេរជោគជ័យ (${transferCode})`);
+} 
 
 // ✅ Delete Asset
 function deleteAsset(id) {
