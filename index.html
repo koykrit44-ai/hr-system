@@ -12638,6 +12638,216 @@ function renderSuppliers() {
     </div>
   `;
 }
+// =====================================================
+// ✅ SUPPLIERS REPORT - PDF (HTML Print with Khmer Fonts)
+// =====================================================
+function exportSuppliersPDF2() {
+  if (!DB.suppliers.length) {
+    toast('❌ គ្មានទិន្នន័យ', 'error');
+    return;
+  }
+  
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    toast('❌ Browser បិទ Popup', 'error');
+    return;
+  }
+  
+  const html = `
+    <!DOCTYPE html>
+    <html lang="km">
+    <head>
+      <meta charset="UTF-8">
+      <title>Suppliers Report</title>
+      <!-- ✅ ភ្ជាប់ Font ខ្មែរពី Google Fonts -->
+      <link href="https://fonts.googleapis.com/css2?family=Moul&family=Siemreap&display=swap" rel="stylesheet">
+      <style>
+        @page { size: A4 portrait; margin: 10mm; }
+        * { box-sizing: border-box; }
+        body {
+          font-family: 'Siemreap', sans-serif; /* ✅ Font ខ្លឹមសារខាងក្រោម */
+          margin: 0; padding: 15px;
+          color: #1e293b; font-size: 11px;
+        }
+        
+        /* ✅ Header Layout */
+        .header {
+          display: flex; justify-content: space-between;
+          align-items: flex-start; margin-bottom: 12px;
+          padding-bottom: 10px; border-bottom: 2px solid #1e40af;
+          min-height: 90px;
+        }
+        .header-left {
+          display: flex; flex-direction: column;
+          align-items: center; text-align: center; width: 220px;
+        }
+        .logo-box {
+          width: 65px; height: 65px;
+          display: flex; align-items: center; justify-content: center;
+          margin-bottom: 5px;
+        }
+        .logo-box img { width: 100%; height: 100%; object-fit: contain; }
+        .company-info { text-align: center; width: 100%; }
+        
+        /* ✅ ប្រើ Khmer OS Muol Light សម្រាប់ក្បាលសន្លឹក */
+        .company-name-kh {
+          font-family: 'Moul', serif; /* ជំនួស Khmer OS Muol Light */
+          font-size: 11px;
+          color: #1e40af; margin: 0; line-height: 1.5; white-space: nowrap;
+        }
+        .company-name-en {
+          font-family: 'Moul', serif; /* ជំនួស Khmer OS Muol Light */
+          font-size: 9px;
+          color: #1e40af; margin: 3px 0 0; white-space: nowrap;
+        }
+        .header-right {
+          text-align: center; font-family: 'Moul', serif; /* ជំនួស Khmer OS Muol Light */
+          font-size: 12px; line-height: 1.8;
+          color: #1e40af; padding-top: 6px;
+        }
+        
+        /* ✅ Title ប្រើ Khmer OS Muol Light */
+        .title {
+          font-family: 'Moul', serif; /* ជំនួស Khmer OS Muol Light */
+          font-size: 16px;
+          margin: 12px 0 3px; text-align: center; color: #1e40af;
+        }
+        .subtitle {
+          font-family: 'Moul', serif; /* ជំនួស Khmer OS Muol Light */
+          font-size: 11px;
+          margin: 0 0 15px; text-align: center; color: #1e40af;
+        }
+        
+        /* ✅ Table ប្រើ Khmer OS Siemreap */
+        table {
+          width: 100%; border-collapse: collapse;
+          font-family: 'Siemreap', sans-serif; /* ✅ Font ខ្លឹមសារខាងក្រោម */
+          font-size: 10px;
+        }
+        th, td {
+          border: 1px solid #333; padding: 5px 8px;
+          text-align: center; vertical-align: middle;
+        }
+        th {
+          background: #1e40af; color: white;
+          font-family: 'Moul', serif; /* ✅ ក្បាលតារាងប្រើ Muol Light */
+          font-size: 9px; line-height: 1.4;
+        }
+        td.name { text-align: left; padding-left: 8px; }
+        
+        /* ✅ Footer */
+        .footer {
+          margin-top: 25px;
+          display: flex; justify-content: space-around;
+          font-family: 'Siemreap', sans-serif; font-size: 11px;
+        }
+        .signature-box { text-align: center; width: 200px; }
+        .signature-line {
+          border-top: 1px solid #333;
+          margin-top: 50px; padding-top: 5px;
+        }
+        .footer-note {
+          text-align: center; margin-top: 20px;
+          font-family: 'Siemreap', sans-serif; font-size: 9px; color: #94a3b8;
+        }
+        
+        /* ✅ Buttons */
+        .no-print {
+          text-align: center; margin-top: 25px;
+          padding-top: 15px; border-top: 1px dashed #cbd5e1;
+        }
+        .btn-print {
+          padding: 12px 30px; font-size: 14px; cursor: pointer;
+          background: #1e40af; color: white; border: none;
+          border-radius: 8px; font-family: 'Siemreap', sans-serif;
+          margin: 0 5px;
+        }
+        .btn-close {
+          padding: 12px 30px; font-size: 14px; cursor: pointer;
+          background: #64748b; color: white; border: none;
+          border-radius: 8px; font-family: 'Siemreap', sans-serif;
+          margin: 0 5px;
+        }
+        @media print { .no-print { display: none; } body { padding: 0; } }
+      </style>
+    </head>
+    <body>
+      <!-- ✅ Header -->
+      <div class="header">
+        <div class="header-left">
+          <div class="logo-box">
+            ${DB.settings.companyLogo ? `<img src="${DB.settings.companyLogo}">` : ''}
+          </div>
+          <div class="company-info">
+            <div class="company-name-kh">ក្រុមហ៊ុន សុកន ត្រេនស្ព័ត ឯ.ក</div>
+            <div class="company-name-en">SOKAN TRANSPORT PTE., LTD.</div>
+          </div>
+        </div>
+        <div class="header-right">
+          <div>ព្រះរាជាណាចក្រកម្ពុជា</div>
+          <div>ជាតិ សាសនា ព្រះមហាក្សត្រ</div>
+        </div>
+      </div>
+      
+      <!-- ✅ Title -->
+      <div class="title">របាយការណ៍អ្នកផ្គត់ផ្គង់</div>
+      <div class="subtitle">Suppliers Report - សរុប ${DB.suppliers.length} ក្រុមហ៊ុន</div>
+      
+      <!-- ✅ Table -->
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 50px;">ល.រ</th>
+            <th style="width: 100px;">កូដ</th>
+            <th>ឈ្មោះអ្នកផ្គត់ផ្គង់</th>
+            <th style="width: 120px;">លេខទូរស័ព្ទ</th>
+            <th style="width: 150px;">អ៊ីមែល</th>
+            <th style="width: 100px;">ស្ថានភាព</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${DB.suppliers.map((s, idx) => `
+            <tr>
+              <td>${String(idx + 1).padStart(2, '0')}</td>
+              <td>${escapeHtml(s.code || '')}</td>
+              <td class="name">${escapeHtml(s.name || '')}</td>
+              <td>${escapeHtml(s.phone || '-')}</td>
+              <td>${escapeHtml(s.email || '-')}</td>
+              <td>${escapeHtml(s.status || 'active')}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      
+      <!-- ✅ Signatures -->
+      <div class="footer">
+        <div class="signature-box">
+          <div>ហត្ថលេខាអ្នករៀបចំ</div>
+          <div class="signature-line"></div>
+        </div>
+        <div class="signature-box">
+          <div>ហត្ថលេខានាយក</div>
+          <div class="signature-line"></div>
+        </div>
+      </div>
+      
+      <div class="footer-note">
+        បង្កើតនៅ ថ្ងៃទី ${new Date().getDate()} ខែ ${new Date().getMonth()+1} ឆ្នាំ ${new Date().getFullYear()}
+      </div>
+      
+      <!-- ✅ Buttons -->
+      <div class="no-print">
+        <button onclick="window.print()" class="btn-print">🖨️ បោះពុម្ព / Save as PDF</button>
+        <button onclick="window.close()" class="btn-close">✖️ បិទ</button>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  printWindow.document.write(html);
+  printWindow.document.close();
+  toast('🖨️ ចុច Print ដើម្បី Save as PDF');
+}
 
 function openSupModal() {
   document.getElementById('modalContainer').classList.add('modal-md');
