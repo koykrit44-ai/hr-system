@@ -396,6 +396,12 @@ body.dark-mode .lang-btn.active {
       <a href="#" onclick="showPage('assetIssues');return false;" data-page="assetIssues" class="sidebar-link flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition text-sm">
   <span>📤</span><span>ប្រគល់/ផ្ទេរ</span>
 </a>
+    <a href="#" onclick="showPage('assetDashboard');return false;" data-page="assetDashboard" class="sidebar-link flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition text-sm">
+  <span>📊</span><span>Asset Dashboard</span>
+</a>
+<a href="#" onclick="showPage('assetHistory');return false;" data-page="assetHistory" class="sidebar-link flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition text-sm">
+  <span>📜</span><span>Asset History</span>
+</a> 
       <a href="#" onclick="showPage('contracts');return false;" data-page="contracts" class="sidebar-link flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition text-sm">
         <span>📝</span><span>កិច្ចសន្យា</span>
         <span class="nav-badge yellow hidden" id="badge-contracts">0</span>
@@ -1943,6 +1949,9 @@ const PAGE_META = {
   payroll: ['💰 ប្រាក់ខែ', 'គណនាប្រាក់ខែ'],
   documents: ['📁 ឯកសារ', 'គ្រប់គ្រងឯកសារ'],
   assets: ['💼 សម្ភារៈ', 'គ្រប់គ្រងទ្រព្យសម្បត្តិ'],
+  assetDashboard: ['📊 Asset Dashboard', 'ផ្ទាំងគ្រប់គ្រងសម្ភារៈ'],
+  assetHistory: ['📜 Asset History', 'ប្រវត្តិសម្ភារៈ'],
+  assetIssues: ['📤 ប្រគល់/ផ្ទេរ', 'ប្រគល់ ផ្ទេរ ប្រគល់ត្រឡប់'],
   contracts: ['📝 កិច្ចសន្យា', 'គ្រប់គ្រងកិច្ចសន្យា'],
   inventory: ['📦 Inventory', 'គ្រប់គ្រងស្តុក'],
   suppliers: ['🏭 អ្នកផ្គត់ផ្គង់', 'អ្នកផ្គត់ផ្គង់'],
@@ -1978,7 +1987,8 @@ const PAGE_META = {
     dashboard: renderDashboard, employees: renderEmployees, orgchart: renderOrgChart,
     organization: renderOrganization, positions: renderPositions,
     attendance: renderAttendance, leave: renderLeave, payroll: renderPayroll,
-    documents: renderDocuments, assets: renderAssets, assetIssues: renderAssetIssues, contracts: renderContracts,
+    documents: renderDocuments, assets: renderAssets, assetIssues: renderAssetIssues,     assetDashboard: renderAssetDashboard,
+    assetHistory: renderAssetHistory, contracts: renderContracts,
     inventory: renderInventory, suppliers: renderSuppliers, purchase: renderPurchase,
     reports: renderReports, audit: renderAudit, settings: renderSettings
   };
@@ -8119,6 +8129,378 @@ function deleteDocument(id) {
   DB.documents = DB.documents.filter(d => d.id !== id);
   saveDB(); renderDocuments(); toast('🗑️ Deleted');
 }
+// =====================================================
+// ✅ ASSET DASHBOARD
+// =====================================================
+function renderAssetDashboard() {
+  // ✅ Stats
+  const totalAssets = DB.assets.length;
+  const inUse = DB.assets.filter(a => a.status === 'in_use').length;
+  const inStock = DB.assets.filter(a => a.status === 'in_stock').length;
+  const underRepair = DB.assets.filter(a => a.status === 'under_repair').length;
+  const lostAssets = DB.assets.filter(a => a.status === 'lost').length;
+  const damagedAssets = DB.assets.filter(a => a.status === 'damaged').length;
+  const disposedAssets = DB.assets.filter(a => a.status === 'disposed').length;
+  
+  // ✅ Value
+  const totalValue = DB.assets.reduce((s,a) => s + (a.purchase_price || 0), 0);
+  const inUseValue = DB.assets.filter(a => a.status === 'in_use').reduce((s,a) => s + (a.purchase_price || 0), 0);
+  const lostValue = DB.assets.filter(a => a.status === 'lost').reduce((s,a) => s + (a.purchase_price || 0), 0);
+  
+  // ✅ Inventory
+  const totalInventoryItems = DB.inventory.length;
+  const lowStockItems = DB.inventory.filter(i => i.quantity <= i.min_stock && i.quantity > 0).length;
+  const outOfStockItems = DB.inventory.filter(i => i.quantity === 0).length;
+  const inventoryValue = DB.inventory.reduce((s,i) => s + (i.quantity * (i.unit_price || 0)), 0);
+  
+  // ✅ Warranty Expiring
+  const warrantyExpiring = DB.assets.filter(a => {
+    if (!a.warranty_expiry) return false;
+    const days = Math.ceil((new Date(a.warranty_expiry) - new Date()) / (1000*60*60*24));
+    return days >= 0 && days <= 90;
+  }).length;
+  
+  // ✅ By Category Group
+  const byGroup = {};
+  DB.assets.forEach(a => {
+    const g = a.category_group || 'Other';
+    if (!byGroup[g]) byGroup[g] = { count: 0, value: 0 };
+    byGroup[g].count++;
+    byGroup[g].value += a.purchase_price || 0;
+  });
+  
+  // ✅ By Department
+  const byDept = {};
+  DB.assets.filter(a => a.current_holder_id).forEach(a => {
+    const emp = DB.employees.find(e => e.id === a.current_holder_id);
+    if (emp) {
+      const d = getDeptName(emp.department_id);
+      if (!byDept[d]) byDept[d] = 0;
+      byDept[d]++;
+    }
+  });
+  
+  document.getElementById('pageContent').innerHTML = `
+    <div class="space-y-4">
+      
+      <!-- ✅ Assets KPI -->
+      <div>
+        <h3 class="font-bold text-sm text-slate-600 mb-2">💼 សម្ភារៈ (Assets)</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div class="card card-click" onclick="showPage('assets')">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-xs text-slate-500">សម្ភារៈសរុប</div>
+                <div class="text-2xl font-bold text-blue-600">${totalAssets}</div>
+              </div>
+              <div class="text-3xl">💼</div>
+            </div>
+          </div>
+          <div class="card card-click" onclick="showPage('assets')">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-xs text-slate-500">កំពុងប្រើ</div>
+                <div class="text-2xl font-bold text-green-600">${inUse}</div>
+              </div>
+              <div class="text-3xl">✅</div>
+            </div>
+          </div>
+          <div class="card card-click" onclick="showPage('assets')">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-xs text-slate-500">ក្នុងស្តុក</div>
+                <div class="text-2xl font-bold text-cyan-600">${inStock}</div>
+              </div>
+              <div class="text-3xl">📦</div>
+            </div>
+          </div>
+          <div class="card card-click" onclick="showPage('assets')">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-xs text-slate-500">តម្លៃសរុប</div>
+                <div class="text-xl font-bold text-purple-600">$${totalValue.toLocaleString()}</div>
+              </div>
+              <div class="text-3xl">💰</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- ✅ Status Breakdown -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="card">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center text-xl">🔧</div>
+            <div>
+              <div class="text-xl font-bold text-orange-600">${underRepair}</div>
+              <div class="text-xs text-slate-500">កំពុងជួសជុល</div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center text-xl">❌</div>
+            <div>
+              <div class="text-xl font-bold text-red-600">${lostAssets}</div>
+              <div class="text-xs text-slate-500">បាត់</div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center text-xl">💔</div>
+            <div>
+              <div class="text-xl font-bold text-red-600">${damagedAssets}</div>
+              <div class="text-xs text-slate-500">ខូច</div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center text-xl">🗑️</div>
+            <div>
+              <div class="text-xl font-bold text-slate-600">${disposedAssets}</div>
+              <div class="text-xs text-slate-500">បោះបង់</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- ✅ Inventory KPI -->
+      <div>
+        <h3 class="font-bold text-sm text-slate-600 mb-2">📦 ស្តុក (Inventory)</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div class="card card-click" onclick="showPage('inventory')">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-xs text-slate-500">ប្រភេទទំនិញ</div>
+                <div class="text-2xl font-bold text-blue-600">${totalInventoryItems}</div>
+              </div>
+              <div class="text-3xl">📦</div>
+            </div>
+          </div>
+          <div class="card card-click" onclick="showPage('inventory')">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-xs text-slate-500">ស្តុកតិច</div>
+                <div class="text-2xl font-bold text-yellow-600">${lowStockItems}</div>
+              </div>
+              <div class="text-3xl">⚠️</div>
+            </div>
+          </div>
+          <div class="card card-click" onclick="showPage('inventory')">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-xs text-slate-500">អស់ស្តុក</div>
+                <div class="text-2xl font-bold text-red-600">${outOfStockItems}</div>
+              </div>
+              <div class="text-3xl">🚫</div>
+            </div>
+          </div>
+          <div class="card card-click" onclick="showPage('inventory')">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-xs text-slate-500">តម្លៃសរុប</div>
+                <div class="text-xl font-bold text-green-600">$${inventoryValue.toLocaleString()}</div>
+              </div>
+              <div class="text-3xl">💰</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- ✅ Alerts -->
+      <div>
+        <h3 class="font-bold text-sm text-slate-600 mb-2">🔔 ការជូនដំណឹង (Alerts)</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div class="card card-click ${lowStockItems > 0 ? 'border-l-4 border-yellow-500' : ''}" onclick="showPage('inventory')">
+            <div class="flex items-center gap-3">
+              <div class="text-3xl">⚠️</div>
+              <div>
+                <div class="text-sm font-medium">ស្តុកតិច</div>
+                <div class="text-2xl font-bold text-yellow-600">${lowStockItems}</div>
+              </div>
+            </div>
+          </div>
+          <div class="card card-click ${warrantyExpiring > 0 ? 'border-l-4 border-orange-500' : ''}" onclick="showPage('reports')">
+            <div class="flex items-center gap-3">
+              <div class="text-3xl">🛡️</div>
+              <div>
+                <div class="text-sm font-medium">ការធានាជិតផុត</div>
+                <div class="text-2xl font-bold text-orange-600">${warrantyExpiring}</div>
+              </div>
+            </div>
+          </div>
+          <div class="card card-click ${lostAssets > 0 ? 'border-l-4 border-red-500' : ''}" onclick="showPage('assets')">
+            <div class="flex items-center gap-3">
+              <div class="text-3xl">❌</div>
+              <div>
+                <div class="text-sm font-medium">បាត់</div>
+                <div class="text-2xl font-bold text-red-600">${lostAssets}</div>
+                ${lostValue > 0 ? `<div class="text-xs text-red-500">$${lostValue.toLocaleString()}</div>` : ''}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- ✅ By Category Group -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="card">
+          <h4 class="font-bold text-sm mb-3 pb-2 border-b">📊 សម្ភារៈតាមប្រភេទ</h4>
+          <div class="space-y-2">
+            ${Object.entries(byGroup).sort((a,b) => b[1].count - a[1].count).map(([group, data]) => `
+              <div class="flex items-center gap-3">
+                <div class="flex-1">
+                  <div class="flex justify-between text-xs mb-1">
+                    <span class="font-medium">${escapeHtml(group)}</span>
+                    <span class="text-slate-500">${data.count} ក្នុង | $${data.value.toLocaleString()}</span>
+                  </div>
+                  <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-blue-500" style="width: ${(data.count / totalAssets * 100).toFixed(0)}%;"></div>
+                  </div>
+                </div>
+              </div>
+            `).join('') || '<div class="text-center text-slate-400 text-xs py-4">មិនមានទិន្នន័យ</div>'}
+          </div>
+        </div>
+        
+        <div class="card">
+          <h4 class="font-bold text-sm mb-3 pb-2 border-b">🏢 សម្ភារៈតាមផ្នែក</h4>
+          <div class="space-y-2">
+            ${Object.entries(byDept).sort((a,b) => b[1] - a[1]).map(([dept, count]) => `
+              <div class="flex items-center gap-3">
+                <div class="flex-1">
+                  <div class="flex justify-between text-xs mb-1">
+                    <span class="font-medium">${escapeHtml(dept)}</span>
+                    <span class="text-slate-500">${count} គ្រឿង</span>
+                  </div>
+                  <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-green-500" style="width: ${(count / inUse * 100).toFixed(0)}%;"></div>
+                  </div>
+                </div>
+              </div>
+            `).join('') || '<div class="text-center text-slate-400 text-xs py-4">មិនមានទិន្នន័យ</div>'}
+          </div>
+        </div>
+      </div>
+      
+      <!-- ✅ Quick Actions -->
+      <div class="card">
+        <h4 class="font-bold text-sm mb-3 pb-2 border-b">⚡ សកម្មភាពលឿន</h4>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <button onclick="openAssetForm()" class="btn btn-primary">➕ បន្ថែមសម្ភារៈ</button>
+          <button onclick="openIssueModal()" class="btn btn-success">📤 ប្រគល់</button>
+          <button onclick="openReturnModal()" class="btn btn-warning">📥 ប្រគល់ត្រឡប់</button>
+          <button onclick="openTransferModal()" class="btn btn-secondary">🔄 ផ្ទេរ</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// =====================================================
+// ✅ ASSET HISTORY PAGE
+// =====================================================
+function renderAssetHistory() {
+  const history = (DB.assetHistory || []).slice().reverse();
+  
+  document.getElementById('pageContent').innerHTML = `
+    <div class="card">
+      <div class="flex flex-wrap justify-between items-center gap-3 mb-4 pb-4 border-b">
+        <div>
+          <h3 class="font-bold text-lg">📜 ប្រវត្តិសម្ភារៈ</h3>
+          <p class="text-xs text-slate-500 mt-1">Asset History - សរុប ${history.length} កំណត់ត្រា</p>
+        </div>
+        <div class="flex gap-2">
+          <input id="histSearch" oninput="filterAssetHistory()" 
+            placeholder="🔍 ស្វែងរក Asset ID..." 
+            class="input" style="width:250px;">
+          <button onclick="exportAssetHistoryExcel()" class="btn btn-secondary btn-sm">📊 Excel</button>
+        </div>
+      </div>
+      
+      <div class="max-h-[70vh] overflow-y-auto">
+        <div class="relative pl-6">
+          <div class="absolute left-2 top-0 bottom-0 w-0.5 bg-blue-200"></div>
+          
+          ${history.length ? history.slice(0, 200).map(h => {
+            const asset = DB.assets.find(a => a.id === h.asset_id);
+            const user = DB.users.find(u => u.id === h.user_id);
+            
+            const icons = {
+              created: '🆕', updated: '✏️', issued: '📤', returned: '📥',
+              transferred: '🔄', repaired: '🔧', lost: '❌', damaged: '💔', disposed: '🗑️'
+            };
+            const colors = {
+              created: '#16a34a', updated: '#3b82f6', issued: '#8b5cf6', returned: '#f59e0b',
+              transferred: '#06b6d4', repaired: '#f97316', lost: '#dc2626', damaged: '#ef4444', disposed: '#64748b'
+            };
+            
+            return `
+              <div class="relative mb-4" data-asset-id="${asset?.asset_id || ''}">
+                <div class="absolute -left-4 top-2 w-4 h-4 rounded-full border-2 border-white shadow" 
+                  style="background: ${colors[h.action] || '#64748b'};"></div>
+                <div class="ml-4 p-3 bg-white border rounded-lg hover:shadow-md transition">
+                  <div class="flex items-start gap-3">
+                    <div class="text-2xl">${icons[h.action] || '📝'}</div>
+                    <div class="flex-1">
+                      <div class="font-medium text-sm">
+                        ${escapeHtml(asset?.item_name || 'Unknown')}
+                        <span class="font-mono text-xs text-blue-600 ml-2">${escapeHtml(asset?.asset_id || '')}</span>
+                      </div>
+                      <div class="text-xs text-slate-600 mt-1">${escapeHtml(h.description)}</div>
+                      <div class="flex gap-3 mt-2 text-xs text-slate-400">
+                        <span>👤 ${escapeHtml(user?.name || 'System')}</span>
+                        <span>🕐 ${new Date(h.created_at).toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('') : `
+            <div class="text-center py-12 text-slate-400">
+              <div class="text-4xl mb-3">📜</div>
+              <p>មិនមានប្រវត្តិ</p>
+            </div>
+          `}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function filterAssetHistory() {
+  const q = (document.getElementById('histSearch')?.value || '').toLowerCase();
+  document.querySelectorAll('[data-asset-id]').forEach(el => {
+    const id = (el.getAttribute('data-asset-id') || '').toLowerCase();
+    const name = el.textContent.toLowerCase();
+    el.style.display = (!q || id.includes(q) || name.includes(q)) ? '' : 'none';
+  });
+}
+
+function exportAssetHistoryExcel() {
+  const history = DB.assetHistory || [];
+  if (!history.length) return toast('❌ គ្មានទិន្នន័យ', 'error');
+  
+  const data = history.map(h => {
+    const asset = DB.assets.find(a => a.id === h.asset_id);
+    const user = DB.users.find(u => u.id === h.user_id);
+    return {
+      'កាលបរិច្ឆេទ': new Date(h.created_at).toLocaleString(),
+      'Asset ID': asset?.asset_id || '',
+      'ឈ្មោះ': asset?.item_name || '',
+      'សកម្មភាព': h.action,
+      'ការពិពណ៌នា': h.description,
+      'អ្នកប្រើ': user?.name || 'System'
+    };
+  });
+  
+  exportXLSX(data, 'Asset_History');
+}
+
+ 
 // =====================================================
 // ✅ ASSET ISSUES PAGE (ប្រគល់/ផ្ទេរ/ប្រគល់ត្រឡប់)
 // =====================================================
