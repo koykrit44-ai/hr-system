@@ -5089,8 +5089,8 @@ function renderAttendance() {
           <button onclick="bulkCheckOut()" class="btn btn-warning">${t('attCheckOutAll')}</button>
         </div>
         <div class="flex gap-2">
-          <button onclick="exportAttendanceExcel()" class="btn btn-secondary">📊 Excel</button>
-          <button onclick="exportAttendancePDF()" class="btn btn-secondary">📕 PDF</button>
+          <button onclick="exportAttendanceReportExcel()" class="btn btn-secondary">📊 Report Excel</button>
+          <button onclick="exportAttendanceReportPDF2()" class="btn btn-secondary">📕 Report PDF</button>
         </div>
       </div>
       <div class="overflow-x-auto">
@@ -5216,16 +5216,393 @@ function bulkCheckOut() {
   });
   saveDB(); renderAttTable(); toast('✅ Bulk Check Out');
 }
-
-function exportAttendanceExcel() {
-  const date = document.getElementById('attDate').value;
-  const data = DB.employees.map(e => {
+// =====================================================
+// ✅ ATTENDANCE REPORT - EXCEL
+// =====================================================
+function exportAttendanceReportExcel() {
+  const date = document.getElementById('attDate')?.value || new Date().toISOString().split('T')[0];
+  
+  const employees = DB.employees.filter(e => ['active','probation','on_leave'].includes(e.status));
+  
+  if (!employees.length) {
+    toast('❌ គ្មានទិន្នន័យ', 'error');
+    return;
+  }
+  
+  const headerRow = [
+    'ល.រ', 'អត្តលេខ', 'ឈ្មោះបុគ្គលិក', 'ផ្នែក', 'មុខតំណែង',
+    'Check In', 'Check Out', 'យឺត (នាទី)', 'OT (នាទី)', 'ស្ថានភាព'
+  ];
+  
+  const dataRows = employees.map((e, idx) => {
     const a = DB.attendance.find(x => x.employee_id === e.id && x.work_date === date);
-    return { Employee: e.full_name, Date: date, In: a?.check_in || '', Out: a?.check_out || '', Status: a?.status || '' };
+    return [
+      String(idx + 1).padStart(2, '0'),
+      e.employee_id || e.code || '',
+      e.full_name || '',
+      getDeptName(e.department_id),
+      getPosName(e.position_id),
+      a?.check_in || '-',
+      a?.check_out || '-',
+      a?.late_minutes || 0,
+      a?.overtime_minutes || 0,
+      a?.status || '-'
+    ];
   });
-  exportXLSX(data, `attendance_${date}`);
+  
+  // ✅ Stats
+  const stats = {
+    present: DB.attendance.filter(a => a.work_date === date && a.status === 'present').length,
+    late: DB.attendance.filter(a => a.work_date === date && a.status === 'late').length,
+    absent: DB.attendance.filter(a => a.work_date === date && a.status === 'absent').length,
+    total: employees.length
+  };
+  
+  const wsData = [
+    ['ក្រុមហ៊ុន សុកន ត្រេនស្ព័ត ឯ.ក'],
+    ['SOKAN TRANSPORT PTE., LTD.'],
+    ['របាយការណ៍វត្តមានបុគ្គលិក'],
+    [`ប្រចាំថ្ងៃទី ${date}`],
+    [`សរុប: ${stats.total} | មានវត្តមាន: ${stats.present} | យឺត: ${stats.late} | អវត្តមាន: ${stats.absent}`],
+    [],
+    headerRow,
+    ...dataRows
+  ];
+  
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  
+  ws['!cols'] = [
+    { wch: 6 }, { wch: 14 }, { wch: 25 }, { wch: 28 }, { wch: 30 },
+    { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 14 }
+  ];
+  
+  ws['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 9 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 9 } },
+    { s: { r: 2, c: 0 }, e: { r: 2, c: 9 } },
+    { s: { r: 3, c: 0 }, e: { r: 3, c: 9 } },
+    { s: { r: 4, c: 0 }, e: { r: 4, c: 9 } }
+  ];
+  
+  ws['!rows'] = [
+    { hpt: 25 }, { hpt: 22 }, { hpt: 22 }, { hpt: 20 }, { hpt: 20 }, { hpt: 5 },
+    { hpt: 30 },
+    ...dataRows.map(() => ({ hpt: 25 }))
+  ];
+  
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, `Attendance ${date}`);
+  XLSX.writeFile(wb, `Attendance_Report_${date}.xlsx`);
+  toast('📊 Excel Downloaded');
 }
 
+// =====================================================
+// ✅ ATTENDANCE REPORT - PDF (HTML Print)
+// =====================================================
+function exportAttendanceReportPDF2() {
+  const date = document.getElementById('attDate')?.value || new Date().toISOString().split('T')[0];
+  
+  const employees = DB.employees.filter(e => ['active','probation','on_leave'].includes(e.status));
+  
+  if (!employees.length) {
+    toast('❌ គ្មានទិន្នន័យ', 'error');
+    return;
+  }
+  
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    toast('❌ Browser បិទ Popup', 'error');
+    return;
+  }
+  
+  // ✅ Stats
+  const stats = {
+    present: DB.attendance.filter(a => a.work_date === date && a.status === 'present').length,
+    late: DB.attendance.filter(a => a.work_date === date && a.status === 'late').length,
+    absent: DB.attendance.filter(a => a.work_date === date && a.status === 'absent').length,
+    total: employees.length
+  };
+  
+  const html = `
+    <!DOCTYPE html>
+    <html lang="km">
+    <head>
+      <meta charset="UTF-8">
+      <title>Attendance Report - ${date}</title>
+      <link href="https://fonts.googleapis.com/css2?family=Moul&family=Siemreap&display=swap" rel="stylesheet">
+      <style>
+        @page { size: A4 landscape; margin: 8mm; }
+        * { box-sizing: border-box; }
+        body {
+          font-family: 'Siemreap', sans-serif;
+          margin: 0; padding: 15px;
+          color: #1e293b; font-size: 11px;
+        }
+        
+        /* ✅ Header */
+        .header {
+          display: flex; justify-content: space-between;
+          align-items: flex-start; margin-bottom: 12px;
+          padding-bottom: 10px; border-bottom: 2px solid #1e40af;
+          min-height: 90px;
+        }
+        .header-left {
+          display: flex; flex-direction: column;
+          align-items: center; text-align: center; width: 220px;
+        }
+        .logo-box {
+          width: 65px; height: 65px;
+          display: flex; align-items: center; justify-content: center;
+          margin-bottom: 5px;
+        }
+        .logo-box img { width: 100%; height: 100%; object-fit: contain; }
+        .company-info { text-align: center; width: 100%; }
+        
+        /* ✅ Khmer OS Muol Light */
+        .company-name-kh {
+          font-family: 'Moul', serif; font-size: 11px;
+          color: #1e40af; margin: 0; line-height: 1.5; white-space: nowrap;
+        }
+        .company-name-en {
+          font-family: 'Moul', serif; font-size: 9px;
+          color: #1e40af; margin: 3px 0 0; white-space: nowrap;
+        }
+        .header-right {
+          text-align: center; font-family: 'Moul', serif;
+          font-size: 12px; line-height: 1.8;
+          color: #1e40af; padding-top: 6px;
+        }
+        
+        /* ✅ Title */
+        .title {
+          font-family: 'Moul', serif; font-size: 16px;
+          margin: 12px 0 3px; text-align: center; color: #1e40af;
+        }
+        .subtitle {
+          font-family: 'Moul', serif; font-size: 11px;
+          margin: 0 0 15px; text-align: center; color: #1e40af;
+        }
+        
+        /* ✅ Stats Grid */
+        .stats-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 10px;
+          margin-bottom: 15px;
+        }
+        .stat-card {
+          border-radius: 6px;
+          padding: 10px;
+          text-align: center;
+          border: 1px solid;
+        }
+        .stat-blue { background: #eff6ff; border-color: #bfdbfe; }
+        .stat-green { background: #f0fdf4; border-color: #bbf7d0; }
+        .stat-yellow { background: #fefce8; border-color: #fde68a; }
+        .stat-red { background: #fef2f2; border-color: #fecaca; }
+        
+        .stat-value {
+          font-family: 'Moul', serif;
+          font-size: 20px;
+          font-weight: bold;
+          line-height: 1.2;
+        }
+        .stat-blue .stat-value { color: #1e40af; }
+        .stat-green .stat-value { color: #16a34a; }
+        .stat-yellow .stat-value { color: #ca8a04; }
+        .stat-red .stat-value { color: #dc2626; }
+        
+        .stat-label {
+          font-family: 'Siemreap', sans-serif;
+          font-size: 10px;
+          color: #64748b;
+          margin-top: 3px;
+        }
+        
+        /* ✅ Table */
+        table {
+          width: 100%; border-collapse: collapse;
+          font-family: 'Siemreap', sans-serif; font-size: 10px;
+        }
+        th, td {
+          border: 1px solid #333; padding: 5px 6px;
+          text-align: center; vertical-align: middle;
+        }
+        th {
+          background: #1e40af; color: white;
+          font-family: 'Moul', serif; font-size: 9px; line-height: 1.4;
+        }
+        td.name { text-align: left; padding-left: 6px; }
+        
+        /* ✅ Status Badge */
+        .badge {
+          display: inline-block;
+          padding: 2px 8px;
+          border-radius: 999px;
+          font-size: 9px;
+          font-weight: 600;
+        }
+        .badge-present { background: #dcfce7; color: #166534; }
+        .badge-late { background: #fef3c7; color: #92400e; }
+        .badge-absent { background: #fee2e2; color: #991b1b; }
+        
+        /* ✅ Footer */
+        .footer {
+          margin-top: 25px;
+          display: flex;
+          justify-content: space-around;
+          font-family: 'Siemreap', sans-serif;
+          font-size: 11px;
+        }
+        .signature-box {
+          text-align: center;
+          width: 200px;
+        }
+        .signature-line {
+          border-top: 1px solid #333;
+          margin-top: 50px;
+          padding-top: 5px;
+        }
+        
+        .footer-note {
+          text-align: center;
+          margin-top: 20px;
+          font-family: 'Siemreap', sans-serif;
+          font-size: 9px;
+          color: #94a3b8;
+        }
+        
+        .no-print {
+          text-align: center; margin-top: 25px;
+          padding-top: 15px; border-top: 1px dashed #cbd5e1;
+        }
+        .btn-print {
+          padding: 12px 30px; font-size: 14px; cursor: pointer;
+          background: #1e40af; color: white; border: none;
+          border-radius: 8px; font-family: 'Siemreap', sans-serif;
+          margin: 0 5px;
+        }
+        .btn-close {
+          padding: 12px 30px; font-size: 14px; cursor: pointer;
+          background: #64748b; color: white; border: none;
+          border-radius: 8px; font-family: 'Siemreap', sans-serif;
+          margin: 0 5px;
+        }
+        @media print { .no-print { display: none; } body { padding: 0; } }
+      </style>
+    </head>
+    <body>
+      <!-- ✅ Header -->
+      <div class="header">
+        <div class="header-left">
+          <div class="logo-box">
+            ${DB.settings.companyLogo ? `<img src="${DB.settings.companyLogo}">` : ''}
+          </div>
+          <div class="company-info">
+            <div class="company-name-kh">ក្រុមហ៊ុន សុកន ត្រេនស្ព័ត ឯ.ក</div>
+            <div class="company-name-en">SOKAN TRANSPORT PTE., LTD.</div>
+          </div>
+        </div>
+        <div class="header-right">
+          <div>ព្រះរាជាណាចក្រកម្ពុជា</div>
+          <div>ជាតិ សាសនា ព្រះមហាក្សត្រ</div>
+        </div>
+      </div>
+      
+      <!-- ✅ Title -->
+      <div class="title">របាយការណ៍វត្តមានបុគ្គលិក</div>
+      <div class="subtitle">ប្រចាំថ្ងៃទី ${date}</div>
+      
+      <!-- ✅ Stats -->
+      <div class="stats-grid">
+        <div class="stat-card stat-blue">
+          <div class="stat-value">${stats.total}</div>
+          <div class="stat-label">បុគ្គលិកសរុប</div>
+        </div>
+        <div class="stat-card stat-green">
+          <div class="stat-value">${stats.present}</div>
+          <div class="stat-label">មានវត្តមាន</div>
+        </div>
+        <div class="stat-card stat-yellow">
+          <div class="stat-value">${stats.late}</div>
+          <div class="stat-label">យឺត</div>
+        </div>
+        <div class="stat-card stat-red">
+          <div class="stat-value">${stats.absent}</div>
+          <div class="stat-label">អវត្តមាន</div>
+        </div>
+      </div>
+      
+      <!-- ✅ Table -->
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 40px;">ល.រ</th>
+            <th style="width: 90px;">អត្តលេខ</th>
+            <th>ឈ្មោះបុគ្គលិក</th>
+            <th>ផ្នែក</th>
+            <th>មុខតំណែង</th>
+            <th style="width: 70px;">Check In</th>
+            <th style="width: 70px;">Check Out</th>
+            <th style="width: 60px;">យឺត</th>
+            <th style="width: 50px;">OT</th>
+            <th style="width: 80px;">ស្ថានភាព</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${employees.map((e, idx) => {
+            const a = DB.attendance.find(x => x.employee_id === e.id && x.work_date === date);
+            const status = a?.status || 'absent';
+            const statusLabel = status === 'present' ? 'មានវត្តមាន' : status === 'late' ? 'យឺត' : status === 'absent' ? 'អវត្តមាន' : status;
+            const statusClass = status === 'present' ? 'badge-present' : status === 'late' ? 'badge-late' : 'badge-absent';
+            
+            return `
+              <tr>
+                <td>${String(idx + 1).padStart(2, '0')}</td>
+                <td>${e.employee_id || e.code || ''}</td>
+                <td class="name">${e.full_name || ''}</td>
+                <td class="name">${getDeptName(e.department_id)}</td>
+                <td class="name">${getPosName(e.position_id)}</td>
+                <td>${a?.check_in || '-'}</td>
+                <td>${a?.check_out || '-'}</td>
+                <td>${a?.late_minutes || 0}</td>
+                <td>${a?.overtime_minutes || 0}</td>
+                <td><span class="badge ${statusClass}">${statusLabel}</span></td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+      
+      <!-- ✅ Signatures -->
+      <div class="footer">
+        <div class="signature-box">
+          <div>ហត្ថលេខាអ្នករៀបចំ</div>
+          <div class="signature-line"></div>
+        </div>
+        <div class="signature-box">
+          <div>ហត្ថលេខានាយក</div>
+          <div class="signature-line"></div>
+        </div>
+      </div>
+      
+      <div class="footer-note">
+        បង្កើតនៅ ថ្ងៃទី ${new Date().getDate()} ខែ ${new Date().getMonth()+1} ឆ្នាំ ${new Date().getFullYear()}
+      </div>
+      
+      <!-- ✅ Buttons -->
+      <div class="no-print">
+        <button onclick="window.print()" class="btn-print">🖨️ បោះពុម្ព / Save as PDF</button>
+        <button onclick="window.close()" class="btn-close">✖️ បិទ</button>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  printWindow.document.write(html);
+  printWindow.document.close();
+  toast('🖨️ ចុច Print ដើម្បី Save as PDF');
+}
 function exportAttendancePDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF('l');
