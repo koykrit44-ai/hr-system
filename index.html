@@ -7314,32 +7314,595 @@ function exportPayrollPDF() {
   doc.save(`Payroll_${y}_${m}.pdf`);
   toast('📕 PDF downloaded');
 }
+// =====================================================
+// ✅ DOCUMENTS PAGE (Labels + Upload + Preview)
+// =====================================================
 
-// =====================================================
-// DOCUMENTS
-// =====================================================
+// ✅ Document Categories
+const DOC_CATEGORIES = {
+  cv: { name: 'ប្រវត្តិរូប (CV)', icon: '📄', color: '#8b5cf6' },
+  contract: { name: 'កិច្ចសន្យា (Contract)', icon: '📝', color: '#16a34a' },
+  certificate: { name: 'សញ្ញាបត្រ (Certificate)', icon: '🎓', color: '#2563eb' },
+  id: { name: 'អត្តសញ្ញាណប័ណ្ណ (ID)', icon: '🪪', color: '#f59e0b' },
+  license: { name: 'ប័ណ្ណបើកបរ (License)', icon: '🚗', color: '#dc2626' },
+  other: { name: 'ឯកសារផ្សេងៗ (Other)', icon: '📁', color: '#64748b' }
+};
+
 function renderDocuments() {
+  // ✅ រៀបចំឯកសារតាម Category
+  const docsByCategory = {};
+  Object.keys(DOC_CATEGORIES).forEach(cat => {
+    docsByCategory[cat] = DB.documents.filter(d => (d.category || 'other') === cat);
+  });
+  
+  // ✅ Stats
+  const stats = {
+    total: DB.documents.length,
+    categories: Object.keys(DOC_CATEGORIES).length,
+    recent: DB.documents.filter(d => {
+      const uploaded = new Date(d.created_at);
+      const dayAgo = new Date();
+      dayAgo.setDate(dayAgo.getDate() - 7);
+      return uploaded > dayAgo;
+    }).length
+  };
+  
   document.getElementById('pageContent').innerHTML = `
     <div class="card">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="font-bold">📁 ${t('documents')}</h3>
-        <label class="btn btn-primary cursor-pointer">📤 ${t('import')}<input type="file" accept=".pdf,.doc,.docx,image/*" multiple class="hidden" onchange="uploadDocument(this)"></label>
+      <!-- ✅ Header -->
+      <div class="flex flex-wrap justify-between items-center gap-3 mb-4 pb-4 border-b">
+        <div>
+          <h3 class="font-bold text-lg">📁 គ្រប់គ្រងឯកសារ</h3>
+          <p class="text-xs text-slate-500 mt-1">Documents Management</p>
+        </div>
+        <div class="flex gap-2 flex-wrap">
+          <button onclick="exportDocumentsExcel()" class="btn btn-secondary">📊 Excel</button>
+          <button onclick="exportDocumentsPDF2()" class="btn btn-secondary">📕 PDF</button>
+        </div>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        ${DB.documents.map(d => `
-          <div class="border rounded-xl p-4 hover:shadow-md">
-            <div class="text-3xl mb-2">${d.isPDF ? '📕' : '📄'}</div>
-            <div class="font-bold">${escapeHtml(d.title)}</div>
-            <div class="text-xs text-slate-500">${escapeHtml(d.type)} · ${d.size || ''}</div>
-            <div class="flex gap-2 mt-3">
-              <button onclick="previewDocument(${d.id})" class="btn btn-secondary btn-sm flex-1">👁️</button>
-              <button onclick="deleteDocument(${d.id})" class="btn btn-danger btn-sm">🗑️</button>
+      
+      <!-- ✅ Stats -->
+      <div class="grid grid-cols-3 gap-3 mb-6">
+        <div class="text-center p-3 bg-blue-50 rounded-lg">
+          <div class="text-2xl font-bold text-blue-600">${stats.total}</div>
+          <div class="text-xs text-slate-500">ឯកសារសរុប</div>
+        </div>
+        <div class="text-center p-3 bg-purple-50 rounded-lg">
+          <div class="text-2xl font-bold text-purple-600">${stats.categories}</div>
+          <div class="text-xs text-slate-500">ប្រភេទ</div>
+        </div>
+        <div class="text-center p-3 bg-green-50 rounded-lg">
+          <div class="text-2xl font-bold text-green-600">${stats.recent}</div>
+          <div class="text-xs text-slate-500">ថ្មីៗ (7 ថ្ងៃ)</div>
+        </div>
+      </div>
+      
+      <!-- ✅ Category Sections -->
+      <div class="space-y-6">
+        ${Object.entries(DOC_CATEGORIES).map(([catKey, cat]) => {
+          const docs = docsByCategory[catKey] || [];
+          return `
+            <div class="border rounded-xl p-4" style="border-left: 4px solid ${cat.color};">
+              
+              <!-- Category Header -->
+              <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-lg flex items-center justify-center text-xl" style="background: ${cat.color}20; color: ${cat.color};">
+                    ${cat.icon}
+                  </div>
+                  <div>
+                    <h4 class="font-bold text-sm">${cat.name}</h4>
+                    <div class="text-xs text-slate-500">${docs.length} ឯកសារ</div>
+                  </div>
+                </div>
+                
+                <!-- Upload Button -->
+                <label class="btn btn-primary btn-sm cursor-pointer">
+                  📤 Upload
+                  <input type="file" multiple class="hidden" 
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xlsx,.xls"
+                    onchange="uploadDocumentByCategory(this, '${catKey}')">
+                </label>
+              </div>
+              
+              <!-- Drop Zone -->
+              <div class="file-drop mb-3" 
+                ondragover="event.preventDefault(); this.classList.add('dragover')" 
+                ondragleave="this.classList.remove('dragover')"
+                ondrop="handleDocDropByCategory(event, '${catKey}')"
+                onclick="this.querySelector('input').click()">
+                <input type="file" multiple class="hidden"
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xlsx,.xls"
+                  onchange="uploadDocumentByCategory(this, '${catKey}')">
+                <div class="text-3xl mb-1">${cat.icon}</div>
+                <p class="text-xs text-slate-500">ចុច ឬ អូសឯកសារទម្លាក់ទីនេះ</p>
+              </div>
+              
+              <!-- Documents List -->
+              ${docs.length ? `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  ${docs.map(d => {
+                    const fileIcon = d.isPDF ? '📕' : d.isImage ? '🖼️' : 
+                                     (d.file_name || '').match(/\\.(xlsx|xls)$/i) ? '📊' :
+                                     (d.file_name || '').match(/\\.(doc|docx)$/i) ? '📘' : '📄';
+                    return `
+                      <div class="flex items-center gap-3 p-2 border rounded-lg hover:bg-slate-50 transition">
+                        <div class="text-2xl">${fileIcon}</div>
+                        <div class="flex-1 min-w-0">
+                          <div class="font-medium text-xs truncate" title="${escapeHtml(d.title || d.file_name)}">
+                            ${escapeHtml(d.title || d.file_name || 'Untitled')}
+                          </div>
+                          <div class="text-xs text-slate-500 mt-0.5">${d.size || ''}</div>
+                        </div>
+                        <div class="flex gap-1">
+                          <button onclick="previewDocument(${d.id})" 
+                            class="text-blue-600 hover:bg-blue-50 px-2 py-1 rounded text-xs" 
+                            title="មើល">👁️</button>
+                          <button onclick="downloadDocument(${d.id})" 
+                            class="text-green-600 hover:bg-green-50 px-2 py-1 rounded text-xs" 
+                            title="Download">⬇️</button>
+                          <button onclick="deleteDocument(${d.id})" 
+                            class="text-red-600 hover:bg-red-50 px-2 py-1 rounded text-xs" 
+                            title="លុប">🗑️</button>
+                        </div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              ` : `
+                <div class="text-center py-4 text-slate-400 text-xs">
+                  មិនមានឯកសារ
+                </div>
+              `}
             </div>
-          </div>
-        `).join('') || `<p class="col-span-full text-center text-slate-400 py-8">${t('empNoData')}</p>`}
+          `;
+        }).join('')}
       </div>
     </div>
   `;
+}
+
+// ✅ Upload Document by Category
+function uploadDocumentByCategory(input, category) {
+  const files = Array.from(input.files);
+  if (!files.length) return;
+  
+  let uploaded = 0;
+  let errors = 0;
+  
+  showLoading('កំពុង Upload...');
+  
+  files.forEach(file => {
+    // ✅ Check size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast(`❌ ${file.name} ធំពេក (max 10MB)`, 'error');
+      errors++;
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        DB.documents.push({
+          id: DB.nextId.doc++,
+          code: 'DOC' + String(DB.nextId.doc).padStart(3, '0'),
+          title: file.name.replace(/\\.[^.]+$/, ''),
+          file_name: file.name,
+          type: file.type || 'file',
+          category: category,
+          size: (file.size / 1024).toFixed(1) + ' KB',
+          isPDF: file.type === 'application/pdf',
+          isImage: file.type.startsWith('image/'),
+          isWord: file.type.includes('word') || /\\.(doc|docx)$/i.test(file.name),
+          isExcel: /\\.(xlsx|xls)$/i.test(file.name),
+          data: e.target.result,
+          created_at: new Date().toISOString()
+        });
+        
+        uploaded++;
+        
+        // ✅ បើ Upload ចប់ទាំងអស់
+        if (uploaded + errors === files.length) {
+          hideLoading();
+          saveDB();
+          renderDocuments();
+          toast(`✅ Upload បាន ${uploaded} ឯកសារ`);
+        }
+      } catch(err) {
+        console.error(err);
+        errors++;
+        if (uploaded + errors === files.length) {
+          hideLoading();
+          toast(`⚠️ Upload បាន ${uploaded}, Error ${errors}`, 'warning');
+        }
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+  
+  input.value = '';
+}
+
+// ✅ Handle Drop
+function handleDocDropByCategory(event, category) {
+  event.preventDefault();
+  event.currentTarget.classList.remove('dragover');
+  
+  const files = event.dataTransfer.files;
+  if (!files.length) return;
+  
+  // ✅ បង្កើត Input បណ្ដោះអាសន្ន
+  const dt = new DataTransfer();
+  Array.from(files).forEach(f => dt.items.add(f));
+  
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.files = dt.files;
+  uploadDocumentByCategory(input, category);
+}
+
+// ✅ Download Document
+function downloadDocument(id) {
+  const d = DB.documents.find(x => x.id === id);
+  if (!d) {
+    toast('❌ រកមិនឃើញ', 'error');
+    return;
+  }
+  
+  const a = document.createElement('a');
+  a.href = d.data;
+  a.download = d.file_name || d.title || 'document';
+  a.click();
+  toast('📥 Download ជោគជ័យ');
+}
+
+// ✅ Preview Document (Updated)
+function previewDocument(id) {
+  const d = DB.documents.find(x => x.id === id);
+  if (!d) {
+    toast('❌ រកមិនឃើញ', 'error');
+    return;
+  }
+  
+  const w = window.open('', '_blank');
+  if (!w) {
+    toast('❌ Browser បិទ Popup', 'error');
+    return;
+  }
+  
+  const fileUrl = d.data || '';
+  if (!fileUrl) {
+    w.close();
+    toast('❌ គ្មាន File', 'error');
+    return;
+  }
+  
+  // ✅ ជ្រើស Preview តាម File Type
+  if (d.isPDF) {
+    w.document.write(`
+      <html>
+        <head>
+          <title>${escapeHtml(d.title || 'PDF')}</title>
+          <style>body { margin: 0; background: #1e293b; }</style>
+        </head>
+        <body>
+          <iframe src="${fileUrl}" style="width:100%;height:100vh;border:none;"></iframe>
+        </body>
+      </html>
+    `);
+  } else if (d.isImage) {
+    w.document.write(`
+      <html>
+        <head>
+          <title>${escapeHtml(d.title || 'Image')}</title>
+          <style>
+            body { margin: 0; background: #1e293b; display: flex; align-items: center; justify-content: center; height: 100vh; }
+          </style>
+        </head>
+        <body>
+          <img src="${fileUrl}" style="max-width:100%;max-height:100vh;object-fit:contain;">
+        </body>
+      </html>
+    `);
+  } else {
+    // Word, Excel, Other → Download
+    w.close();
+    downloadDocument(id);
+  }
+}
+
+// ✅ Delete Document
+function deleteDocument(id) {
+  const d = DB.documents.find(x => x.id === id);
+  if (!d) return;
+  
+  if (!confirm(`លុប "${d.title || d.file_name}"?`)) return;
+  
+  DB.documents = DB.documents.filter(x => x.id !== id);
+  logAudit(currentUser.id, 'DELETE_DOCUMENT', 'document', id, `Deleted ${d.title}`);
+  saveDB();
+  renderDocuments();
+  toast('🗑️ លុបរួច');
+}
+
+// =====================================================
+// ✅ DOCUMENTS REPORT - EXCEL
+// =====================================================
+function exportDocumentsExcel() {
+  if (!DB.documents.length) {
+    toast('❌ គ្មានទិន្នន័យ', 'error');
+    return;
+  }
+  
+  const headerRow = ['ល.រ', 'កូដ', 'ឈ្មោះឯកសារ', 'ប្រភេទ', 'ទំហំ', 'កាលបរិច្ឆេទ'];
+  
+  const dataRows = DB.documents.map((d, idx) => {
+    const cat = DOC_CATEGORIES[d.category] || DOC_CATEGORIES.other;
+    return [
+      String(idx + 1).padStart(2, '0'),
+      d.code || '',
+      d.title || d.file_name || '',
+      cat.name,
+      d.size || '',
+      d.created_at ? new Date(d.created_at).toLocaleDateString('en-GB') : ''
+    ];
+  });
+  
+  const wsData = [
+    ['ក្រុមហ៊ុន សុកន ត្រេនស្ព័ត ឯ.ក'],
+    ['SOKAN TRANSPORT PTE., LTD.'],
+    ['របាយការណ៍ឯកសារ'],
+    [],
+    headerRow,
+    ...dataRows
+  ];
+  
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  
+  ws['!cols'] = [
+    { wch: 6 }, { wch: 12 }, { wch: 35 }, { wch: 25 }, { wch: 12 }, { wch: 15 }
+  ];
+  
+  ws['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 5 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 5 } },
+    { s: { r: 2, c: 0 }, e: { r: 2, c: 5 } }
+  ];
+  
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Documents');
+  XLSX.writeFile(wb, `Documents_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+  toast('📊 Excel Downloaded');
+}
+
+// =====================================================
+// ✅ DOCUMENTS REPORT - PDF (HTML Print)
+// =====================================================
+function exportDocumentsPDF2() {
+  if (!DB.documents.length) {
+    toast('❌ គ្មានទិន្នន័យ', 'error');
+    return;
+  }
+  
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    toast('❌ Browser បិទ Popup', 'error');
+    return;
+  }
+  
+  // ✅ Group by Category
+  const docsByCategory = {};
+  Object.keys(DOC_CATEGORIES).forEach(cat => {
+    docsByCategory[cat] = DB.documents.filter(d => (d.category || 'other') === cat);
+  });
+  
+  const html = `
+    <!DOCTYPE html>
+    <html lang="km">
+    <head>
+      <meta charset="UTF-8">
+      <title>Documents Report</title>
+      <link href="https://fonts.googleapis.com/css2?family=Moul&family=Siemreap&display=swap" rel="stylesheet">
+      <style>
+        @page { size: A4 portrait; margin: 10mm; }
+        * { box-sizing: border-box; }
+        body {
+          font-family: 'Siemreap', sans-serif;
+          margin: 0; padding: 15px;
+          color: #1e293b; font-size: 11px;
+        }
+        
+        .header {
+          display: flex; justify-content: space-between;
+          align-items: flex-start; margin-bottom: 12px;
+          padding-bottom: 10px; border-bottom: 2px solid #1e40af;
+          min-height: 90px;
+        }
+        .header-left {
+          display: flex; flex-direction: column;
+          align-items: center; text-align: center; width: 220px;
+        }
+        .logo-box {
+          width: 65px; height: 65px;
+          display: flex; align-items: center; justify-content: center;
+          margin-bottom: 5px;
+        }
+        .logo-box img { width: 100%; height: 100%; object-fit: contain; }
+        .company-info { text-align: center; width: 100%; }
+        
+        .company-name-kh {
+          font-family: 'Moul', serif; font-size: 11px;
+          color: #1e40af; margin: 0; line-height: 1.5; white-space: nowrap;
+        }
+        .company-name-en {
+          font-family: 'Moul', serif; font-size: 9px;
+          color: #1e40af; margin: 3px 0 0; white-space: nowrap;
+        }
+        .header-right {
+          text-align: center; font-family: 'Moul', serif;
+          font-size: 12px; line-height: 1.8;
+          color: #1e40af; padding-top: 6px;
+        }
+        
+        .title {
+          font-family: 'Moul', serif; font-size: 16px;
+          margin: 12px 0 3px; text-align: center; color: #1e40af;
+        }
+        .subtitle {
+          font-family: 'Moul', serif; font-size: 11px;
+          margin: 0 0 15px; text-align: center; color: #1e40af;
+        }
+        
+        .section {
+          margin-bottom: 18px;
+        }
+        .section-title {
+          font-family: 'Moul', serif;
+          font-size: 12px;
+          color: white;
+          margin: 0 0 10px;
+          padding: 6px 12px;
+          background: #1e40af;
+          border-radius: 4px;
+        }
+        
+        table {
+          width: 100%; border-collapse: collapse;
+          font-family: 'Siemreap', sans-serif; font-size: 10px;
+        }
+        th, td {
+          border: 1px solid #333; padding: 5px 8px;
+          text-align: center;
+        }
+        th {
+          background: #f1f5f9; color: #1e293b;
+          font-family: 'Moul', serif; font-size: 10px;
+        }
+        td.name { text-align: left; }
+        
+        .footer {
+          margin-top: 25px;
+          display: flex;
+          justify-content: space-around;
+          font-family: 'Siemreap', sans-serif;
+          font-size: 11px;
+        }
+        .signature-box {
+          text-align: center;
+          width: 200px;
+        }
+        .signature-line {
+          border-top: 1px solid #333;
+          margin-top: 50px;
+          padding-top: 5px;
+        }
+        
+        .footer-note {
+          text-align: center;
+          margin-top: 20px;
+          font-family: 'Siemreap', sans-serif;
+          font-size: 9px;
+          color: #94a3b8;
+        }
+        
+        .no-print {
+          text-align: center; margin-top: 25px;
+          padding-top: 15px; border-top: 1px dashed #cbd5e1;
+        }
+        .btn-print {
+          padding: 12px 30px; font-size: 14px; cursor: pointer;
+          background: #1e40af; color: white; border: none;
+          border-radius: 8px; font-family: 'Siemreap', sans-serif;
+          margin: 0 5px;
+        }
+        .btn-close {
+          padding: 12px 30px; font-size: 14px; cursor: pointer;
+          background: #64748b; color: white; border: none;
+          border-radius: 8px; font-family: 'Siemreap', sans-serif;
+          margin: 0 5px;
+        }
+        @media print { .no-print { display: none; } body { padding: 0; } }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div class="header-left">
+          <div class="logo-box">
+            ${DB.settings.companyLogo ? `<img src="${DB.settings.companyLogo}">` : ''}
+          </div>
+          <div class="company-info">
+            <div class="company-name-kh">ក្រុមហ៊ុន សុកន ត្រេនស្ព័ត ឯ.ក</div>
+            <div class="company-name-en">SOKAN TRANSPORT PTE., LTD.</div>
+          </div>
+        </div>
+        <div class="header-right">
+          <div>ព្រះរាជាណាចក្រកម្ពុជា</div>
+          <div>ជាតិ សាសនា ព្រះមហាក្សត្រ</div>
+        </div>
+      </div>
+      
+      <div class="title">របាយការណ៍ឯកសារ</div>
+      <div class="subtitle">Documents Report - សរុប ${DB.documents.length} ឯកសារ</div>
+      
+      ${Object.entries(DOC_CATEGORIES).map(([catKey, cat]) => {
+        const docs = docsByCategory[catKey] || [];
+        if (!docs.length) return '';
+        
+        return `
+          <div class="section">
+            <div class="section-title">${cat.icon} ${cat.name} (${docs.length})</div>
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 40px;">ល.រ</th>
+                  <th style="width: 80px;">កូដ</th>
+                  <th>ឈ្មោះឯកសារ</th>
+                  <th style="width: 80px;">ទំហំ</th>
+                  <th style="width: 90px;">កាលបរិច្ឆេទ</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${docs.map((d, idx) => `
+                  <tr>
+                    <td>${String(idx + 1).padStart(2, '0')}</td>
+                    <td>${d.code || ''}</td>
+                    <td class="name">${escapeHtml(d.title || d.file_name || '')}</td>
+                    <td>${d.size || ''}</td>
+                    <td>${d.created_at ? new Date(d.created_at).toLocaleDateString('en-GB') : ''}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }).join('')}
+      
+      <div class="footer">
+        <div class="signature-box">
+          <div>ហត្ថលេខាអ្នករៀបចំ</div>
+          <div class="signature-line"></div>
+        </div>
+        <div class="signature-box">
+          <div>ហត្ថលេខានាយក</div>
+          <div class="signature-line"></div>
+        </div>
+      </div>
+      
+      <div class="footer-note">
+        បង្កើតនៅ ថ្ងៃទី ${new Date().getDate()} ខែ ${new Date().getMonth()+1} ឆ្នាំ ${new Date().getFullYear()}
+      </div>
+      
+      <div class="no-print">
+        <button onclick="window.print()" class="btn-print">🖨️ បោះពុម្ព / Save as PDF</button>
+        <button onclick="window.close()" class="btn-close">✖️ បិទ</button>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  printWindow.document.write(html);
+  printWindow.document.close();
+  toast('🖨️ ចុច Print ដើម្បី Save as PDF');
 }
 
 function uploadDocument(input) {
