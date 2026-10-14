@@ -10261,54 +10261,89 @@ function renderContracts() {
   `;
 }
 // =====================================================
-// ✅ IMPORT CONTRACTS - ងាយៗ (Excel/CSV/PDF/Word/Image)
+// ✅ IMPORT CONTRACTS - គាំទ្រ PDF, Word, Image, Excel
 // =====================================================
 function importContractsExcel(input) {
   const files = Array.from(input.files);
   if (!files.length) return;
   
   // ✅ បែងចែក File
-  const dataFiles = [];
-  const attachFiles = [];
+  const dataFiles = [];      // Excel/CSV
+  const attachFiles = [];    // PDF/Word/Image
   
   files.forEach(file => {
     const name = file.name.toLowerCase();
+    const type = file.type || '';
+    
+    // ✅ Data Files (Excel/CSV)
     if (name.endsWith('.xlsx') || name.endsWith('.xls') || name.endsWith('.csv')) {
       dataFiles.push(file);
-    } else {
-      attachFiles.push(file);
+      return;
     }
+    
+    // ✅ Attachment Files (PDF/Word/Image)
+    if (
+      type === 'application/pdf' || name.endsWith('.pdf') ||
+      type.includes('word') || type.includes('document') || name.endsWith('.doc') || name.endsWith('.docx') ||
+      type.startsWith('image/') || name.match(/\.(jpg|jpeg|png|gif|webp)$/i)
+    ) {
+      attachFiles.push(file);
+      return;
+    }
+    
+    // ⚠️ បើមិនស្គាល់ → ដាក់ក្នុង Attachment
+    attachFiles.push(file);
   });
   
-  console.log('Data Files:', dataFiles);
-  console.log('Attach Files:', attachFiles);
+  console.log('📊 Data Files:', dataFiles.map(f => f.name));
+  console.log('📎 Attach Files:', attachFiles.map(f => f.name));
   
-  // ✅ បង្ហាញ Modal ងាយៗ
+  // ✅ បើមានតែ Attachment Files → Upload ភ្លាម
+  if (dataFiles.length === 0 && attachFiles.length > 0) {
+    showAttachContractModal(attachFiles);
+    input.value = '';
+    return;
+  }
+  
+  // ✅ បើមាន Data Files → បង្ហាញ Modal ជ្រើសរបៀប
+  showImportChoiceModal(dataFiles, attachFiles);
+  input.value = '';
+}
+
+// ✅ Modal ជ្រើសរបៀប Import
+function showImportChoiceModal(dataFiles, attachFiles) {
   document.getElementById('modalContainer').classList.add('modal-md');
   document.getElementById('modalContainer').classList.remove('modal-xl', 'modal-lg');
   document.getElementById('modalTitle').textContent = '📤 នាំចូលឯកសារ';
   
   document.getElementById('modalBody').innerHTML = `
     <div class="space-y-4">
-      <div class="p-3 bg-blue-50 rounded-lg">
-        <div class="text-sm font-medium">📋 ព័ត៌មាន</div>
-        <div class="text-xs">File សរុប: ${files.length}</div>
+      <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+        <div class="text-sm font-medium text-blue-700 mb-1">📋 ព័ត៌មាន</div>
+        <div class="text-xs text-blue-600">File សរុប ${dataFiles.length + attachFiles.length}</div>
       </div>
       
       ${dataFiles.length > 0 ? `
-        <div class="p-3 bg-green-50 rounded-lg">
-          <div class="text-sm font-medium text-green-700">📊 Data Files (${dataFiles.length})</div>
-          <div class="text-xs text-green-600 mt-1">
-            ${dataFiles.map(f => '• ' + f.name).join('<br>')}
+        <div class="p-3 bg-green-50 border border-green-200 rounded-lg">
+          <div class="text-sm font-medium text-green-700 mb-1">📊 Data Files (${dataFiles.length})</div>
+          <div class="text-xs text-green-600 mt-2 space-y-1">
+            ${dataFiles.map(f => `<div>• ${escapeHtml(f.name)}</div>`).join('')}
           </div>
         </div>
       ` : ''}
       
       ${attachFiles.length > 0 ? `
-        <div class="p-3 bg-amber-50 rounded-lg">
-          <div class="text-sm font-medium text-amber-700">📎 Attachment Files (${attachFiles.length})</div>
-          <div class="text-xs text-amber-600 mt-1">
-            ${attachFiles.map(f => '• ' + f.name).join('<br>')}
+        <div class="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+          <div class="text-sm font-medium text-amber-700 mb-1">📎 Attachment Files (${attachFiles.length})</div>
+          <div class="text-xs text-amber-600 mt-2 space-y-1">
+            ${attachFiles.map(f => {
+              const size = (f.size / 1024).toFixed(1) + ' KB';
+              let icon = '📎';
+              if (f.type === 'application/pdf' || f.name.endsWith('.pdf')) icon = '📕';
+              else if (f.type.includes('word') || f.name.endsWith('.doc') || f.name.endsWith('.docx')) icon = '📘';
+              else if (f.type.startsWith('image/')) icon = '🖼️';
+              return `<div>${icon} ${escapeHtml(f.name)} (${size})</div>`;
+            }).join('')}
           </div>
         </div>
       ` : ''}
@@ -10317,39 +10352,276 @@ function importContractsExcel(input) {
         <label class="text-sm font-medium">ជ្រើសរបៀប Import:</label>
         <div class="space-y-2 mt-2">
           ${dataFiles.length > 0 ? `
-            <label class="flex items-center gap-2 p-2 border rounded cursor-pointer">
-              <input type="radio" name="impType" value="data" checked onchange="toggleAttachSection2()">
-              <span class="text-sm">📊 Import ជា Data</span>
+            <label class="flex items-center gap-2 p-2 border rounded-lg cursor-pointer hover:bg-green-50">
+              <input type="radio" name="imp_choice" value="data" checked onchange="toggleAttachSection3()">
+              <span class="text-sm">📊 Import ជា <b>Data</b> (Excel/CSV)</span>
             </label>
           ` : ''}
           ${attachFiles.length > 0 ? `
-            <label class="flex items-center gap-2 p-2 border rounded cursor-pointer">
-              <input type="radio" name="impType" value="attach" ${dataFiles.length === 0 ? 'checked' : ''} onchange="toggleAttachSection2()">
-              <span class="text-sm">📎 Import ជា Attachment</span>
+            <label class="flex items-center gap-2 p-2 border rounded-lg cursor-pointer hover:bg-amber-50">
+              <input type="radio" name="imp_choice" value="attach" ${dataFiles.length === 0 ? 'checked' : ''} onchange="toggleAttachSection3()">
+              <span class="text-sm">📎 Upload ជា <b>Attachment</b> (PDF/Word/Image)</span>
             </label>
           ` : ''}
         </div>
       </div>
       
-      <div id="attachSection2" class="${attachFiles.length > 0 && dataFiles.length === 0 ? '' : 'hidden'}">
+      <div id="attach_section_3" class="${attachFiles.length > 0 && dataFiles.length === 0 ? '' : 'hidden'}">
         <label class="text-sm font-medium">ភ្ជាប់ទៅកិច្ចសន្យា:</label>
-        <select id="attachContractId2" class="input mt-1">
-          <option value="">-- ជ្រើស --</option>
+        <select id="attach_contract_3" class="input mt-1">
+          <option value="">-- ជ្រើសកិច្ចសន្យា --</option>
           ${DB.contracts.map(c => `<option value="${c.id}">${escapeHtml(c.code)} - ${escapeHtml(c.title)}</option>`).join('')}
         </select>
       </div>
       
       <div class="flex justify-end gap-2 pt-4 border-t">
         <button type="button" onclick="closeModal()" class="btn btn-secondary">បោះបង់</button>
-        <button type="button" onclick="doImport2()" class="btn btn-primary">📤 នាំចូល</button>
+        <button type="button" onclick="executeImportChoice()" class="btn btn-primary">📤 នាំចូល</button>
       </div>
     </div>
   `;
   openModal();
   
-  window._importData2 = dataFiles;
-  window._importAttach2 = attachFiles;
+  window._importData3 = dataFiles;
+  window._importAttach3 = attachFiles;
 }
+
+// ✅ Toggle Attachment Section
+function toggleAttachSection3() {
+  const type = document.querySelector('input[name="imp_choice"]:checked')?.value;
+  const section = document.getElementById('attach_section_3');
+  if (!section) return;
+  if (type === 'attach') section.classList.remove('hidden');
+  else section.classList.add('hidden');
+}
+
+// ✅ Execute Import
+function executeImportChoice() {
+  const type = document.querySelector('input[name="imp_choice"]:checked')?.value;
+  
+  if (type === 'data') {
+    doImportData3();
+  } else {
+    doImportAttach3();
+  }
+}
+
+// ✅ Import Data
+function doImportData3() {
+  const files = window._importData3 || [];
+  if (!files.length) return toast('❌ គ្មាន File', 'error');
+  
+  closeModal();
+  showLoading('កំពុងនាំចូល...');
+  
+  let totalAdded = 0;
+  let totalSkipped = 0;
+  let done = 0;
+  
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet);
+        
+        rows.forEach(row => {
+          const title = String(row['ចំណងជើង'] || row['Title'] || row['title'] || '').trim();
+          if (!title) { totalSkipped++; return; }
+          
+          const dup = DB.contracts.find(c => c.title === title);
+          if (dup) { totalSkipped++; return; }
+          
+          const newId = DB.nextId.contract++;
+          DB.contracts.push({
+            id: newId,
+            code: 'CT' + String(newId).padStart(3, '0'),
+            title: title,
+            type: String(row['ប្រភេទ'] || row['Type'] || 'Employment').trim(),
+            value: +(row['តម្លៃ ($)'] || row['Value'] || 0) || 0,
+            status: String(row['ស្ថានភាព'] || row['Status'] || 'active').toLowerCase(),
+            attachments: [],
+            created_at: new Date().toISOString()
+          });
+          totalAdded++;
+        });
+      } catch(err) {
+        console.error(err);
+      }
+      
+      done++;
+      if (done === files.length) {
+        hideLoading();
+        saveDB();
+        renderContracts();
+        toast(`✅ នាំចូលបាន ${totalAdded} (រំលង ${totalSkipped})`);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+// ✅ Import Attachment
+function doImportAttach3() {
+  const files = window._importAttach3 || [];
+  if (!files.length) return toast('❌ គ្មាន File', 'error');
+  
+  const contractId = +document.getElementById('attach_contract_3')?.value;
+  if (!contractId) return toast('❌ សូមជ្រើសកិច្ចសន្យា', 'error');
+  
+  const contract = DB.contracts.find(c => c.id === contractId);
+  if (!contract) return;
+  
+  closeModal();
+  showLoading('កំពុង Upload...');
+  
+  if (!contract.attachments) contract.attachments = [];
+  
+  let uploaded = 0;
+  let errors = 0;
+  
+  files.forEach(file => {
+    // ✅ Check size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast(`❌ ${file.name} ធំពេក (max 10MB)`, 'error');
+      errors++;
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const isPDF = file.type === 'application/pdf' || file.name.endsWith('.pdf');
+      const isWord = file.type.includes('word') || file.name.endsWith('.doc') || file.name.endsWith('.docx');
+      const isImage = file.type.startsWith('image/') || file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+      
+      contract.attachments.push({
+        id: Date.now() + Math.random(),
+        name: file.name,
+        size: (file.size / 1024).toFixed(1) + ' KB',
+        type: file.type || 'file',
+        isPDF: isPDF,
+        isWord: isWord,
+        isImage: isImage,
+        data: e.target.result,
+        uploaded_at: new Date().toISOString()
+      });
+      
+      uploaded++;
+      
+      if (uploaded + errors === files.length) {
+        hideLoading();
+        logAudit(currentUser.id, 'UPLOAD_ATTACHMENTS', 'contract', contractId, `Uploaded ${uploaded} files`);
+        saveDB();
+        renderContracts();
+        toast(`✅ Upload បាន ${uploaded} ឯកសារ`);
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// ✅ Modal ភ្ជាប់ទៅកិច្ចសន្យា (បើមានតែ Attachment)
+function showAttachContractModal(attachFiles) {
+  document.getElementById('modalContainer').classList.add('modal-md');
+  document.getElementById('modalContainer').classList.remove('modal-xl', 'modal-lg');
+  document.getElementById('modalTitle').textContent = '📎 Upload ឯកសារ';
+  
+  document.getElementById('modalBody').innerHTML = `
+    <div class="space-y-4">
+      <div class="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+        <div class="text-sm font-medium text-amber-700 mb-2">📎 ឯកសារដែលបានជ្រើស (${attachFiles.length})</div>
+        <div class="space-y-1">
+          ${attachFiles.map(f => {
+            const size = (f.size / 1024).toFixed(1) + ' KB';
+            let icon = '📎';
+            if (f.type === 'application/pdf' || f.name.endsWith('.pdf')) icon = '📕';
+            else if (f.type.includes('word') || f.name.endsWith('.doc') || f.name.endsWith('.docx')) icon = '📘';
+            else if (f.type.startsWith('image/')) icon = '🖼️';
+            return `<div class="text-xs">${icon} ${escapeHtml(f.name)} (${size})</div>`;
+          }).join('')}
+        </div>
+      </div>
+      
+      <div>
+        <label class="text-sm font-medium">ភ្ជាប់ទៅកិច្ចសន្យា <span class="text-red-500">*</span></label>
+        <select id="attach_contract_solo" class="input mt-1">
+          <option value="">-- ជ្រើសកិច្ចសន្យា --</option>
+          ${DB.contracts.map(c => `<option value="${c.id}">${escapeHtml(c.code)} - ${escapeHtml(c.title)}</option>`).join('')}
+        </select>
+        ${DB.contracts.length === 0 ? '<p class="text-xs text-red-500 mt-1">⚠️ មិនមានកិច្ចសន្យា។ សូមបន្ថែមកិច្ចសន្យាមុនសិន។</p>' : ''}
+      </div>
+      
+      <div class="flex justify-end gap-2 pt-4 border-t">
+        <button type="button" onclick="closeModal()" class="btn btn-secondary">បោះបង់</button>
+        <button type="button" onclick="doAttachSolo()" class="btn btn-primary">📤 Upload</button>
+      </div>
+    </div>
+  `;
+  openModal();
+  
+  window._importAttachSolo = attachFiles;
+}
+
+// ✅ Upload Attachment (Solo)
+function doAttachSolo() {
+  const files = window._importAttachSolo || [];
+  if (!files.length) return toast('❌ គ្មាន File', 'error');
+  
+  const contractId = +document.getElementById('attach_contract_solo')?.value;
+  if (!contractId) return toast('❌ សូមជ្រើសកិច្ចសន្យា', 'error');
+  
+  const contract = DB.contracts.find(c => c.id === contractId);
+  if (!contract) return;
+  
+  closeModal();
+  showLoading('កំពុង Upload...');
+  
+  if (!contract.attachments) contract.attachments = [];
+  
+  let uploaded = 0;
+  let errors = 0;
+  
+  files.forEach(file => {
+    if (file.size > 10 * 1024 * 1024) {
+      toast(`❌ ${file.name} ធំពេក`, 'error');
+      errors++;
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const isPDF = file.type === 'application/pdf' || file.name.endsWith('.pdf');
+      const isWord = file.type.includes('word') || file.name.endsWith('.doc') || file.name.endsWith('.docx');
+      const isImage = file.type.startsWith('image/') || file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+      
+      contract.attachments.push({
+        id: Date.now() + Math.random(),
+        name: file.name,
+        size: (file.size / 1024).toFixed(1) + ' KB',
+        type: file.type || 'file',
+        isPDF: isPDF,
+        isWord: isWord,
+        isImage: isImage,
+        data: e.target.result,
+        uploaded_at: new Date().toISOString()
+      });
+      
+      uploaded++;
+      
+      if (uploaded + errors === files.length) {
+        hideLoading();
+        logAudit(currentUser.id, 'UPLOAD_ATTACHMENTS', 'contract', contractId, `Uploaded ${uploaded} files`);
+        saveDB();
+        renderContracts();
+        toast(`✅ Upload បាន ${uploaded} ឯកសារ`);
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 
 function toggleAttachSection2() {
   const type = document.querySelector('input[name="impType"]:checked')?.value;
