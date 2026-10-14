@@ -393,15 +393,15 @@ body.dark-mode .lang-btn.active {
         <span>💼</span><span>សម្ភារៈ</span>
         <span class="nav-badge blue hidden" id="badge-assets">0</span>
       </a>
-      <a href="#" onclick="showPage('assetIssues');return false;" data-page="assetIssues" class="sidebar-link flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition text-sm">
-  <span>📤</span><span>ប្រគល់/ផ្ទេរ</span>
-</a>
-    <a href="#" onclick="showPage('assetDashboard');return false;" data-page="assetDashboard" class="sidebar-link flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition text-sm">
+      <a href="#" onclick="showPage('assetDashboard');return false;" data-page="assetDashboard" class="sidebar-link flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition text-sm">
   <span>📊</span><span>Asset Dashboard</span>
 </a>
 <a href="#" onclick="showPage('assetHistory');return false;" data-page="assetHistory" class="sidebar-link flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition text-sm">
   <span>📜</span><span>Asset History</span>
-</a> 
+</a>
+<a href="#" onclick="showPage('assetIssues');return false;" data-page="assetIssues" class="sidebar-link flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition text-sm">
+  <span>📤</span><span>ប្រគល់/ផ្ទេរ</span>
+</a>
       <a href="#" onclick="showPage('contracts');return false;" data-page="contracts" class="sidebar-link flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition text-sm">
         <span>📝</span><span>កិច្ចសន្យា</span>
         <span class="nav-badge yellow hidden" id="badge-contracts">0</span>
@@ -1984,14 +1984,18 @@ const PAGE_META = {
   document.getElementById('pageSubtitle').textContent = s;
   
   const renderers = {
-    dashboard: renderDashboard, employees: renderEmployees, orgchart: renderOrgChart,
-    organization: renderOrganization, positions: renderPositions,
-    attendance: renderAttendance, leave: renderLeave, payroll: renderPayroll,
-    documents: renderDocuments, assets: renderAssets, assetIssues: renderAssetIssues,     assetDashboard: renderAssetDashboard,
-    assetHistory: renderAssetHistory, contracts: renderContracts,
-    inventory: renderInventory, suppliers: renderSuppliers, purchase: renderPurchase,
-    reports: renderReports, audit: renderAudit, settings: renderSettings
-  };
+  dashboard: renderDashboard, employees: renderEmployees, orgchart: renderOrgChart,
+  organization: renderOrganization, positions: renderPositions,
+  attendance: renderAttendance, leave: renderLeave, payroll: renderPayroll,
+  documents: renderDocuments, 
+  assets: renderAssets, 
+  assetDashboard: renderAssetDashboard,
+  assetHistory: renderAssetHistory,
+  assetIssues: renderAssetIssues,
+  contracts: renderContracts,
+  inventory: renderInventory, suppliers: renderSuppliers, purchase: renderPurchase,
+  reports: renderReports, audit: renderAudit, settings: renderSettings
+};
   
   try {
     if (renderers[page]) renderers[page]();
