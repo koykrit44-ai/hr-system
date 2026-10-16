@@ -702,23 +702,30 @@ body.dark-mode .card {
   z-index: 10;
 }
 // =====================================================
-// ✅ CODE RAIN ANIMATION
+// ✅ CODE RAIN ANIMATION (ដំណើរការពិតប្រាកដ)
 // =====================================================
-function initCodeRain() {
+(function initCodeRain() {
   const canvas = document.getElementById('codeRainCanvas');
-  if (!canvas) return;
+  if (!canvas) {
+    console.error('❌ Canvas #codeRainCanvas រកមិនឃើញ!');
+    return;
+  }
   
   const ctx = canvas.getContext('2d');
   
-  // កំណត់ទំហំ Canvas ឱ្យស្មើនឹងអេក្រង់
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  // កំណត់ទំហំ Canvas
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
   
   // ពាក្យកូដដែលនឹងរត់
   const codeSnippets = [
     'const', 'let', 'var', 'function', 'return', 'if', 'else', 'for', 'while',
     'class', 'import', 'export', 'async', 'await', 'try', 'catch', 'throw',
-    '=>', '{}', '()', '[]', '===', '!==', '&&', '||', '...', '?.',
+    '=>', '{ }', '( )', '[ ]', '===', '!==', '&&', '||', '...', '?.',
     'document', 'window', 'querySelector', 'addEventListener', 'console.log',
     'true', 'false', 'null', 'undefined', 'NaN', 'Infinity',
     '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
@@ -726,17 +733,17 @@ function initCodeRain() {
     'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
     'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
     'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-    '{', '}', '(', ')', '[', ']', ';', ':', ',', '.', '+', '-', '*', '/', '=', '<', '>', '!', '?', '&', '|', '^', '%', '$', '#', '@'
+    '{', '}', '(', ')', '[', ']', ';', ':', ',', '.', '+', '-', '*', '/', 
+    '=', '<', '>', '!', '?', '&', '|', '^', '%', '$', '#', '@'
   ];
   
-  // ទំហំអក្សរ
   const fontSize = 16;
   const columns = Math.floor(canvas.width / fontSize);
   
-  // បង្កើត Array សម្រាប់តាមដានទីតាំង Y នៃជួរឈរនីមួយៗ
+  // បង្កើត Array សម្រាប់តាមដានទីតាំង Y
   const drops = [];
   for (let i = 0; i < columns; i++) {
-    drops[i] = Math.random() * -100; // ចាប់ផ្តើមពីខាងលើអេក្រង់
+    drops[i] = Math.random() * -100; // ចាប់ផ្តើមពីខាងលើ
   }
   
   // ពណ៌ផ្សេងៗ
@@ -749,65 +756,44 @@ function initCodeRain() {
     '#ffffff', // ស
   ];
   
+  let animationId;
+  
   function draw() {
-    // បន្ថែមពណ៌ខ្មៅថ្លាស្រាល ដើម្បីធ្វើឱ្យមានដាន (Trail)
+    // បន្ថែមពណ៌ខ្មៅថ្លា (Trail Effect)
     ctx.fillStyle = 'rgba(2, 6, 23, 0.08)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // កំណត់ Font
-    ctx.font = `${fontSize}px 'Courier New', monospace`;
-    
     // គូរអក្សរនីមួយៗ
     for (let i = 0; i < drops.length; i++) {
-      // ជ្រើសរើសពាក្យដោយចៃដន្យ
       const text = codeSnippets[Math.floor(Math.random() * codeSnippets.length)];
-      
-      // ជ្រើសរើសពណ៌ដោយចៃដន្យ
       const color = colors[Math.floor(Math.random() * colors.length)];
+      
       ctx.fillStyle = color;
-      
-      // បន្ថែមពន្លឺស្រាលៗ
       ctx.shadowColor = color;
-      ctx.shadowBlur = 8;
+      ctx.shadowBlur = 10;
+      ctx.font = `${fontSize}px 'Courier New', monospace`;
       
-      // គូរអក្សរ
       const x = i * fontSize;
       const y = drops[i] * fontSize;
       
-      // ពិនិត្យមើលថាតើអក្សរធំពេកឬអត់
-      if (text.length > 3) {
-        ctx.font = `${fontSize * 0.7}px 'Courier New', monospace`;
-      } else {
-        ctx.font = `${fontSize}px 'Courier New', monospace`;
-      }
-      
       ctx.fillText(text, x, y);
-      
-      // បន្ថយ Shadow វិញ
       ctx.shadowBlur = 0;
       
       // បង្កើតចលនាចុះក្រោម
       if (y > canvas.height && Math.random() > 0.975) {
         drops[i] = 0;
       }
-      drops[i] += 0.5; // ល្បឿនរត់
+      drops[i] += 0.5;
     }
+    
+    animationId = requestAnimationFrame(draw);
   }
   
   // ចាប់ផ្តើមដំណើរការ
-  setInterval(draw, 50); // ល្បឿន Refresh (តូច = លឿន)
+  draw();
   
-  // ប្តូរទំហំ Canvas ពេលប្តូរទំហំ Window
-  window.addEventListener('resize', () => {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-  });
-}
-
-// ចាប់ផ្តើមដំណើរការពេល Page Load
-document.addEventListener('DOMContentLoaded', () => {
-  initCodeRain();
-});
+  console.log('✅ Code Rain ចាប់ផ្តើមដំណើរការ!');
+})();
 
 
  /* ===================================================== */
