@@ -2849,68 +2849,7 @@ function renderEmployees() {
 }
 
 const debounceFilterEmployees = debounce(() => { empPage = 1; filterEmployees(); }, 250);
-function filterEmployees() {
-  const q = (document.getElementById('empSearch')?.value || '').toLowerCase();
-  const st = document.getElementById('empStatusF')?.value || '';
-  const deptId = +document.getElementById('empDeptF')?.value || null;
-  const branchId = +document.getElementById('empBranchF')?.value || null;
 
-  const list = DB.employees.filter(e => {
-    const m = !q || e.full_name.toLowerCase().includes(q) || (e.employee_id || '').toLowerCase().includes(q) || e.code.toLowerCase().includes(q);
-    const matchStatus = !st || e.status === st;
-    const matchDept = !deptId || e.department_id === deptId;
-    const matchBranch = !branchId || e.branch_id === branchId;
-    return m && matchStatus && matchDept && matchBranch;
-  });
-
-  const total = list.length;
-  const totalPages = Math.max(1, Math.ceil(total / empLimit));
-  if (empPage > totalPages) empPage = totalPages;
-  const start = (empPage - 1) * empLimit;
-  const paginated = list.slice(start, start + empLimit);
-
-  document.getElementById('empTableBody').innerHTML = paginated.map(e => `
-    <tr class="border-b table-row hover:bg-slate-50">
-      <td class="p-3">
-        ${e.photo 
-          ? `<img src="${e.photo}" class="w-10 h-10 rounded-full object-cover" loading="lazy">` 
-          : `<div class="avatar-circle w-10 h-10 text-sm">${escapeHtml(e.full_name.charAt(0))}</div>`}
-      </td>
-      <td class="p-3 font-mono text-xs text-green-600">${escapeHtml(e.employee_id || '-')}</td>
-      <td class="p-3 font-mono text-xs text-blue-600">${escapeHtml(e.code)}</td>
-      <td class="p-3">
-        <div class="font-medium cursor-pointer hover:text-blue-600" onclick="viewEmpProfile(${e.id})">${escapeHtml(e.full_name)}</div>
-        <div class="text-xs text-slate-500">${escapeHtml(e.email)}</div>
-      </td>
-      <td class="p-3">${escapeHtml(getDeptName(e.department_id))}</td>
-      <td class="p-3">${escapeHtml(getPosName(e.position_id))}</td>
-      <td class="p-3">${statusBadge(e.status)}</td>
-      <td class="p-3 text-center">
-          ${renderDocBadges(e.documents, e.id)}
-        </td>
-        <td class="p-3 text-right whitespace-nowrap">
-        <button onclick="viewEmpProfile(${e.id})" class="text-blue-600 hover:bg-blue-50 px-2 py-1 rounded text-xs" title="មើល">👁️</button>
-        ${canEdit() ? `<button onclick="openEmpForm(${e.id})" class="text-amber-600 hover:bg-amber-50 px-2 py-1 rounded text-xs" title="កែ">✏️</button>` : ''}
-        ${canDelete() ? `<button onclick="deleteEmp(${e.id})" class="text-red-600 hover:bg-red-50 px-2 py-1 rounded text-xs" title="លុប">🗑️</button>` : ''}
-      </td>
-    </tr>
-  `).join('') || '<tr><td colspan="9" class="text-center p-8 text-slate-400">មិនមានទិន្នន័យ</td></tr>';
-
-  let pag = `<div class="text-sm text-slate-500">${t('empShowing')} ` + (total ? start+1 : 0) + '-' + Math.min(start+empLimit, total) + ' ' + t('empOf') + ' ' + total + '</div><div class="pagination">';
-  pag += `<button onclick="empPage=1;filterEmployees()" ${empPage===1?'disabled':''}>«</button>`;
-  pag += `<button onclick="empPage=${empPage-1};filterEmployees()" ${empPage===1?'disabled':''}>‹</button>`;
-  for (let i = 1; i <= totalPages; i++) {
-    if (i === 1 || i === totalPages || Math.abs(i - empPage) <= 1) {
-      pag += `<button onclick="empPage=${i};filterEmployees()" class="${empPage===i?'active':''}">${i}</button>`;
-    } else if (i === empPage - 2 || i === empPage + 2) {
-      pag += `<span>...</span>`;
-    }
-  }
-  pag += `<button onclick="empPage=${empPage+1};filterEmployees()" ${empPage===totalPages?'disabled':''}>›</button>`;
-  pag += `<button onclick="empPage=${totalPages};filterEmployees()" ${empPage===totalPages?'disabled':''}>»</button>`;
-  pag += '</div>';
-  document.getElementById('empPagination').innerHTML = pag;
-}
 // =====================================================
 // ✅ EXPORT EMPLOYEES REPORT - EXCEL (តាម Filter)
 // =====================================================
