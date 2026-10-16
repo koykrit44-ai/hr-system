@@ -836,7 +836,252 @@ body.dark-mode .card {
   background: rgba(30, 41, 59, 0.8) !important;
   border-color: rgba(59, 130, 246, 0.3) !important;
   color: #e2e8f0 !important;
-} 
+}
+/* ===================================================== */
+/* ✅ MOBILE RESPONSIVE (សម្រាប់ទូរសព្ទដៃ) */
+/* ===================================================== */
+
+/* 1. បង្ហាញប៊ូតុង Menu នៅលើអេក្រង់តូច */
+#mobileMenuBtn {
+  display: none;
+  position: fixed;
+  top: 15px;
+  left: 15px;
+  z-index: 100;
+  width: 45px;
+  height: 45px;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 24px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+  align-items: center;
+  justify-content: center;
+}
+
+/* 2. សម្រាប់អេក្រង់តូចជាង 768px (Tablet & Mobile) */
+@media (max-width: 768px) {
+  
+  /* បង្ហាញប៊ូតុង Menu */
+  #mobileMenuBtn {
+    display: flex;
+  }
+  
+  /* លាក់ Sidebar ចេញពីអេក្រង់ */
+  aside {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    width: 280px;
+    z-index: 90;
+  }
+  
+  /* ពេលចុចប៊ូតុង Menu ឱ្យ Sidebar រុលចេញមក */
+  aside.mobile-open {
+    transform: translateX(0);
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+  }
+  
+  /* លុប Margin-Left ចេញពី Main Content */
+  main {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+  
+  /* ធ្វើឱ្យ Header មានទំហំតូចជាងមុន */
+  header {
+    padding: 12px 16px !important;
+  }
+  
+  header h1 {
+    font-size: 16px !important;
+    padding-left: 50px;
+  }
+  
+  header p {
+    font-size: 10px !important;
+    padding-left: 50px;
+  }
+  
+  /* លាក់ Date នៅលើ Header */
+  header .hidden.md\\:block {
+    display: none !important;
+  }
+  
+  /* បង្កើត Grid តែ 1 ឬ 2 ជួរប៉ុណ្ណោះ */
+  .grid-cols-4, .grid-cols-3, .grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  
+  /* KPI Cards តូចជាងមុន */
+  .card {
+    padding: 15px !important;
+    border-radius: 12px !important;
+  }
+  
+  .card .text-3xl {
+    font-size: 20px !important;
+  }
+  
+  .card .text-2xl {
+    font-size: 18px !important;
+  }
+  
+  .card .text-xl {
+    font-size: 16px !important;
+  }
+  
+  /* ធ្វើឱ្យតារាង Scroll បាន */
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+    border-radius: 10px;
+  }
+  
+  table {
+    font-size: 11px !important;
+    min-width: 600px;
+  }
+  
+  table th, table td {
+    padding: 6px 8px !important;
+    white-space: nowrap;
+  }
+  
+  /* Modal ឱ្យសមទំហំអេក្រង់ */
+  .modal-xl, .modal-lg, .modal-md {
+    max-width: 95% !important;
+    margin: 10px !important;
+  }
+  
+  #modalContainer {
+    max-height: 95vh !important;
+    border-radius: 16px !important;
+  }
+  
+  /* Filters ឱ្យរៀបជាជួរឈរ */
+  .flex.flex-wrap.gap-2 > input,
+  .flex.flex-wrap.gap-2 > select {
+    width: 100% !important;
+    margin-bottom: 6px;
+  }
+  
+  /* ប៊ូតុង Filter ឱ្យពេញទំហំ */
+  .flex.flex-wrap.gap-2 > button,
+  .flex.flex-wrap.gap-2 > label {
+    flex: 1;
+    min-width: 120px;
+  }
+  
+  /* កាត់បន្ថយ Padding នៅ Page Content */
+  #pageContent {
+    padding: 12px !important;
+  }
+  
+  /* Pagination ឱ្យតូចជាងមុន */
+  .pagination button {
+    padding: 4px 8px !important;
+    font-size: 11px !important;
+  }
+  
+  /* Chart ឱ្យមានទំហំតូច */
+  canvas {
+    max-height: 200px !important;
+  }
+}
+
+/* 3. សម្រាប់អេក្រង់តូចខ្លាំង (Mobile < 480px) */
+@media (max-width: 480px) {
+  
+  /* Grid តែ 1 ជួរប៉ុណ្ណោះ */
+  .grid-cols-4, .grid-cols-3, .grid-cols-2 {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+  }
+  
+  /* KPI Cards */
+  .card {
+    padding: 12px !important;
+  }
+  
+  .card .text-3xl {
+    font-size: 18px !important;
+  }
+  
+  /* Header តូចជាងមុន */
+  header h1 {
+    font-size: 14px !important;
+  }
+  
+  /* លាក់ Logo នៅ Header */
+  header .w-10, header .w-11 {
+    width: 36px !important;
+    height: 36px !important;
+  }
+  
+  /* Lang Switcher តូច */
+  .lang-btn {
+    padding: 4px 8px !important;
+    font-size: 10px !important;
+  }
+  
+  /* តារាង */
+  table {
+    font-size: 10px !important;
+  }
+  
+  /* Modal */
+  .modal-xl, .modal-lg, .modal-md {
+    max-width: 98% !important;
+  }
+  
+  /* Toast Notification */
+  .toast {
+    bottom: 12px !important;
+    right: 12px !important;
+    left: 12px !important;
+    font-size: 12px !important;
+    padding: 12px 16px !important;
+  }
+}
+
+/* 4. បង្កើត Overlay ពេលបើក Sidebar លើ Mobile */
+#mobileOverlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 85;
+  backdrop-filter: blur(4px);
+}
+
+#mobileOverlay.active {
+  display: block;
+}
+
+/* 5. បង្កើតប៊ូតុងបិទ Sidebar នៅក្នុង Sidebar */
+#closeSidebarBtn {
+  display: none;
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 35px;
+  height: 35px;
+  background: rgba(239, 68, 68, 0.9);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 18px;
+  cursor: pointer;
+  z-index: 95;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  #closeSidebarBtn {
+    display: flex;
+  }
+}
 </style>
 </head>
 <body>
@@ -891,8 +1136,15 @@ body.dark-mode .card {
 </div>
 
 <!-- ============ APP ============ -->
+ <!-- ✅ Mobile Menu Button -->
+<button id="mobileMenuBtn" onclick="toggleMobileSidebar()">☰</button>
+
+<!-- ✅ Mobile Overlay -->
+<div id="mobileOverlay" onclick="toggleMobileSidebar()"></div>
 <div id="appScreen" class="hidden min-h-screen flex">
   <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col fixed h-full z-20 shadow-2xl">
+   <!-- ✅ Close Button (សម្រាប់ Mobile) -->
+  <button id="closeSidebarBtn" onclick="toggleMobileSidebar()">✕</button>
     <div class="p-5 border-b border-slate-700 flex items-center gap-3">
       <div id="sidebarLogo" class="w-11 h-11 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg flex items-center justify-center font-bold text-white overflow-hidden">
         <img src="415-logo.png" alt="Logo" class="w-full h-full object-cover">
@@ -14917,6 +15169,49 @@ document.addEventListener('DOMContentLoaded', () => {
   setInterval(() => { if (currentUser) saveDB(); }, 5 * 60 * 1000);
   window.addEventListener('beforeunload', () => { if (currentUser) saveDB(); });
   setInterval(() => { if (currentUser) updateBadges(); }, 30000);
+});
+// =====================================================
+// ✅ MOBILE SIDEBAR TOGGLE
+// =====================================================
+function toggleMobileSidebar() {
+  const sidebar = document.querySelector('aside');
+  const overlay = document.getElementById('mobileOverlay');
+  
+  if (!sidebar || !overlay) return;
+  
+  const isOpen = sidebar.classList.contains('mobile-open');
+  
+  if (isOpen) {
+    sidebar.classList.remove('mobile-open');
+    overlay.classList.remove('active');
+    document.body.style.overflow = '';
+  } else {
+    sidebar.classList.add('mobile-open');
+    overlay.classList.add('active');
+    document.body.style.overflow = 'hidden'; // បិទការ Scroll នៅខាងក្រោយ
+  }
+}
+
+// ✅ បិទ Sidebar ពេលចុច Link
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.sidebar-link').forEach(link => {
+    link.addEventListener('click', () => {
+      if (window.innerWidth <= 768) {
+        toggleMobileSidebar();
+      }
+    });
+  });
+});
+
+// ✅ បិទ Sidebar ពេលប្តូរទំហំអេក្រង់ធំជាង 768px
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 768) {
+    const sidebar = document.querySelector('aside');
+    const overlay = document.getElementById('mobileOverlay');
+    if (sidebar) sidebar.classList.remove('mobile-open');
+    if (overlay) overlay.classList.remove('active');
+    document.body.style.overflow = '';
+  }
 });
 </script>
 </body>
