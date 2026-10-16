@@ -681,6 +681,133 @@ body.dark-mode .card {
   from { background-position: 0 0; }
   to { background-position: 200px 200px; }
 }
+/* ===================================================== */
+/* ✅ CODE RAIN BACKGROUND (រត់ពីលើចុះក្រោម) */
+/* ===================================================== */
+
+#codeRainCanvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1; /* ដាក់នៅខាងក្រោយគេ */
+  background: #020617; /* ពណ៌ខ្មៅជាង */
+  opacity: 0.9; /* បន្ថយភាពច្បាស់បន្តិច */
+}
+
+/* បង្កើតពន្លឺស្រាលៗនៅក្បែរ Login Box */
+#loginScreen {
+  position: relative;
+  z-index: 10;
+}
+// =====================================================
+// ✅ CODE RAIN ANIMATION
+// =====================================================
+function initCodeRain() {
+  const canvas = document.getElementById('codeRainCanvas');
+  if (!canvas) return;
+  
+  const ctx = canvas.getContext('2d');
+  
+  // កំណត់ទំហំ Canvas ឱ្យស្មើនឹងអេក្រង់
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  
+  // ពាក្យកូដដែលនឹងរត់
+  const codeSnippets = [
+    'const', 'let', 'var', 'function', 'return', 'if', 'else', 'for', 'while',
+    'class', 'import', 'export', 'async', 'await', 'try', 'catch', 'throw',
+    '=>', '{}', '()', '[]', '===', '!==', '&&', '||', '...', '?.',
+    'document', 'window', 'querySelector', 'addEventListener', 'console.log',
+    'true', 'false', 'null', 'undefined', 'NaN', 'Infinity',
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+    'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+    'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+    'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+    '{', '}', '(', ')', '[', ']', ';', ':', ',', '.', '+', '-', '*', '/', '=', '<', '>', '!', '?', '&', '|', '^', '%', '$', '#', '@'
+  ];
+  
+  // ទំហំអក្សរ
+  const fontSize = 16;
+  const columns = Math.floor(canvas.width / fontSize);
+  
+  // បង្កើត Array សម្រាប់តាមដានទីតាំង Y នៃជួរឈរនីមួយៗ
+  const drops = [];
+  for (let i = 0; i < columns; i++) {
+    drops[i] = Math.random() * -100; // ចាប់ផ្តើមពីខាងលើអេក្រង់
+  }
+  
+  // ពណ៌ផ្សេងៗ
+  const colors = [
+    '#00ff41', // បៃតង Matrix
+    '#00cc33',
+    '#009922',
+    '#3b82f6', // ខៀវ
+    '#8b5cf6', // ស្វាយ
+    '#ffffff', // ស
+  ];
+  
+  function draw() {
+    // បន្ថែមពណ៌ខ្មៅថ្លាស្រាល ដើម្បីធ្វើឱ្យមានដាន (Trail)
+    ctx.fillStyle = 'rgba(2, 6, 23, 0.08)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // កំណត់ Font
+    ctx.font = `${fontSize}px 'Courier New', monospace`;
+    
+    // គូរអក្សរនីមួយៗ
+    for (let i = 0; i < drops.length; i++) {
+      // ជ្រើសរើសពាក្យដោយចៃដន្យ
+      const text = codeSnippets[Math.floor(Math.random() * codeSnippets.length)];
+      
+      // ជ្រើសរើសពណ៌ដោយចៃដន្យ
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      ctx.fillStyle = color;
+      
+      // បន្ថែមពន្លឺស្រាលៗ
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 8;
+      
+      // គូរអក្សរ
+      const x = i * fontSize;
+      const y = drops[i] * fontSize;
+      
+      // ពិនិត្យមើលថាតើអក្សរធំពេកឬអត់
+      if (text.length > 3) {
+        ctx.font = `${fontSize * 0.7}px 'Courier New', monospace`;
+      } else {
+        ctx.font = `${fontSize}px 'Courier New', monospace`;
+      }
+      
+      ctx.fillText(text, x, y);
+      
+      // បន្ថយ Shadow វិញ
+      ctx.shadowBlur = 0;
+      
+      // បង្កើតចលនាចុះក្រោម
+      if (y > canvas.height && Math.random() > 0.975) {
+        drops[i] = 0;
+      }
+      drops[i] += 0.5; // ល្បឿនរត់
+    }
+  }
+  
+  // ចាប់ផ្តើមដំណើរការ
+  setInterval(draw, 50); // ល្បឿន Refresh (តូច = លឿន)
+  
+  // ប្តូរទំហំ Canvas ពេលប្តូរទំហំ Window
+  window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  });
+}
+
+// ចាប់ផ្តើមដំណើរការពេល Page Load
+document.addEventListener('DOMContentLoaded', () => {
+  initCodeRain();
+});
 </style>
 </head>
 <body>
@@ -694,7 +821,8 @@ body.dark-mode .card {
   <span>Session នឹងផុតកំណត់ក្នុង <b id="sessionCountdown">60</b> វិនាទី</span>
   <button onclick="extendSession()" class="bg-white text-amber-700 px-3 py-1 rounded font-medium text-sm">បន្ត</button>
 </div>
-
+<!-- ✅ បន្ថែម Canvas នៅទីនេះ -->
+<canvas id="codeRainCanvas"></canvas>
 <!-- ============ LOGIN ============ -->
 <div id="loginScreen" class="min-h-screen login-bg flex items-center justify-center p-4">
  <div class="stars"></div>
