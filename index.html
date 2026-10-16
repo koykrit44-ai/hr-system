@@ -847,7 +847,7 @@ body.dark-mode .card {
   position: fixed;
   top: 15px;
   left: 15px;
-  z-index: 100;
+  z-index: 10001 !important; /* ✅ ដាក់ឱ្យខ្ពស់ជាងគេ */
   width: 45px;
   height: 45px;
   background: linear-gradient(135deg, #2563eb, #1d4ed8);
@@ -863,24 +863,25 @@ body.dark-mode .card {
 
 /* 2. សម្រាប់អេក្រង់តូចជាង 768px (Tablet & Mobile) */
 @media (max-width: 768px) {
-  
-  /* បង្ហាញប៊ូតុង Menu */
   #mobileMenuBtn {
     display: flex;
   }
   
-  /* លាក់ Sidebar ចេញពីអេក្រង់ */
   aside {
     transform: translateX(-100%);
     transition: transform 0.3s ease;
     width: 280px;
-    z-index: 90;
+    z-index: 9999 !important; /* ✅ ដាក់ឱ្យខ្ពស់ជាងគេ */
   }
   
-  /* ពេលចុចប៊ូតុង Menu ឱ្យ Sidebar រុលចេញមក */
   aside.mobile-open {
     transform: translateX(0);
     box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+  }
+  
+  /* ✅ បន្ថែមកូដនេះដើម្បីធានាថា Overlay នៅក្រោម Sidebar */
+  #mobileOverlay {
+    z-index: 9998 !important;
   }
   
   /* លុប Margin-Left ចេញពី Main Content */
@@ -1050,7 +1051,7 @@ body.dark-mode .card {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.6);
-  z-index: 85;
+  z-index: 9998 !important; /* ✅ ដាក់ឱ្យទាបជាង Sidebar បន្តិច */
   backdrop-filter: blur(4px);
 }
 
@@ -1072,7 +1073,7 @@ body.dark-mode .card {
   border-radius: 50%;
   font-size: 18px;
   cursor: pointer;
-  z-index: 95;
+  z-index: 10000 !important; /* ✅ ដាក់ឱ្យខ្ពស់ជាងគេ ដើម្បីឱ្យចុចបាន */
   align-items: center;
   justify-content: center;
 }
@@ -15177,7 +15178,10 @@ function toggleMobileSidebar() {
   const sidebar = document.querySelector('aside');
   const overlay = document.getElementById('mobileOverlay');
   
-  if (!sidebar || !overlay) return;
+  if (!sidebar || !overlay) {
+    console.error('❌ Sidebar or Overlay not found!');
+    return;
+  }
   
   const isOpen = sidebar.classList.contains('mobile-open');
   
@@ -15188,9 +15192,27 @@ function toggleMobileSidebar() {
   } else {
     sidebar.classList.add('mobile-open');
     overlay.classList.add('active');
-    document.body.style.overflow = 'hidden'; // បិទការ Scroll នៅខាងក្រោយ
+    document.body.style.overflow = 'hidden';
   }
 }
+
+// ✅ បន្ថែមកូដនេះដើម្បីឱ្យប៊ូតុងបិទ (✕) ដំណើរការ
+document.addEventListener('DOMContentLoaded', () => {
+  // ប៊ូតុងបិទ Sidebar
+  const closeBtn = document.getElementById('closeSidebarBtn');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', toggleMobileSidebar);
+  }
+  
+  // បិទ Sidebar ពេលចុច Link
+  document.querySelectorAll('.sidebar-link').forEach(link => {
+    link.addEventListener('click', () => {
+      if (window.innerWidth <= 768) {
+        toggleMobileSidebar();
+      }
+    });
+  });
+});
 
 // ✅ បិទ Sidebar ពេលចុច Link
 document.addEventListener('DOMContentLoaded', () => {
