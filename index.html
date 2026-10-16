@@ -808,6 +808,49 @@ function initCodeRain() {
 document.addEventListener('DOMContentLoaded', () => {
   initCodeRain();
 });
+
+
+ /* ===================================================== */
+/* ✅ CODE RAIN BACKGROUND (រត់ពីលើចុះក្រោម) */
+/* ===================================================== */
+
+#codeRainCanvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0; /* ដាក់នៅខាងក្រោយ Login Box */
+  background: #020617; /* ពណ៌ខ្មៅ */
+}
+
+/* ធ្វើឱ្យ Login Screen នៅពីលើ Canvas */
+#loginScreen {
+  position: relative;
+  z-index: 10;
+  background: transparent !important; /* លុបពណ៌ Gradient ចាស់ចេញ */
+}
+#loginScreen .glass {
+  background: rgba(15, 23, 42, 0.85) !important; /* ពណ៌ខ្មៅថ្លា */
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+}
+
+#loginScreen .glass h1,
+#loginScreen .glass .text-slate-800 {
+  color: #ffffff !important;
+}
+
+#loginScreen .glass label {
+  color: #cbd5e1 !important;
+}
+
+#loginScreen .glass .input {
+  background: rgba(30, 41, 59, 0.8) !important;
+  border-color: rgba(59, 130, 246, 0.3) !important;
+  color: #e2e8f0 !important;
+} 
 </style>
 </head>
 <body>
