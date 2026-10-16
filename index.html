@@ -357,6 +357,225 @@ body.dark-mode .lang-btn.active {
     background: rgba(30, 41, 59, 0.95) !important;
     border-color: #334155 !important;
   }
+ /* ===================================================== */
+/* ✅ ULTRA PREMIUM UI ENHANCEMENT (កម្រិតឡូយបំផុត) */
+/* ===================================================== */
+
+/* 1. Sidebar បែប Glassmorphism (ថ្លាស្អាត) */
+aside {
+  background: rgba(15, 23, 42, 0.95) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* 2. Logo នៅ Sidebar ឱ្យមានពន្លឺ */
+#sidebarLogo {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
+  transition: all 0.3s ease;
+}
+#sidebarLogo:hover {
+  transform: rotate(5deg) scale(1.05);
+  box-shadow: 0 0 30px rgba(59, 130, 246, 0.9);
+}
+
+/* 3. User Avatar នៅ Sidebar ឱ្យមានស្រមោល */
+#userAvatar {
+  box-shadow: 0 0 15px rgba(139, 92, 246, 0.5);
+}
+
+/* 4. Header បែប Glassmorphism */
+header {
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.5) !important;
+}
+
+body.dark-mode header {
+  background: rgba(30, 41, 59, 0.85) !important;
+}
+
+/* 5. KPI Cards បន្ថែម Neon Glow ពេល Hover */
+.card {
+  position: relative;
+  overflow: hidden;
+}
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+.card:hover::before {
+  left: 100%;
+}
+
+/* 6. ប៊ូតុង (Buttons) ឱ្យមានពន្លឺ Neon */
+.btn-primary {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+  box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+}
+.btn-primary:hover {
+  box-shadow: 0 6px 25px rgba(37, 99, 235, 0.6);
+  transform: translateY(-2px);
+}
+.btn-success {
+  background: linear-gradient(135deg, #16a34a, #15803d) !important;
+  box-shadow: 0 4px 15px rgba(22, 163, 74, 0.4);
+}
+.btn-success:hover {
+  box-shadow: 0 6px 25px rgba(22, 163, 74, 0.6);
+}
+.btn-danger {
+  background: linear-gradient(135deg, #dc2626, #b91c1c) !important;
+  box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
+}
+.btn-danger:hover {
+  box-shadow: 0 6px 25px rgba(220, 38, 38, 0.6);
+}
+
+/* 7. តារាង (Table) ឱ្យមានចលនាពេល Hover */
+table tbody tr {
+  transition: all 0.2s ease;
+}
+table tbody tr:hover {
+  background: linear-gradient(90deg, #eff6ff, #f8fafc) !important;
+  transform: scale(1.005);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+body.dark-mode table tbody tr:hover {
+  background: linear-gradient(90deg, #334155, #1e293b) !important;
+}
+
+/* 8. Input Fields ឱ្យមានពន្លឺពេល Focus */
+.input:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2), 0 0 20px rgba(59, 130, 246, 0.3) !important;
+  background: #ffffff !important;
+}
+
+body.dark-mode .input:focus {
+  background: #1e293b !important;
+}
+
+/* 9. Login Background ឱ្យមានចលនា (Animated Gradient) */
+.login-bg {
+  background: linear-gradient(-45deg, #1e3a8a, #1e40af, #7c3aed, #2563eb);
+  background-size: 400% 400%;
+  animation: gradientShift 10s ease infinite;
+}
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* 10. Login Box ឱ្យមានស្រមោលដិត */
+#loginScreen .glass {
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* 11. Notification Badge ឱ្យមានចលនា */
+#notifBadge {
+  animation: bounce 1s infinite;
+}
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+/* 12. Modal ឱ្យមានចលនាលោតឡើងលើ */
+#modalContainer {
+  animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes modalPop {
+  from { opacity: 0; transform: scale(0.9) translateY(20px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* 13. Scrollbar ឱ្យស្អាត និងស្តើង */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #94a3b8, #64748b);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #3b82f6, #2563eb);
+}
+
+/* 14. Page Content ឱ្យមាន Fade In ពេលប្តូរ Page */
+#pageContent {
+  animation: fadeInUp 0.4s ease-out;
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 15. Nav Badge ឱ្យមានពន្លឺ */
+.nav-badge {
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.6);
+}
+
+/* 16. Dark Mode បន្ថែមពណ៌ឱ្យស្អាត */
+body.dark-mode {
+  background: #0a0f1a;
+}
+body.dark-mode .card {
+  background: linear-gradient(145deg, #1e293b, #0f172a) !important;
+  border: 1px solid rgba(51, 65, 85, 0.5) !important;
+}
+
+/* 17. Logo Upload ឱ្យមានចលនា */
+.logo-upload {
+  transition: all 0.3s ease;
+}
+.logo-upload:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
+}
+
+/* 18. Toast Notification ឱ្យមានស្រមោលដិត */
+.toast {
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3), 0 0 20px rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+/* 19. Tab Buttons ឱ្យមានចលនា */
+.tab-btn {
+  position: relative;
+  transition: all 0.3s ease;
+}
+.tab-btn::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #2563eb, #7c3aed);
+  transition: all 0.3s ease;
+  transform: translateX(-50%);
+}
+.tab-btn:hover::after {
+  width: 80%;
+}
+.tab-btn.active::after {
+  width: 100%;
+}
 </style>
 </head>
 <body>
