@@ -9350,75 +9350,148 @@ function renderAssetDashboard() {
     </div>
   `;
 }
-
 // =====================================================
-// ✅ ASSET HISTORY PAGE
+// ✅ ASSET HISTORY PAGE (មាន Filter តាមផ្នែក/សាខា & Export)
 // =====================================================
 function renderAssetHistory() {
-  const history = (DB.assetHistory || []).slice().reverse();
+  // ទាញយកបញ្ជីផ្នែក និងសាខាសម្រាប់ Filter
+  const departments = DB.departments || [];
+  const branches = DB.branches || [];
   
   document.getElementById('pageContent').innerHTML = `
     <div class="card">
+      <!-- ✅ Header -->
       <div class="flex flex-wrap justify-between items-center gap-3 mb-4 pb-4 border-b">
         <div>
           <h3 class="font-bold text-lg">📜 ប្រវត្តិសម្ភារៈ</h3>
-          <p class="text-xs text-slate-500 mt-1">Asset History - សរុប ${history.length} កំណត់ត្រា</p>
+          <p class="text-xs text-slate-500 mt-1">Asset History - សរុប <span id="histTotalCount">0</span> កំណត់ត្រា</p>
         </div>
-        <div class="flex gap-2">
-          <input id="histSearch" oninput="filterAssetHistory()" 
-            placeholder="🔍 ស្វែងរក Asset ID..." 
-            class="input" style="width:250px;">
+        <div class="flex gap-2 flex-wrap">
           <button onclick="exportAssetHistoryExcel()" class="btn btn-secondary btn-sm">📊 Excel</button>
+          <button onclick="exportAssetHistoryPDF()" class="btn btn-secondary btn-sm">📕 PDF</button>
         </div>
       </div>
       
-      <div class="max-h-[70vh] overflow-y-auto">
+      <!-- ✅ Filters -->
+      <div class="flex flex-wrap gap-2 mb-4">
+        <input id="histSearch" oninput="filterAssetHistory()" 
+          placeholder="🔍 ស្វែងរក Asset ID ឬឈ្មោះ..." 
+          class="input" style="width:250px;">
+          
+        <select id="histDeptFilter" onchange="filterAssetHistory()" class="input" style="width:180px;">
+          <option value="">-- គ្រប់ផ្នែក --</option>
+          ${departments.map(d => `<option value="${d.id}">${d.name}</option>`).join('')}
+        </select>
+        
+        <select id="histBranchFilter" onchange="filterAssetHistory()" class="input" style="width:180px;">
+          <option value="">-- គ្រប់សាខា --</option>
+          ${branches.map(b => `<option value="${b.id}">${b.name}</option>`).join('')}
+        </select>
+      </div>
+      
+      <!-- ✅ History Timeline Container -->
+      <div class="max-h-[70vh] overflow-y-auto" id="histContainer">
         <div class="relative pl-6">
           <div class="absolute left-2 top-0 bottom-0 w-0.5 bg-blue-200"></div>
-          
-          ${history.length ? history.slice(0, 200).map(h => {
-            const asset = DB.assets.find(a => a.id === h.asset_id);
-            const user = DB.users.find(u => u.id === h.user_id);
-            
-            const icons = {
-              created: '🆕', updated: '✏️', issued: '📤', returned: '📥',
-              transferred: '🔄', repaired: '🔧', lost: '❌', damaged: '💔', disposed: '🗑️'
-            };
-            const colors = {
-              created: '#16a34a', updated: '#3b82f6', issued: '#8b5cf6', returned: '#f59e0b',
-              transferred: '#06b6d4', repaired: '#f97316', lost: '#dc2626', damaged: '#ef4444', disposed: '#64748b'
-            };
-            
-            return `
-              <div class="relative mb-4" data-asset-id="${asset?.asset_id || ''}">
-                <div class="absolute -left-4 top-2 w-4 h-4 rounded-full border-2 border-white shadow" 
-                  style="background: ${colors[h.action] || '#64748b'};"></div>
-                <div class="ml-4 p-3 bg-white border rounded-lg hover:shadow-md transition">
-                  <div class="flex items-start gap-3">
-                    <div class="text-2xl">${icons[h.action] || '📝'}</div>
-                    <div class="flex-1">
-                      <div class="font-medium text-sm">
-                        ${escapeHtml(asset?.item_name || 'Unknown')}
-                        <span class="font-mono text-xs text-blue-600 ml-2">${escapeHtml(asset?.asset_id || '')}</span>
-                      </div>
-                      <div class="text-xs text-slate-600 mt-1">${escapeHtml(h.description)}</div>
-                      <div class="flex gap-3 mt-2 text-xs text-slate-400">
-                        <span>👤 ${escapeHtml(user?.name || 'System')}</span>
-                        <span>🕐 ${new Date(h.created_at).toLocaleString()}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            `;
-          }).join('') : `
-            <div class="text-center py-12 text-slate-400">
-              <div class="text-4xl mb-3">📜</div>
-              <p>មិនមានប្រវត្តិ</p>
-            </div>
-          `}
+          <div id="histList"></div>
         </div>
       </div>
+    </div>
+  `;
+  
+  // ហៅ Function ដើម្បីបង្ហាញទិន្នន័យ
+  filterAssetHistory();
+}
+
+// =====================================================
+// ✅ FILTER ASSET HISTORY (ដំណើរការតាម Filter)
+// =====================================================
+function filterAssetHistory() {
+  const q = (document.getElementById('histSearch')?.value || '').toLowerCase();
+  const deptId = +document.getElementById('histDeptFilter')?.value || null;
+  const branchId = +document.getElementById('histBranchFilter')?.value || null;
+
+  const history = (DB.assetHistory || []).slice().reverse();
+  
+  // ✅ ចម្រាញ់ទិន្នន័យតាម Filter
+  const filtered = history.filter(h => {
+    const asset = DB.assets.find(a => a.id === h.asset_id);
+    if (!asset) return false;
+    
+    // ពិនិត្យឈ្មោះ ឬ Asset ID
+    const matchQ = !q || 
+      (asset.asset_id || '').toLowerCase().includes(q) || 
+      (asset.item_name || '').toLowerCase().includes(q);
+      
+    // ពិនិត្យផ្នែក (ផ្អែកលើអ្នកកាន់បច្ចុប្បន្ន)
+    let matchDept = true;
+    if (deptId) {
+      if (!asset.current_holder_id) {
+        matchDept = false;
+      } else {
+        const holder = DB.employees.find(e => e.id === asset.current_holder_id);
+        matchDept = holder && holder.department_id === deptId;
+      }
+    }
+    
+    // ពិនិត្យសាខា (ផ្អែកលើអ្នកកាន់បច្ចុប្បន្ន)
+    let matchBranch = true;
+    if (branchId) {
+      if (!asset.current_holder_id) {
+        matchBranch = false;
+      } else {
+        const holder = DB.employees.find(e => e.id === asset.current_holder_id);
+        matchBranch = holder && holder.branch_id === branchId;
+      }
+    }
+    
+    return matchQ && matchDept && matchBranch;
+  });
+
+  // បង្ហាញចំនួនសរុប
+  document.getElementById('histTotalCount').textContent = filtered.length;
+
+  const icons = {
+    created: '🆕', updated: '✏️', issued: '📤', returned: '📥',
+    transferred: '🔄', repaired: '🔧', lost: '❌', damaged: '💔', disposed: '🗑️'
+  };
+  const colors = {
+    created: '#16a34a', updated: '#3b82f6', issued: '#8b5cf6', returned: '#f59e0b',
+    transferred: '#06b6d4', repaired: '#f97316', lost: '#dc2626', damaged: '#ef4444', disposed: '#64748b'
+  };
+
+  document.getElementById('histList').innerHTML = filtered.length ? filtered.map(h => {
+    const asset = DB.assets.find(a => a.id === h.asset_id);
+    const user = DB.users.find(u => u.id === h.user_id);
+    const actionName = h.action ? h.action.toUpperCase() : 'UNKNOWN';
+    
+    return `
+      <div class="relative mb-4" data-asset-id="${asset?.asset_id || ''}">
+        <div class="absolute -left-4 top-2 w-4 h-4 rounded-full border-2 border-white shadow" 
+          style="background: ${colors[h.action] || '#64748b'};"></div>
+        <div class="ml-4 p-3 bg-white border rounded-lg hover:shadow-md transition">
+          <div class="flex items-start gap-3">
+            <div class="text-2xl">${icons[h.action] || '📝'}</div>
+            <div class="flex-1">
+              <div class="font-medium text-sm">
+                ${escapeHtml(asset?.item_name || 'Unknown')}
+                <span class="font-mono text-xs text-blue-600 ml-2">${escapeHtml(asset?.asset_id || '')}</span>
+                <span class="badge badge-blue ml-2 text-xs">${actionName}</span>
+              </div>
+              <div class="text-xs text-slate-600 mt-1">${escapeHtml(h.description)}</div>
+              <div class="flex gap-3 mt-2 text-xs text-slate-400">
+                <span>👤 ${escapeHtml(user?.name || 'System')}</span>
+                <span>🕐 ${new Date(h.created_at).toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('') : `
+    <div class="text-center py-12 text-slate-400">
+      <div class="text-4xl mb-3">📜</div>
+      <p>មិនមានប្រវត្តិតាមការស្វែងរក</p>
     </div>
   `;
 }
@@ -9430,6 +9503,62 @@ function filterAssetHistory() {
     const name = el.textContent.toLowerCase();
     el.style.display = (!q || id.includes(q) || name.includes(q)) ? '' : 'none';
   });
+}
+// =====================================================
+// ✅ EXPORT ASSET HISTORY - EXCEL
+// =====================================================
+function exportAssetHistoryExcel() {
+  const q = (document.getElementById('histSearch')?.value || '').toLowerCase();
+  const deptId = +document.getElementById('histDeptFilter')?.value || null;
+  const branchId = +document.getElementById('histBranchFilter')?.value || null;
+
+  const history = (DB.assetHistory || []).slice().reverse();
+  
+  const filtered = history.filter(h => {
+    const asset = DB.assets.find(a => a.id === h.asset_id);
+    if (!asset) return false;
+    
+    const matchQ = !q || (asset.asset_id || '').toLowerCase().includes(q) || (asset.item_name || '').toLowerCase().includes(q);
+    
+    let matchDept = true;
+    if (deptId) {
+      const holder = asset.current_holder_id ? DB.employees.find(e => e.id === asset.current_holder_id) : null;
+      matchDept = holder && holder.department_id === deptId;
+    }
+    
+    let matchBranch = true;
+    if (branchId) {
+      const holder = asset.current_holder_id ? DB.employees.find(e => e.id === asset.current_holder_id) : null;
+      matchBranch = holder && holder.branch_id === branchId;
+    }
+    
+    return matchQ && matchDept && matchBranch;
+  });
+
+  if (!filtered.length) {
+    toast('❌ គ្មានទិន្នន័យ', 'error');
+    return;
+  }
+
+  const data = filtered.map(h => {
+    const asset = DB.assets.find(a => a.id === h.asset_id);
+    const user = DB.users.find(u => u.id === h.user_id);
+    const holder = asset?.current_holder_id ? DB.employees.find(e => e.id === asset.current_holder_id) : null;
+    
+    return {
+      'កាលបរិច្ឆេទ': new Date(h.created_at).toLocaleString(),
+      'Asset ID': asset?.asset_id || '',
+      'ឈ្មោះសម្ភារៈ': asset?.item_name || '',
+      'សកម្មភាព': h.action,
+      'ការពិពណ៌នា': h.description,
+      'អ្នកកាន់បច្ចុប្បន្ន': holder?.full_name || '-',
+      'ផ្នែក': holder ? getDeptName(holder.department_id) : '-',
+      'សាខា': holder ? (DB.branches.find(b => b.id === holder.branch_id)?.name || '-') : '-',
+      'អ្នកធ្វើប្រតិបត្តិការ': user?.name || 'System'
+    };
+  });
+
+  exportXLSX(data, 'Asset_History');
 }
 
 function exportAssetHistoryExcel() {
@@ -9451,7 +9580,218 @@ function exportAssetHistoryExcel() {
   
   exportXLSX(data, 'Asset_History');
 }
+// =====================================================
+// ✅ EXPORT ASSET HISTORY - PDF (HTML Print + Khmer Fonts)
+// =====================================================
+function exportAssetHistoryPDF() {
+  const q = (document.getElementById('histSearch')?.value || '').toLowerCase();
+  const deptId = +document.getElementById('histDeptFilter')?.value || null;
+  const branchId = +document.getElementById('histBranchFilter')?.value || null;
 
+  const history = (DB.assetHistory || []).slice().reverse();
+  
+  const filtered = history.filter(h => {
+    const asset = DB.assets.find(a => a.id === h.asset_id);
+    if (!asset) return false;
+    
+    const matchQ = !q || (asset.asset_id || '').toLowerCase().includes(q) || (asset.item_name || '').toLowerCase().includes(q);
+    
+    let matchDept = true;
+    if (deptId) {
+      const holder = asset.current_holder_id ? DB.employees.find(e => e.id === asset.current_holder_id) : null;
+      matchDept = holder && holder.department_id === deptId;
+    }
+    
+    let matchBranch = true;
+    if (branchId) {
+      const holder = asset.current_holder_id ? DB.employees.find(e => e.id === asset.current_holder_id) : null;
+      matchBranch = holder && holder.branch_id === branchId;
+    }
+    
+    return matchQ && matchDept && matchBranch;
+  });
+
+  if (!filtered.length) {
+    toast('❌ គ្មានទិន្នន័យ', 'error');
+    return;
+  }
+
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    toast('❌ Browser បិទ Popup', 'error');
+    return;
+  }
+
+  const html = `
+    <!DOCTYPE html>
+    <html lang="km">
+    <head>
+      <meta charset="UTF-8">
+      <title>Asset History Report</title>
+      <link href="https://fonts.googleapis.com/css2?family=Moul&family=Siemreap&display=swap" rel="stylesheet">
+      <style>
+        @page { size: A4 landscape; margin: 8mm; }
+        * { box-sizing: border-box; }
+        body {
+          font-family: 'Siemreap', sans-serif; /* ✅ Font ខ្លឹមសារខាងក្រោម */
+          margin: 0; padding: 15px;
+          color: #1e293b; font-size: 11px;
+        }
+        
+        .header {
+          display: flex; justify-content: space-between;
+          align-items: flex-start; margin-bottom: 15px;
+          padding-bottom: 12px; border-bottom: 2px solid #1e40af;
+          min-height: 100px;
+        }
+        .header-left {
+          display: flex; flex-direction: column;
+          align-items: center; text-align: center; width: 250px;
+        }
+        .logo-box {
+          width: 70px; height: 70px;
+          display: flex; align-items: center; justify-content: center;
+          margin-bottom: 6px;
+        }
+        .logo-box img { width: 100%; height: 100%; object-fit: contain; }
+        .company-info { text-align: center; width: 100%; }
+        
+        .company-name-kh {
+          font-family: 'Moul', serif; /* ✅ Khmer OS Muol Light */
+          font-size: 12px; color: #1e40af; margin: 0; line-height: 1.5;
+        }
+        .company-name-en {
+          font-family: 'Moul', serif; /* ✅ Khmer OS Muol Light */
+          font-size: 10px; color: #1e40af; margin: 3px 0 0;
+        }
+        .header-right {
+          text-align: center; font-family: 'Moul', serif; /* ✅ Khmer OS Muol Light */
+          font-size: 13px; line-height: 1.8; color: #1e40af; padding-top: 8px;
+        }
+        
+        .title {
+          font-family: 'Moul', serif; /* ✅ Khmer OS Muol Light */
+          font-size: 16px; margin: 15px 0 5px; text-align: center; color: #1e40af;
+        }
+        .subtitle {
+          font-family: 'Moul', serif; /* ✅ Khmer OS Muol Light */
+          font-size: 12px; margin: 0 0 15px; text-align: center; color: #1e40af;
+        }
+        
+        table {
+          width: 100%; border-collapse: collapse;
+          font-family: 'Siemreap', sans-serif; /* ✅ Khmer OS Siemreap */
+          font-size: 10px;
+        }
+        th, td {
+          border: 1px solid #333; padding: 5px 6px;
+          text-align: center; vertical-align: middle;
+        }
+        th {
+          background: #1e40af; color: white;
+          font-family: 'Moul', serif; /* ✅ Khmer OS Muol Light */
+          font-size: 9px; line-height: 1.4;
+        }
+        td.name { text-align: left; padding-left: 8px; }
+        
+        .footer {
+          margin-top: 20px; text-align: right;
+          font-family: 'Siemreap', sans-serif; font-size: 11px;
+        }
+        .no-print {
+          text-align: center; margin-top: 25px;
+          padding-top: 15px; border-top: 1px dashed #cbd5e1;
+        }
+        .btn-print {
+          padding: 12px 30px; font-size: 14px; cursor: pointer;
+          background: #1e40af; color: white; border: none;
+          border-radius: 8px; font-family: 'Siemreap', sans-serif;
+          margin: 0 5px;
+        }
+        .btn-close {
+          padding: 12px 30px; font-size: 14px; cursor: pointer;
+          background: #64748b; color: white; border: none;
+          border-radius: 8px; font-family: 'Siemreap', sans-serif;
+          margin: 0 5px;
+        }
+        @media print { .no-print { display: none; } body { padding: 0; } }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div class="header-left">
+          <div class="logo-box">
+            ${DB.settings.companyLogo ? `<img src="${DB.settings.companyLogo}">` : ''}
+          </div>
+          <div class="company-info">
+            <div class="company-name-kh">ក្រុមហ៊ុន សុកន ត្រេនស្ព័ត ឯ.ក</div>
+            <div class="company-name-en">SOKAN TRANSPORT PTE., LTD.</div>
+          </div>
+        </div>
+        <div class="header-right">
+          <div>ព្រះរាជាណាចក្រកម្ពុជា</div>
+          <div>ជាតិ សាសនា ព្រះមហាក្សត្រ</div>
+        </div>
+      </div>
+      
+      <div class="title">របាយការណ៍ប្រវត្តិសម្ភារៈ</div>
+      <div class="subtitle">Asset History Report - គិតត្រឹមថ្ងៃទី ${new Date().getDate()} ខែ ${new Date().getMonth()+1} ឆ្នាំ ${new Date().getFullYear()}</div>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>ល.រ</th>
+            <th>កាលបរិច្ឆេទ</th>
+            <th>Asset ID</th>
+            <th>ឈ្មោះសម្ភារៈ</th>
+            <th>សកម្មភាព</th>
+            <th>ការពិពណ៌នា</th>
+            <th>អ្នកកាន់បច្ចុប្បន្ន</th>
+            <th>ផ្នែក</th>
+            <th>សាខា</th>
+            <th>អ្នកប្រើប្រាស់</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${filtered.map((h, idx) => {
+            const asset = DB.assets.find(a => a.id === h.asset_id);
+            const user = DB.users.find(u => u.id === h.user_id);
+            const holder = asset?.current_holder_id ? DB.employees.find(e => e.id === asset.current_holder_id) : null;
+            
+            return `
+              <tr>
+                <td>${String(idx + 1).padStart(2, '0')}</td>
+                <td>${new Date(h.created_at).toLocaleDateString()}</td>
+                <td>${escapeHtml(asset?.asset_id || '-')}</td>
+                <td class="name">${escapeHtml(asset?.item_name || '-')}</td>
+                <td>${escapeHtml(h.action || '')}</td>
+                <td class="name">${escapeHtml(h.description || '-')}</td>
+                <td class="name">${escapeHtml(holder?.full_name || '-')}</td>
+                <td>${holder ? getDeptName(holder.department_id) : '-'}</td>
+                <td>${holder ? (DB.branches.find(b => b.id === holder.branch_id)?.name || '-') : '-'}</td>
+                <td>${escapeHtml(user?.name || 'System')}</td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+      
+      <div class="footer">
+        បានធ្វើនៅ ថ្ងៃទី ${new Date().getDate()} ខែ ${new Date().getMonth()+1} ឆ្នាំ ${new Date().getFullYear()}
+      </div>
+      
+      <div class="no-print">
+        <button onclick="window.print()" class="btn-print">🖨️ បោះពុម្ព / Save as PDF</button>
+        <button onclick="window.close()" class="btn-close">✖️ បិទ</button>
+      </div>
+    </body>
+    </html>
+  `;
+
+  printWindow.document.write(html);
+  printWindow.document.close();
+  toast('🖨️ ចុច Print ដើម្បី Save as PDF');
+}
  
 // =====================================================
 // ✅ ASSET ISSUES PAGE (ប្រគល់/ផ្ទេរ/ប្រគល់ត្រឡប់)
