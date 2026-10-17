@@ -9351,7 +9351,7 @@ function renderAssetDashboard() {
   `;
 }
 // =====================================================
-// ✅ ASSET HISTORY PAGE (មាន Filter តាមផ្នែក/សាខា & Export)
+// ✅ ASSET HISTORY PAGE (កែសម្រួលឱ្យដំណើរការលើ Dark Mode និងបង្ហាញទិន្នន័យភ្លាម)
 // =====================================================
 function renderAssetHistory() {
   // ទាញយកបញ្ជីផ្នែក និងសាខាសម្រាប់ Filter
@@ -9390,16 +9390,16 @@ function renderAssetHistory() {
       </div>
       
       <!-- ✅ History Timeline Container -->
-      <div class="max-h-[70vh] overflow-y-auto" id="histContainer">
+      <div class="max-h-[70vh] overflow-y-auto pr-2" id="histContainer">
         <div class="relative pl-6">
-          <div class="absolute left-2 top-0 bottom-0 w-0.5 bg-blue-200"></div>
+          <div class="absolute left-2 top-0 bottom-0 w-0.5 bg-blue-200 dark:bg-slate-700"></div>
           <div id="histList"></div>
         </div>
       </div>
     </div>
   `;
   
-  // ហៅ Function ដើម្បីបង្ហាញទិន្នន័យ
+  // ✅ ហៅ Function ដើម្បីបង្ហាញទិន្នន័យភ្លាមៗ
   filterAssetHistory();
 }
 
@@ -9449,7 +9449,8 @@ function filterAssetHistory() {
   });
 
   // បង្ហាញចំនួនសរុប
-  document.getElementById('histTotalCount').textContent = filtered.length;
+  const countEl = document.getElementById('histTotalCount');
+  if (countEl) countEl.textContent = filtered.length;
 
   const icons = {
     created: '🆕', updated: '✏️', issued: '📤', returned: '📥',
@@ -9460,26 +9461,30 @@ function filterAssetHistory() {
     transferred: '#06b6d4', repaired: '#f97316', lost: '#dc2626', damaged: '#ef4444', disposed: '#64748b'
   };
 
-  document.getElementById('histList').innerHTML = filtered.length ? filtered.map(h => {
+  const listEl = document.getElementById('histList');
+  if (!listEl) return;
+
+  listEl.innerHTML = filtered.length ? filtered.map(h => {
     const asset = DB.assets.find(a => a.id === h.asset_id);
     const user = DB.users.find(u => u.id === h.user_id);
     const actionName = h.action ? h.action.toUpperCase() : 'UNKNOWN';
     
+    // ✅ បន្ថែម Class សម្រាប់ Dark Mode នៅក្នុង Card នីមួយៗ
     return `
       <div class="relative mb-4" data-asset-id="${asset?.asset_id || ''}">
-        <div class="absolute -left-4 top-2 w-4 h-4 rounded-full border-2 border-white shadow" 
+        <div class="absolute -left-4 top-2 w-4 h-4 rounded-full border-2 border-white dark:border-slate-800 shadow" 
           style="background: ${colors[h.action] || '#64748b'};"></div>
-        <div class="ml-4 p-3 bg-white border rounded-lg hover:shadow-md transition">
+        <div class="ml-4 p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:shadow-md transition">
           <div class="flex items-start gap-3">
             <div class="text-2xl">${icons[h.action] || '📝'}</div>
             <div class="flex-1">
-              <div class="font-medium text-sm">
+              <div class="font-medium text-sm text-slate-800 dark:text-slate-100">
                 ${escapeHtml(asset?.item_name || 'Unknown')}
-                <span class="font-mono text-xs text-blue-600 ml-2">${escapeHtml(asset?.asset_id || '')}</span>
+                <span class="font-mono text-xs text-blue-600 dark:text-blue-400 ml-2">${escapeHtml(asset?.asset_id || '')}</span>
                 <span class="badge badge-blue ml-2 text-xs">${actionName}</span>
               </div>
-              <div class="text-xs text-slate-600 mt-1">${escapeHtml(h.description)}</div>
-              <div class="flex gap-3 mt-2 text-xs text-slate-400">
+              <div class="text-xs text-slate-600 dark:text-slate-400 mt-1">${escapeHtml(h.description)}</div>
+              <div class="flex gap-3 mt-2 text-xs text-slate-400 dark:text-slate-500">
                 <span>👤 ${escapeHtml(user?.name || 'System')}</span>
                 <span>🕐 ${new Date(h.created_at).toLocaleString()}</span>
               </div>
@@ -9489,21 +9494,13 @@ function filterAssetHistory() {
       </div>
     `;
   }).join('') : `
-    <div class="text-center py-12 text-slate-400">
+    <div class="text-center py-12 text-slate-400 dark:text-slate-500">
       <div class="text-4xl mb-3">📜</div>
       <p>មិនមានប្រវត្តិតាមការស្វែងរក</p>
     </div>
   `;
 }
 
-function filterAssetHistory() {
-  const q = (document.getElementById('histSearch')?.value || '').toLowerCase();
-  document.querySelectorAll('[data-asset-id]').forEach(el => {
-    const id = (el.getAttribute('data-asset-id') || '').toLowerCase();
-    const name = el.textContent.toLowerCase();
-    el.style.display = (!q || id.includes(q) || name.includes(q)) ? '' : 'none';
-  });
-}
 // =====================================================
 // ✅ EXPORT ASSET HISTORY - EXCEL
 // =====================================================
@@ -9561,25 +9558,6 @@ function exportAssetHistoryExcel() {
   exportXLSX(data, 'Asset_History');
 }
 
-function exportAssetHistoryExcel() {
-  const history = DB.assetHistory || [];
-  if (!history.length) return toast('❌ គ្មានទិន្នន័យ', 'error');
-  
-  const data = history.map(h => {
-    const asset = DB.assets.find(a => a.id === h.asset_id);
-    const user = DB.users.find(u => u.id === h.user_id);
-    return {
-      'កាលបរិច្ឆេទ': new Date(h.created_at).toLocaleString(),
-      'Asset ID': asset?.asset_id || '',
-      'ឈ្មោះ': asset?.item_name || '',
-      'សកម្មភាព': h.action,
-      'ការពិពណ៌នា': h.description,
-      'អ្នកប្រើ': user?.name || 'System'
-    };
-  });
-  
-  exportXLSX(data, 'Asset_History');
-}
 // =====================================================
 // ✅ EXPORT ASSET HISTORY - PDF (HTML Print + Khmer Fonts)
 // =====================================================
