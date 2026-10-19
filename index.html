@@ -1230,7 +1230,11 @@ body.dark-mode .asset-upload-zone:hover {
         <span class="nav-badge yellow hidden" id="badge-contracts">0</span>
       </a>
       
-      <div class="section-title">LOGISTICS</div>
+            <div class="section-title">LOGISTICS</div>
+      <!-- ✅ បន្ថែម Menu រថយន្តនៅទីនេះ -->
+      <a href="#" onclick="showPage('vehicles');return false;" data-page="vehicles" class="sidebar-link flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition text-sm">
+        <span>🚚</span><span>រថយន្ត (Vehicles)</span>
+      </a>
       <a href="#" onclick="showPage('inventory');return false;" data-page="inventory" class="sidebar-link flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition text-sm">
         <span>📦</span><span>Inventory</span>
         <span class="nav-badge hidden" id="badge-inventory">0</span>
@@ -1973,12 +1977,13 @@ const DB = {
   // ✅ Inventory Management (ស្តុក)
   inventory: [],           // ស្តុក
   inventoryMovements: [],  // ចលនាស្តុក (In/Out)
-  
+  // ✅ បន្ថែមទិន្នន័យរថយន្តនៅទីនេះ
+  vehicles: [],
   nextId: { 
     company: 1, branch: 1, dept: 1, div: 1, team: 1, pos: 1, grade: 1, emp: 1, att: 1, leave: 1, 
     leaveType: 6, pay: 1, doc: 1, contract: 1, sup: 1, po: 1, audit: 1, ins: 1,
     asset: 1, assetCategory: 1, assetLocation: 1, issue: 1, transfer: 1, return: 1,
-    lost: 1, damage: 1, maintenance: 1, disposal: 1, stockCount: 1, inv: 1, invMovement: 1
+    lost: 1, damage: 1, maintenance: 1, disposal: 1, stockCount: 1, inv: 1, invMovement: 1, vehicle: 1
   }
 };
 let currentUser = null;
@@ -2781,6 +2786,7 @@ const PAGE_META = {
   reports: ['📈 របាយការណ៍', 'របាយការណ៍'],
   audit: ['🔒 Audit Log', 'កត់ត្រា'],
   settings: ['⚙️ ការកំណត់', 'កំណត់ប្រព័ន្ធ']
+  vehicles: ['🚚 គ្រប់គ្រងរថយន្ត', 'គ្រប់គ្រងព័ត៌មានរថយន្ត']
 };
 
  function showPage(page) {
@@ -13332,6 +13338,117 @@ function renderInventory() {
   
   filterInventory();
 }
+// =====================================================
+// ✅ VEHICLE MANAGEMENT (គ្រប់គ្រងរថយន្ត)
+// =====================================================
+function renderVehicles() {
+  document.getElementById('pageContent').innerHTML = `
+    <div class="card">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-bold text-lg">🚚 គ្រប់គ្រងរថយន្ត</h3>
+        <button onclick="openVehicleForm()" class="btn btn-primary">+ បន្ថែមរថយន្ត</button>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50 border-b-2">
+            <tr>
+              <th class="text-left p-2">លេខឡាន</th>
+              <th class="text-left p-2">ប្រភេទ</th>
+              <th class="text-center p-2">ស្ថានភាព</th>
+              <th class="text-left p-2">លេខម៉ាស៊ីន</th>
+              <th class="text-left p-2">ធានារ៉ាប់រង</th>
+              <th class="text-right p-2">ទម្ងន់អតិបរមា</th>
+              <th class="text-center p-2">សកម្មភាព</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${DB.vehicles && DB.vehicles.length ? DB.vehicles.map(v => `
+              <tr class="border-b hover:bg-slate-50">
+                <td class="p-2 font-bold text-blue-600">${v.plate_no}</td>
+                <td class="p-2">${v.type}</td>
+                <td class="p-2 text-center">${statusBadge(v.status)}</td>
+                <td class="p-2 font-mono text-xs">${v.engine_no}</td>
+                <td class="p-2 text-xs">${v.insurance_date || '-'}</td>
+                <td class="p-2 text-right font-bold">${(v.max_weight || 0).toLocaleString()} Kg</td>
+                <td class="p-2 text-center">
+                  <button onclick="deleteVehicle(${v.id})" class="text-red-500 hover:bg-red-50 px-2 py-1 rounded">🗑️</button>
+                </td>
+              </tr>
+            `).join('') : '<tr><td colspan="7" class="text-center p-8 text-slate-400">មិនមានទិន្នន័យ</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+// បើក Form បន្ថែមរថយន្ត
+function openVehicleForm() {
+  document.getElementById('modalTitle').textContent = '🚚 បន្ថែមរថយន្តថ្មី';
+  document.getElementById('modalContainer').classList.add('modal-md');
+  document.getElementById('modalBody').innerHTML = `
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div><label class="text-sm font-medium">លេខឡាន <span class="text-red-500">*</span></label><input id="v_plate" class="input" placeholder="ឧ. 2A-1234"></div>
+      <div><label class="text-sm font-medium">ប្រភេទរថយន្ត</label>
+        <select id="v_type" class="input">
+          <option>ឡានដឹកទំនិញធំ</option>
+          <option>ឡានដឹកទំនិញតូច</option>
+          <option>កុងតឺន័រ</option>
+          <option>ឡានត្រជាក់</option>
+        </select>
+      </div>
+      <div><label class="text-sm font-medium">ស្ថានភាព</label>
+        <select id="v_status" class="input">
+          <option value="available">ទំនេរ</option>
+          <option value="in_use">កំពុងដឹក</option>
+          <option value="maintenance">ថែទាំ</option>
+          <option value="broken">ខូច</option>
+        </select>
+      </div>
+      <div><label class="text-sm font-medium">លេខសម្គាល់ម៉ាស៊ីន</label><input id="v_engine" class="input" placeholder="ENG-001"></div>
+      <div><label class="text-sm font-medium">កាលបរិច្ឆេទចុះបញ្ជី</label><input id="v_reg" type="date" class="input"></div>
+      <div><label class="text-sm font-medium">កាលបរិច្ឆេទធានារ៉ាប់រង</label><input id="v_ins" type="date" class="input"></div>
+      <div><label class="text-sm font-medium">ទម្ងន់អនុញ្ញាតអតិបរមា (Kg)</label><input id="v_weight" type="number" class="input" value="10000"></div>
+      <div><label class="text-sm font-medium">កាលវិភាគថែទាំបន្ទាប់</label><input id="v_maint" type="date" class="input"></div>
+    </div>
+    <div class="flex justify-end gap-2 mt-6 pt-4 border-t">
+      <button onclick="closeModal()" class="btn btn-secondary">បោះបង់</button>
+      <button onclick="saveVehicle()" class="btn btn-primary">💾 រក្សាទុក</button>
+    </div>
+  `;
+  openModal();
+}
+
+// រក្សាទុករថយន្ត
+function saveVehicle() {
+  const plate = document.getElementById('v_plate').value.trim();
+  if (!plate) return toast('❌ សូមបំពេញលេខឡាន', 'error');
+
+  DB.vehicles.push({
+    id: DB.nextId.vehicle++,
+    plate_no: plate,
+    type: document.getElementById('v_type').value,
+    status: document.getElementById('v_status').value,
+    engine_no: document.getElementById('v_engine').value,
+    reg_date: document.getElementById('v_reg').value,
+    insurance_date: document.getElementById('v_ins').value,
+    max_weight: +document.getElementById('v_weight').value || 0,
+    next_maintenance: document.getElementById('v_maint').value
+  });
+  
+  saveDB(); 
+  closeModal(); 
+  renderVehicles(); 
+  toast('✅ បន្ថែមរថយន្តជោគជ័យ');
+}
+
+// លុបរថយន្ត
+function deleteVehicle(id) {
+  if(!confirm('លុបរថយន្តនេះ?')) return;
+  DB.vehicles = DB.vehicles.filter(v => v.id !== id);
+  saveDB(); renderVehicles(); toast('🗑️ លុបរួច');
+}
+ 
 
 const debounceInvFilter = debounce(() => { invPage = 1; filterInventory(); }, 250);
 
@@ -15616,7 +15733,7 @@ function closeModal() {
     attendance: renderAttendance, leave: renderLeave, payroll: renderPayroll,
     documents: renderDocuments, assets: renderAssets, assetDashboard: renderAssetDashboard, assetHistory: renderAssetHistory, assetIssues: renderAssetIssues,  contracts: renderContracts,
     inventory: renderInventory, suppliers: renderSuppliers, purchase: renderPurchase,
-    reports: renderReports, audit: renderAudit, settings: renderSettings
+    reports: renderReports, audit: renderAudit, settings: renderSettings, vehicles: renderVehicles
   };
   
   try {
