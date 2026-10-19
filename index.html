@@ -1083,6 +1083,28 @@ body.dark-mode .card {
     display: flex;
   }
 }
+/* ============ ASSET UPLOAD ZONE ============ */
+.asset-upload-zone {
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  background: #f8fafc;
+}
+.asset-upload-zone:hover, .asset-upload-zone.dragover {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+body.dark-mode .asset-upload-zone {
+  background: #1e293b;
+  border-color: #475569;
+}
+body.dark-mode .asset-upload-zone:hover {
+  border-color: #3b82f6;
+  background: #0f172a;
+}
 </style>
 </head>
 <body>
@@ -10354,24 +10376,27 @@ function filterAssets() {
 
 // ✅ Open Asset Form (បន្ថែម/កែ)
 function openAssetForm(id) {
-  const a = id ? DB.assets.find(x => x.id === id) : {};
+  const a = id ? DB.assets.find(x => x.id === id) : { files: [] }; // បន្ថែម files: []
   
   document.getElementById('modalContainer').classList.add('modal-xl');
   document.getElementById('modalContainer').classList.remove('modal-lg', 'modal-md');
   document.getElementById('modalTitle').textContent = id ? `✏️ កែ: ${a.item_name}` : '➕ បន្ថែមសម្ភារៈថ្មី';
   
+  // បង្កើត Array បណ្ដោះអាសន្នសម្រាប់ផ្ទុកឯកសារ
+  window._tempAssetFiles = a.files ? [...a.files] : [];
+  
   document.getElementById('modalBody').innerHTML = `
     <form id="assetForm" onsubmit="saveAssetForm(event, ${id || 'null'})">
       
       <!-- ✅ Basic Info -->
-      <h4 class="font-bold text-slate-700 mb-3 pb-2 border-b">📋 ព័ត៌មានមូលដ្ឋាន</h4>
+      <h4 class="font-bold text-slate-700 dark:text-slate-300 mb-3 pb-2 border-b border-slate-200 dark:border-slate-700">📋 ព័ត៌មានមូលដ្ឋាន</h4>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         <div>
-          <label class="text-sm font-medium">Asset ID</label>
-          <input class="input bg-slate-100" value="${a.asset_id || 'Auto-generated'}" disabled>
+          <label class="text-sm font-medium dark:text-slate-300">Asset ID</label>
+          <input class="input bg-slate-100 dark:bg-slate-800" value="${a.asset_id || 'Auto-generated'}" disabled>
         </div>
         <div>
-          <label class="text-sm font-medium">ប្រភេទ <span class="text-red-500">*</span></label>
+          <label class="text-sm font-medium dark:text-slate-300">ប្រភេទ <span class="text-red-500">*</span></label>
           <select id="a_category" class="input" required onchange="updateAssetCategoryInfo()">
             <option value="">-- ជ្រើសប្រភេទ --</option>
             ${DB.assetCategories.map(c => `
@@ -10383,71 +10408,65 @@ function openAssetForm(id) {
           </select>
         </div>
         <div>
-          <label class="text-sm font-medium">ឈ្មោះសម្ភារៈ <span class="text-red-500">*</span></label>
+          <label class="text-sm font-medium dark:text-slate-300">ឈ្មោះសម្ភារៈ <span class="text-red-500">*</span></label>
           <input id="a_name" class="input" value="${escapeHtml(a.item_name || '')}" required>
         </div>
       </div>
       
       <!-- ✅ Product Details -->
-      <h4 class="font-bold text-slate-700 mb-3 pb-2 border-b">🔧 ព័ត៌មានលម្អិត</h4>
+      <h4 class="font-bold text-slate-700 dark:text-slate-300 mb-3 pb-2 border-b border-slate-200 dark:border-slate-700">🔧 ព័ត៌មានលម្អិត</h4>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         <div>
-          <label class="text-sm font-medium">Brand</label>
+          <label class="text-sm font-medium dark:text-slate-300">Brand</label>
           <input id="a_brand" class="input" value="${escapeHtml(a.brand || '')}">
         </div>
         <div>
-          <label class="text-sm font-medium">Model</label>
+          <label class="text-sm font-medium dark:text-slate-300">Model</label>
           <input id="a_model" class="input" value="${escapeHtml(a.model || '')}">
         </div>
         <div>
-          <label class="text-sm font-medium">Serial Number</label>
+          <label class="text-sm font-medium dark:text-slate-300">Serial Number</label>
           <input id="a_serial" class="input" value="${escapeHtml(a.serial_number || '')}">
         </div>
       </div>
       
       <!-- ✅ Purchase Info -->
-      <h4 class="font-bold text-slate-700 mb-3 pb-2 border-b">💰 ព័ត៌មានទិញ</h4>
+      <h4 class="font-bold text-slate-700 dark:text-slate-300 mb-3 pb-2 border-b border-slate-200 dark:border-slate-700">💰 ព័ត៌មានទិញ</h4>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         <div>
-          <label class="text-sm font-medium">ថ្ងៃទិញ</label>
+          <label class="text-sm font-medium dark:text-slate-300">ថ្ងៃទិញ</label>
           <input id="a_purchase_date" type="date" class="input" value="${a.purchase_date || new Date().toISOString().split('T')[0]}">
         </div>
         <div>
-          <label class="text-sm font-medium">តម្លៃ ($)</label>
+          <label class="text-sm font-medium dark:text-slate-300">តម្លៃ ($)</label>
           <input id="a_price" type="number" step="0.01" class="input" value="${a.purchase_price || 0}">
         </div>
         <div>
-          <label class="text-sm font-medium">ការធានា (Warranty)</label>
+          <label class="text-sm font-medium dark:text-slate-300">ការធានា (Warranty)</label>
           <input id="a_warranty" type="date" class="input" value="${a.warranty_expiry || ''}">
         </div>
       </div>
       
       <!-- ✅ Status & Location -->
-      <h4 class="font-bold text-slate-700 mb-3 pb-2 border-b">📍 ស្ថានភាព & ទីតាំង</h4>
+      <h4 class="font-bold text-slate-700 dark:text-slate-300 mb-3 pb-2 border-b border-slate-200 dark:border-slate-700">📍 ស្ថានភាព & ទីតាំង</h4>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         <div>
-          <label class="text-sm font-medium">ស្ថានភាព</label>
+          <label class="text-sm font-medium dark:text-slate-300">ស្ថានភាព</label>
           <select id="a_status" class="input">
-            ${DB.assetStatuses.map(s => `
-              <option value="${s.code}" ${a.status === s.code ? 'selected' : ''}>${s.name}</option>
-            `).join('')}
+            ${DB.assetStatuses.map(s => `<option value="${s.code}" ${a.status === s.code ? 'selected' : ''}>${s.name}</option>`).join('')}
           </select>
         </div>
         <div>
-          <label class="text-sm font-medium">លក្ខខណ្ឌ</label>
+          <label class="text-sm font-medium dark:text-slate-300">លក្ខខណ្ឌ</label>
           <select id="a_condition" class="input">
-            ${DB.assetConditions.map(c => `
-              <option value="${c.code}" ${a.condition === c.code ? 'selected' : ''}>${c.name}</option>
-            `).join('')}
+            ${DB.assetConditions.map(c => `<option value="${c.code}" ${a.condition === c.code ? 'selected' : ''}>${c.name}</option>`).join('')}
           </select>
         </div>
         <div>
-          <label class="text-sm font-medium">ទីតាំង</label>
+          <label class="text-sm font-medium dark:text-slate-300">ទីតាំង</label>
           <select id="a_location" class="input">
             <option value="">-- ជ្រើសទីតាំង --</option>
-            ${DB.assetLocations.map(l => `
-              <option value="${l.id}" ${a.location_id === l.id ? 'selected' : ''}>${l.name}</option>
-            `).join('')}
+            ${DB.assetLocations.map(l => `<option value="${l.id}" ${a.location_id === l.id ? 'selected' : ''}>${l.name}</option>`).join('')}
           </select>
         </div>
       </div>
@@ -10455,28 +10474,156 @@ function openAssetForm(id) {
       <!-- ✅ Holder & Remark -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div>
-          <label class="text-sm font-medium">អ្នកកាន់បច្ចុប្បន្ន</label>
+          <label class="text-sm font-medium dark:text-slate-300">អ្នកកាន់បច្ចុប្បន្ន</label>
           <select id="a_holder" class="input">
             <option value="">-- គ្មាន --</option>
-            ${DB.employees.filter(e => e.status === 'active').map(e => `
-              <option value="${e.id}" ${a.current_holder_id === e.id ? 'selected' : ''}>${e.full_name} (${e.employee_id || e.code})</option>
-            `).join('')}
+            ${DB.employees.filter(e => e.status === 'active').map(e => `<option value="${e.id}" ${a.current_holder_id === e.id ? 'selected' : ''}>${e.full_name} (${e.employee_id || e.code})</option>`).join('')}
           </select>
         </div>
         <div>
-          <label class="text-sm font-medium">ចំណាំ</label>
+          <label class="text-sm font-medium dark:text-slate-300">ចំណាំ</label>
           <input id="a_remark" class="input" value="${escapeHtml(a.remark || '')}">
         </div>
       </div>
+
+      <!-- ✅ ផ្នែកបន្ថែមថ្មីសម្រាប់ Upload -->
+      <h4 class="font-bold text-slate-700 dark:text-slate-300 mb-3 pb-2 border-b border-slate-200 dark:border-slate-700">🖼️ រូបភាព & ឯកសារភ្ជាប់</h4>
+      <div class="mb-4">
+        <div class="asset-upload-zone" 
+          onclick="document.getElementById('assetFileInput').click()"
+          ondragover="event.preventDefault(); this.classList.add('dragover')" 
+          ondragleave="this.classList.remove('dragover')"
+          ondrop="handleAssetFileDrop(event)">
+          <input type="file" id="assetFileInput" multiple class="hidden" 
+            accept="image/*,.pdf,.doc,.docx" 
+            onchange="handleAssetFileUpload(this)">
+          <div class="text-4xl mb-2 text-slate-400">📤</div>
+          <p class="text-sm font-medium dark:text-slate-300">ចុច ឬ អូសឯកសារទម្លាក់ទីនេះ</p>
+          <p class="text-xs text-slate-500 mt-1">គាំទ្រ រូបភាព, PDF, Word (Max 5MB)</p>
+        </div>
+        
+        <!-- បង្ហាញឯកសារដែល Upload រួច -->
+        <div id="assetFileList" class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2"></div>
+      </div>
       
       <!-- ✅ Buttons -->
-      <div class="flex justify-end gap-2 mt-6 pt-4 border-t">
+      <div class="flex justify-end gap-2 mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
         <button type="button" onclick="closeModal()" class="btn btn-secondary">បោះបង់</button>
         <button type="submit" class="btn btn-primary">💾 រក្សាទុក</button>
       </div>
     </form>
   `;
   openModal();
+  
+  // បង្ហាញបញ្ជីឯកសារចាស់ (បើមាន)
+  renderAssetFiles();
+}
+
+// =====================================================
+// ✅ មុខងារ Upload ឯកសារសម្រាប់ Asset
+// =====================================================
+function handleAssetFileUpload(input) {
+  const files = Array.from(input.files);
+  if (!files.length) return;
+  
+  files.forEach(file => {
+    if (file.size > 5 * 1024 * 1024) {
+      toast(`❌ ${file.name} ធំពេក (Max 5MB)`, 'error');
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      window._tempAssetFiles.push({
+        id: Date.now() + Math.random(),
+        name: file.name,
+        size: (file.size / 1024).toFixed(1) + ' KB',
+        type: file.type,
+        isImage: file.type.startsWith('image/'),
+        isPDF: file.type === 'application/pdf',
+        data: e.target.result, // Base64 URL
+        uploaded_at: new Date().toISOString()
+      });
+      renderAssetFiles();
+      toast(`✅ ${file.name}`);
+    };
+    reader.readAsDataURL(file);
+  });
+  
+  input.value = '';
+}
+
+function handleAssetFileDrop(event) {
+  event.preventDefault();
+  event.currentTarget.classList.remove('dragover');
+  const files = event.dataTransfer.files;
+  if (!files.length) return;
+  
+  const dt = new DataTransfer();
+  Array.from(files).forEach(f => dt.items.add(f));
+  
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.files = dt.files;
+  handleAssetFileUpload(input);
+}
+
+function renderAssetFiles() {
+  const list = document.getElementById('assetFileList');
+  if (!list) return;
+  
+  if (!window._tempAssetFiles || window._tempAssetFiles.length === 0) {
+    list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2 col-span-2">មិនមានឯកសារ</p>';
+    return;
+  }
+  
+  list.innerHTML = window._tempAssetFiles.map((f, i) => {
+    let icon = '📄';
+    if (f.isImage) icon = '🖼️';
+    else if (f.isPDF) icon = '📕';
+    else if (f.type.includes('word')) icon = '📘';
+    
+    return `
+      <div class="flex items-center gap-3 p-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800">
+        ${f.isImage 
+          ? `<img src="${f.data}" class="w-10 h-10 rounded object-cover border border-slate-200 dark:border-slate-600">`
+          : `<div class="w-10 h-10 flex items-center justify-center text-xl bg-slate-100 dark:bg-slate-700 rounded">${icon}</div>`
+        }
+        <div class="flex-1 min-w-0">
+          <div class="text-xs font-medium truncate dark:text-slate-200">${escapeHtml(f.name)}</div>
+          <div class="text-[10px] text-slate-500">${f.size}</div>
+        </div>
+        <div class="flex gap-1">
+          <button type="button" onclick="previewAssetFile(${i})" class="text-blue-500 hover:bg-blue-50 dark:hover:bg-slate-700 p-1 rounded">👁️</button>
+          <button type="button" onclick="removeAssetFile(${i})" class="text-red-500 hover:bg-red-50 dark:hover:bg-slate-700 p-1 rounded">🗑️</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function previewAssetFile(index) {
+  const f = window._tempAssetFiles[index];
+  if (!f) return;
+  
+  const w = window.open('', '_blank');
+  if (f.isImage) {
+    w.document.write(`<html><body style="margin:0;background:#1e293b;display:flex;align-items:center;justify-content:center;height:100vh;"><img src="${f.data}" style="max-width:100%;max-height:100vh;"></body></html>`);
+  } else if (f.isPDF) {
+    w.document.write(`<html><body style="margin:0;background:#1e293b;"><iframe src="${f.data}" style="width:100%;height:100vh;border:none;"></iframe></body></html>`);
+  } else {
+    w.close();
+    const a = document.createElement('a');
+    a.href = f.data;
+    a.download = f.name;
+    a.click();
+  }
+}
+
+function removeAssetFile(index) {
+  if (!confirm('លុបឯកសារនេះ?')) return;
+  window._tempAssetFiles.splice(index, 1);
+  renderAssetFiles();
 }
 
 function updateAssetCategoryInfo() {
@@ -10520,7 +10667,8 @@ function saveAssetForm(e, id) {
     location_name: location?.name || '',
     current_holder_id: holderId || null,
     current_holder_name: holder?.full_name || '',
-    remark: document.getElementById('a_remark').value.trim() || ''
+    remark: document.getElementById('a_remark').value.trim() || '',
+    files: window._tempAssetFiles || [] // ✅ បន្ថែមបន្ទាត់នេះ
   };
   
   if (id) {
@@ -10639,7 +10787,23 @@ function viewAsset(id) {
         </div>
       </div>
     </div>
-    
+        <!-- បន្ថែមកូដនេះនៅក្នុង viewAsset(id) -->
+    ${a.files && a.files.length > 0 ? `
+      <div class="mt-4">
+        <h4 class="font-bold text-sm mb-3">🖼️ ឯកសារភ្ជាប់ (${a.files.length})</h4>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+          ${a.files.map(f => `
+            <div class="border rounded-lg p-2 text-center hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer" onclick="previewAssetFileById(${a.id}, '${f.id}')">
+              ${f.isImage 
+                ? `<img src="${f.data}" class="w-full h-20 object-cover rounded mb-2">`
+                : `<div class="text-3xl mb-2">${f.isPDF ? '📕' : '📄'}</div>`
+              }
+              <div class="text-xs truncate">${escapeHtml(f.name)}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    ` : ''}
     <!-- ✅ History -->
     <div class="border rounded-lg p-3">
       <h4 class="font-bold text-sm mb-3">📜 ប្រវត្តិ (${history.length})</h4>
@@ -10664,6 +10828,28 @@ function viewAsset(id) {
   `;
   openModal();
 }
+// ✅ មុខងារបើកមើលឯកសារពីក្នុង viewAsset
+function previewAssetFileById(assetId, fileId) {
+  const asset = DB.assets.find(a => a.id === assetId);
+  if (!asset || !asset.files) return;
+  
+  const f = asset.files.find(x => String(x.id) === String(fileId));
+  if (!f) return;
+  
+  const w = window.open('', '_blank');
+  if (f.isImage) {
+    w.document.write(`<html><body style="margin:0;background:#1e293b;display:flex;align-items:center;justify-content:center;height:100vh;"><img src="${f.data}" style="max-width:100%;max-height:100vh;"></body></html>`);
+  } else if (f.isPDF) {
+    w.document.write(`<html><body style="margin:0;background:#1e293b;"><iframe src="${f.data}" style="width:100%;height:100vh;border:none;"></iframe></body></html>`);
+  } else {
+    w.close();
+    const link = document.createElement('a');
+    link.href = f.data;
+    link.download = f.name;
+    link.click();
+  }
+}
+ 
 // =====================================================
 // ✅ ASSET ISSUE (ប្រគល់សម្ភារៈ)
 // =====================================================
