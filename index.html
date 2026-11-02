@@ -2082,26 +2082,37 @@ function debounce(fn, wait = 250) {
 // =====================================================
 function initDB() {
   if (typeof fbDB !== 'undefined') {
-    fbDB.ref('hr_data').once('value').then((snapshot) => {
+    // ✅ ប្រើ .on('value') ជំនួស .once('value') ដើម្បីទទួលបានទិន្នន័យ Real-time
+    fbDB.ref('hr_data').on('value', (snapshot) => {
       const data = snapshot.val();
       if (data && data.users && data.users.length > 0) {
+        // រក្សាទុក User បច្ចុប្រ្ន ដើម្បីកុំឱ្យវាបាត់ពេលទាញទិន្នន័យថ្មី
+        const currentSession = sessionStorage.getItem(SESSION_KEY);
+        
         Object.assign(DB, data);
         applyCompanyLogo();
-        console.log('✅ Loaded from Firebase');
-           // ✅ Refresh Dashboard ក្រោយ Load
-    if (typeof currentUser !== 'undefined' && currentUser) {
-      setTimeout(() => {
-        if (typeof updateBadges === 'function') updateBadges();
-        const currentPage = document.querySelector('.sidebar-link.active')?.getAttribute('data-page');
-        if (currentPage && typeof showPage === 'function') showPage(currentPage);
-      }, 500);
-    }
-        return;
+        console.log('🔄 ទិន្នន័យត្រូវបាន Update ពី Firebase');
+        
+        // ✅ បើកឡើងវិញនូវ Session បច្ចុប្បន្ន (បើមាន)
+        if (currentSession && !currentUser) {
+          try {
+            currentUser = JSON.parse(currentSession);
+          } catch(e) {}
+        }
+
+        // ✅ Refresh ទំព័របច្ចុប្បន្នដោយស្វ័យប្រវត្តិ
+        if (typeof currentUser !== 'undefined' && currentUser) {
+          setTimeout(() => {
+            if (typeof updateBadges === 'function') updateBadges();
+            const currentPage = document.querySelector('.sidebar-link.active')?.getAttribute('data-page');
+            if (currentPage && typeof showPage === 'function') showPage(currentPage);
+          }, 200);
+        }
       } else {
         createInitialData();
         saveDB();
       }
-    }).catch((error) => {
+    }, (error) => {
       console.error('❌ Firebase error:', error);
       loadFromLocalStorage();
     });
@@ -2396,12 +2407,11 @@ function createInitialData() {
   });
   function saveDB() { 
   try {
-    // ✅ Sanitize - លុប undefined ចេញ
     const cleanDB = JSON.parse(JSON.stringify(DB));
-    
     localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanDB));
     
-    if (typeof fbDB !== 'undefined') {
+    if (typeof fbDB !== 'undefined' && currentUser) { 
+      // ✅ បន្ថែមលក្ខខណ្ឌ currentUser ដើម្បីកុំឱ្យ Save ពេលមិនទាន់ Login (កាត់បន្ថយ Loop)
       fbDB.ref('hr_data').set(cleanDB).then(() => {
         console.log('✅ Saved to Firebase');
       }).catch((error) => {
@@ -4229,100 +4239,102 @@ function saveEmpForm(e, id) {
   try {
     clearFieldErrors();
   
-  const fn = document.getElementById('f_fn').value.trim();
-  const ln = document.getElementById('f_ln').value.trim();
-  const phone = document.getElementById('f_phone').value.trim();
-  const email = document.getElementById('f_email').value.trim();
-  const nid = document.getElementById('f_nid').value.trim();
-  const emgName = document.getElementById('f_emg_name').value.trim();
-  const emgPhone = document.getElementById('f_emg_phone').value.trim();
-  const salary = +document.getElementById('f_salary').value;
-  
-  let hasError = false;
-  
-  if (!fn) { showFieldError('f_fn', 'សូមបំពេញ KH Name'); hasError = true; }
-  if (!ln) { showFieldError('f_ln', 'សូមបំពេញ EN Name'); hasError = true; }
-  if (!phone) { showFieldError('f_phone', 'សូមបំពេញទូរស័ព្ទ'); hasError = true; }
-  else if (!validatePhone(phone)) { showFieldError('f_phone', 'ទូរស័ព្ទមិនត្រឹមត្រូវ'); hasError = true; }
-  
-  if (!emgName) { showFieldError('f_emg_name', 'សូមបំពេញ Emergency Name'); hasError = true; }
-  if (!emgPhone) { showFieldError('f_emg_phone', 'សូមបំពេញ Emergency Phone'); hasError = true; }
-  else if (!validatePhone(emgPhone)) { showFieldError('f_emg_phone', 'ទូរស័ព្ទមិនត្រឹមត្រូវ'); hasError = true; }
-  
-  if (email && !validateEmail(email)) { showFieldError('f_email', 'អ៊ីមែលមិនត្រឹមត្រូវ'); hasError = true; }
-  if (nid && !validateNationalId(nid)) { showFieldError('f_nid', 'អត្តសញ្ញាណប័ណ្ណត្រូវមាន 9-12 ខ្ទង់'); hasError = true; }
-  if (salary < 0) { showFieldError('f_salary', 'ប្រាក់ខែមិនអាចអវិជ្ជមាន'); hasError = true; }
-  
-  const empIdInput = document.getElementById('f_employee_id').value.trim();
-  if (empIdInput) {
-    const dup = DB.employees.find(x => x.employee_id === empIdInput && x.id !== id);
-    if (dup) { showFieldError('f_employee_id', 'អត្តលេខនេះមានរួចហើយ'); hasError = true; }
-  }
-  
-  if (hasError) {
-    toast('❌ សូមពិនិត្យព័ត៌មានម្តងទៀត', 'error');
-    return;
-  }
-  
-  // ✅ Ensure window._tempDocs is defined
-  if (!window._tempDocs) window._tempDocs = [];
-  if (!window._tempEdu) window._tempEdu = [];
-  if (!window._tempSkills) window._tempSkills = [];
-  if (!window._tempHist) window._tempHist = [];
-  if (!window._tempInsurances) window._tempInsurances = [];
-  
-  const data = {
-    employee_id: empIdInput,
-    first_name: fn, last_name: ln, full_name: fn + ' ' + ln,
-    gender: document.getElementById('f_gender').value,
-    date_of_birth: document.getElementById('f_dob').value,
-    nationality: document.getElementById('f_nation').value,
-    marital_status: document.getElementById('f_marital').value,
-    children_son: +document.getElementById('f_son').value || 0,
-    children_daughter: +document.getElementById('f_daughter').value || 0,
-    national_id: nid,
-    national_id_expiry: document.getElementById('f_nid_exp').value,
-    national_id_status: document.getElementById('f_nid_status').value,
-    driving_license_no: document.getElementById('f_dl_no').value,
-    driving_license_expiry: document.getElementById('f_dl_exp').value,
-    driving_license_status: document.getElementById('f_dl_status').value,
-    phone: phone,
-    phone2: document.getElementById('f_phone2').value,
-    email: email,
-    current_address: document.getElementById('f_addr').value,
-    emergency_name: emgName,
-    emergency_relationship: document.getElementById('f_emg_rel').value,
-    emergency_phone: emgPhone,
-    branch_id: +document.getElementById('f_branch').value || null,
-    department_id: document.getElementById('f_dept').value ? +document.getElementById('f_dept').value : null,
-    position_id: +document.getElementById('f_pos').value,
-    grade_id: +document.getElementById('f_grade').value,
-    hire_date: document.getElementById('f_hire').value,
-    status: document.getElementById('f_status').value,
-    base_salary: salary,
-    education: window._tempEdu,
-    skills: window._tempSkills,
-    employment_history: window._tempHist,
-    documents: window._tempDocs,           // ✅ Save documents
-    insurances: window._tempInsurances,
-    photo: window._tempPhoto
-  };
-  
-  if (id) {
-    Object.assign(DB.employees.find(x => x.id === id), data);
-    logAudit(currentUser.id, 'UPDATE_EMPLOYEE', 'employee', id, `Updated ${data.full_name}`);
-    toast('✅ កែជោគជ័យ');
-  } else {
-    data.id = DB.nextId.emp++;
-    data.code = 'EMP' + String(data.id).padStart(4, '0');
-    data.created_at = new Date().toISOString();
-    DB.employees.push(data);
-    logAudit(currentUser.id, 'CREATE_EMPLOYEE', 'employee', data.id, `Created ${data.full_name}`);
-    toast('✅ បន្ថែមជោគជ័យ');
-  }
-       saveDB(); 
+    const fn = document.getElementById('f_fn').value.trim();
+    const ln = document.getElementById('f_ln').value.trim();
+    const phone = document.getElementById('f_phone').value.trim();
+    const email = document.getElementById('f_email').value.trim();
+    const nid = document.getElementById('f_nid').value.trim();
+    const emgName = document.getElementById('f_emg_name').value.trim();
+    const emgPhone = document.getElementById('f_emg_phone').value.trim();
+    const salary = +document.getElementById('f_salary').value;
+    
+    let hasError = false;
+    
+    if (!fn) { showFieldError('f_fn', 'សូមបំពេញ KH Name'); hasError = true; }
+    if (!ln) { showFieldError('f_ln', 'សូមបំពេញ EN Name'); hasError = true; }
+    if (!phone) { showFieldError('f_phone', 'សូមបំពេញទូរស័ព្ទ'); hasError = true; }
+    else if (!validatePhone(phone)) { showFieldError('f_phone', 'ទូរស័ព្ទមិនត្រឹមត្រូវ'); hasError = true; }
+    
+    if (!emgName) { showFieldError('f_emg_name', 'សូមបំពេញ Emergency Name'); hasError = true; }
+    if (!emgPhone) { showFieldError('f_emg_phone', 'សូមបំពេញ Emergency Phone'); hasError = true; }
+    else if (!validatePhone(emgPhone)) { showFieldError('f_emg_phone', 'ទូរស័ព្ទមិនត្រឹមត្រូវ'); hasError = true; }
+    
+    if (email && !validateEmail(email)) { showFieldError('f_email', 'អ៊ីមែលមិនត្រឹមត្រូវ'); hasError = true; }
+    if (nid && !validateNationalId(nid)) { showFieldError('f_nid', 'អត្តសញ្ញាណប័ណ្ណត្រូវមាន 9-12 ខ្ទង់'); hasError = true; }
+    if (salary < 0) { showFieldError('f_salary', 'ប្រាក់ខែមិនអាចអវិជ្ជមាន'); hasError = true; }
+    
+    const empIdInput = document.getElementById('f_employee_id').value.trim();
+    if (empIdInput) {
+      const dup = DB.employees.find(x => x.employee_id === empIdInput && x.id !== id);
+      if (dup) { showFieldError('f_employee_id', 'អត្តលេខនេះមានរួចហើយ'); hasError = true; }
+    }
+    
+    if (hasError) {
+      toast('❌ សូមពិនិត្យព័ត៌មានម្តងទៀត', 'error');
+      return;
+    }
+    
+    // ✅ Ensure window._tempDocs is defined
+    if (!window._tempDocs) window._tempDocs = [];
+    if (!window._tempEdu) window._tempEdu = [];
+    if (!window._tempSkills) window._tempSkills = [];
+    if (!window._tempHist) window._tempHist = [];
+    if (!window._tempInsurances) window._tempInsurances = [];
+    
+    const data = {
+      employee_id: empIdInput,
+      first_name: fn, last_name: ln, full_name: fn + ' ' + ln,
+      gender: document.getElementById('f_gender').value,
+      date_of_birth: document.getElementById('f_dob').value,
+      nationality: document.getElementById('f_nation').value,
+      marital_status: document.getElementById('f_marital').value,
+      children_son: +document.getElementById('f_son').value || 0,
+      children_daughter: +document.getElementById('f_daughter').value || 0,
+      national_id: nid,
+      national_id_expiry: document.getElementById('f_nid_exp').value,
+      national_id_status: document.getElementById('f_nid_status').value,
+      driving_license_no: document.getElementById('f_dl_no').value,
+      driving_license_expiry: document.getElementById('f_dl_exp').value,
+      driving_license_status: document.getElementById('f_dl_status').value,
+      phone: phone,
+      phone2: document.getElementById('f_phone2').value,
+      email: email,
+      current_address: document.getElementById('f_addr').value,
+      emergency_name: emgName,
+      emergency_relationship: document.getElementById('f_emg_rel').value,
+      emergency_phone: emgPhone,
+      branch_id: +document.getElementById('f_branch').value || null,
+      department_id: document.getElementById('f_dept').value ? +document.getElementById('f_dept').value : null,
+      position_id: +document.getElementById('f_pos').value,
+      grade_id: +document.getElementById('f_grade').value,
+      hire_date: document.getElementById('f_hire').value,
+      status: document.getElementById('f_status').value,
+      base_salary: salary,
+      education: window._tempEdu,
+      skills: window._tempSkills,
+      employment_history: window._tempHist,
+      documents: window._tempDocs,           // ✅ Save documents
+      insurances: window._tempInsurances,
+      photo: window._tempPhoto
+    };
+    
+    if (id) {
+      Object.assign(DB.employees.find(x => x.id === id), data);
+      logAudit(currentUser.id, 'UPDATE_EMPLOYEE', 'employee', id, `Updated ${data.full_name}`);
+      toast('✅ កែជោគជ័យ');
+    } else {
+      data.id = DB.nextId.emp++;
+      data.code = 'EMP' + String(data.id).padStart(4, '0');
+      data.created_at = new Date().toISOString();
+      DB.employees.push(data);
+      logAudit(currentUser.id, 'CREATE_EMPLOYEE', 'employee', data.id, `Created ${data.full_name}`);
+      toast('✅ បន្ថែមជោគជ័យ');
+    }
+    
+    // ✅ ដាក់នៅទីនេះ (បន្ទាប់ពីការបន្ថែម ឬកែប្រែរួចរាល់)
+    saveDB(); 
     closeModal(); 
-    filterEmployees();
+    filterEmployees(); 
     
   } catch (err) {
     console.error('❌ Error in saveEmpForm:', err);
