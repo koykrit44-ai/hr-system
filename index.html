@@ -3090,6 +3090,19 @@ function renderEmployees() {
             <option value="">-- គ្រប់ផ្នែក --</option>
             ${DB.departments.map(d => `<option value="${d.id}">${d.name}</option>`).join('')}
           </select>
+          <!-- ✅ បន្ថែម Filter សម្រាប់ផ្លូវ និងឡាន -->
+          <select id="empRouteF" onchange="empPage=1;filterEmployees()" class="input" style="width:150px;">
+            <option value="">-- ប្រភេទផ្លូវ --</option>
+            <option value="long">ផ្លូវវែង</option>
+            <option value="short">ផ្លូវខ្លី</option>
+          </select>
+          <select id="empTruckF" onchange="empPage=1;filterEmployees()" class="input" style="width:150px;">
+            <option value="">-- ប្រភេទឡាន --</option>
+            <option value="6_wheels">កង់ ៦</option>
+            <option value="10_wheels">កង់ ១០</option>
+            <option value="container">កុងតឺន័រ</option>
+            <option value="other">ផ្សេងៗ</option>
+          </select>
           <!-- ✅ Branch Filter -->
           <select id="empBranchF" onchange="empPage=1;filterEmployees()" class="input" style="width:180px;">
             <option value="">-- គ្រប់សាខា --</option>
@@ -3125,6 +3138,8 @@ function renderEmployees() {
               <th class="text-left p-3">${t('empName')}</th>
               <th class="text-left p-3">${t('empDept')}</th>
               <th class="text-left p-3">${t('empPosition')}</th>
+              <th class="text-left p-3">ប្រភេទផ្លូវ/ឡាន</th>
+              <th class="text-left p-3">រយៈពេលធ្វើការ</th>
               <th class="text-left p-3">${t('empStatus')}</th>
               <th class="text-center p-3">📎 ឯកសារ</th>
               <th class="text-right p-3">${t('empActions')}</th>
@@ -3138,22 +3153,51 @@ function renderEmployees() {
   `;
   filterEmployees();
 }
+// ✅ Function គណនារយៈពេលធ្វើការ
+function calculateYearsOfService(hireDate) {
+  if (!hireDate) return '-';
+  const start = new Date(hireDate);
+  const now = new Date();
+  const years = now.getFullYear() - start.getFullYear();
+  if (years <= 0) {
+    const months = now.getMonth() - start.getMonth() + (years * 12);
+    return months + ' ខែ';
+  }
+  return years + ' ឆ្នាំ';
+}
 
+function filterEmployees() {
+  const q = (document.getElementById('empSearch')?.value || '').toLowerCase();
+  // ... (កូដដើម)
 const debounceFilterEmployees = debounce(() => { empPage = 1; filterEmployees(); }, 250);
 function filterEmployees() {
   const q = (document.getElementById('empSearch')?.value || '').toLowerCase();
   const st = document.getElementById('empStatusF')?.value || '';
   const deptId = +document.getElementById('empDeptF')?.value || null;
   const branchId = +document.getElementById('empBranchF')?.value || null;
+  
+  // ✅ ទាញយកតម្លៃពី Filter ថ្មី
+  const routeF = document.getElementById('empRouteF')?.value || '';
+  const truckF = document.getElementById('empTruckF')?.value || '';
 
   const list = DB.employees.filter(e => {
-    const m = !q || e.full_name.toLowerCase().includes(q) || (e.employee_id || '').toLowerCase().includes(q) || e.code.toLowerCase().includes(q);
+    const yearsOfService = calculateYearsOfService(e.hire_date);
+    const routeText = e.route_type === 'long' ? 'ផ្លូវវែង' : e.route_type === 'short' ? 'ផ្លូវខ្លី' : '';
+    const truckText = e.truck_type === '6_wheels' ? 'កង់ ៦' : e.truck_type === '10_wheels' ? 'កង់ ១០' : e.truck_type === 'container' ? 'កុងតឺន័រ' : '';
+    const searchString = `${e.full_name} ${e.employee_id} ${e.code} ${routeText} ${truckText} ${yearsOfService}`.toLowerCase();
+    
+    const m = !q || searchString.includes(q);
     const matchStatus = !st || e.status === st;
     const matchDept = !deptId || e.department_id === deptId;
     const matchBranch = !branchId || e.branch_id === branchId;
-    return m && matchStatus && matchDept && matchBranch;
-  });
+    
+    // ✅ ពិនិត្យ Filter ថ្មី
+    const matchRoute = !routeF || e.route_type === routeF;
+    const matchTruck = !truckF || e.truck_type === truckF;
 
+    return m && matchStatus && matchDept && matchBranch && matchRoute && matchTruck;
+  });
+  
   const total = list.length;
   const totalPages = Math.max(1, Math.ceil(total / empLimit));
   if (empPage > totalPages) empPage = totalPages;
@@ -3175,6 +3219,16 @@ function filterEmployees() {
       </td>
       <td class="p-3">${escapeHtml(getDeptName(e.department_id))}</td>
       <td class="p-3">${escapeHtml(getPosName(e.position_id))}</td>
+      <td class="p-3 text-xs">
+        ${e.route_type === 'long' ? '🛣️ ផ្លូវវែង' : e.route_type === 'short' ? '🛣️ ផ្លូវខ្លី' : '-'}
+        <br>
+        ${e.truck_type === '6_wheels' ? '🚚 កង់ ៦' : e.truck_type === '10_wheels' ? '🚛 កង់ ១០' : e.truck_type === 'container' ? '🚛 កុងតឺន័រ' : e.truck_type === 'other' ? '🚚 ផ្សេងៗ' : ''}
+      </td>
+      
+      <!-- ✅ បន្ថែមកូដគណនារយៈពេលធ្វើការ (គិតជាឆ្នាំ) -->
+      <td class="p-3 text-xs font-medium ${calculateYearsOfService(e.hire_date).includes('ឆ្នាំ') ? 'text-blue-600' : 'text-slate-500'}">
+        ${calculateYearsOfService(e.hire_date)}
+      </td>
       <td class="p-3">${statusBadge(e.status)}</td>
       <td class="p-3 text-center">
           ${renderDocBadges(e.documents, e.id)}
@@ -3211,14 +3265,20 @@ function exportEmployeesReportExcel() {
   const deptId = +document.getElementById('empDeptF')?.value || null;
   const branchId = +document.getElementById('empBranchF')?.value || null;
 
-  const list = DB.employees.filter(e => {
-    const m = !q || e.full_name.toLowerCase().includes(q) || (e.employee_id || '').toLowerCase().includes(q) || e.code.toLowerCase().includes(q);
+    const list = DB.employees.filter(e => {
+    // ✅ ពង្រីកការស្វែងរក (Search) ឱ្យរកឃើញ ផ្លូវ, ឡាន, ឆ្នាំ
+    const yearsOfService = calculateYearsOfService(e.hire_date);
+    const routeText = e.route_type === 'long' ? 'ផ្លូវវែង' : e.route_type === 'short' ? 'ផ្លូវខ្លី' : '';
+    const truckText = e.truck_type === '6_wheels' ? 'កង់ ៦' : e.truck_type === '10_wheels' ? 'កង់ ១០' : e.truck_type === 'container' ? 'កុងតឺន័រ' : '';
+    
+    const searchString = `${e.full_name} ${e.employee_id} ${e.code} ${routeText} ${truckText} ${yearsOfService}`.toLowerCase();
+    
+    const m = !q || searchString.includes(q);
     const matchStatus = !st || e.status === st;
     const matchDept = !deptId || e.department_id === deptId;
     const matchBranch = !branchId || e.branch_id === branchId;
     return m && matchStatus && matchDept && matchBranch;
   });
-
   if (!list.length) {
     toast('❌ គ្មានទិន្នន័យ', 'error');
     return;
@@ -3459,7 +3519,24 @@ function openEmpForm(id) {
           <div><label class="text-sm font-medium">Base Salary (USD)</label><input id="f_salary" type="number" class="input" value="${emp.base_salary || 0}"></div>
         </div>
       </div>
-
+          <div>
+            <label class="text-sm font-medium">ប្រភេទផ្លូវ (Route Type)</label>
+            <select id="f_route_type" class="input">
+              <option value="">-- ជ្រើសរើស --</option>
+              <option value="long" ${emp.route_type === 'long' ? 'selected' : ''}>ផ្លូវវែង (Long Route)</option>
+              <option value="short" ${emp.route_type === 'short' ? 'selected' : ''}>ផ្លូវខ្លី (Short Route)</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-sm font-medium">កាន់ឡានប្រភេទ (Truck Type)</label>
+            <select id="f_truck_type" class="input">
+              <option value="">-- ជ្រើសរើស --</option>
+              <option value="6_wheels" ${emp.truck_type === '6_wheels' ? 'selected' : ''}>កង់ ៦ (6 Wheels)</option>
+              <option value="10_wheels" ${emp.truck_type === '10_wheels' ? 'selected' : ''}>កង់ ១០ (10 Wheels)</option>
+              <option value="container" ${emp.truck_type === 'container' ? 'selected' : ''}>កុងតឺន័រ (Container)</option>
+              <option value="other" ${emp.truck_type === 'other' ? 'selected' : ''}>ផ្សេងៗ (Other)</option>
+            </select>
+          </div>
       <div id="tab-insurance" class="tab-content hidden">
         <div class="flex justify-between items-center mb-3">
           <h4 class="font-bold text-slate-700">🛡️ Insurance</h4>
@@ -4316,6 +4393,8 @@ function saveEmpForm(e, id) {
       documents: window._tempDocs,           // ✅ Save documents
       insurances: window._tempInsurances,
       photo: window._tempPhoto
+     route_type: document.getElementById('f_route_type').value,
+     truck_type: document.getElementById('f_truck_type').value
     };
     
     if (id) {
@@ -5225,8 +5304,15 @@ function exportEmployeesReportPDF2() {
   const deptId = +document.getElementById('empDeptF')?.value || null;
   const branchId = +document.getElementById('empBranchF')?.value || null;
 
-  const list = DB.employees.filter(e => {
-    const m = !q || e.full_name.toLowerCase().includes(q) || (e.employee_id || '').toLowerCase().includes(q) || e.code.toLowerCase().includes(q);
+    const list = DB.employees.filter(e => {
+    // ✅ ពង្រីកការស្វែងរក (Search) ឱ្យរកឃើញ ផ្លូវ, ឡាន, ឆ្នាំ
+    const yearsOfService = calculateYearsOfService(e.hire_date);
+    const routeText = e.route_type === 'long' ? 'ផ្លូវវែង' : e.route_type === 'short' ? 'ផ្លូវខ្លី' : '';
+    const truckText = e.truck_type === '6_wheels' ? 'កង់ ៦' : e.truck_type === '10_wheels' ? 'កង់ ១០' : e.truck_type === 'container' ? 'កុងតឺន័រ' : '';
+    
+    const searchString = `${e.full_name} ${e.employee_id} ${e.code} ${routeText} ${truckText} ${yearsOfService}`.toLowerCase();
+    
+    const m = !q || searchString.includes(q);
     const matchStatus = !st || e.status === st;
     const matchDept = !deptId || e.department_id === deptId;
     const matchBranch = !branchId || e.branch_id === branchId;
