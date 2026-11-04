@@ -3166,10 +3166,8 @@ function calculateYearsOfService(hireDate) {
   return years + ' ឆ្នាំ';
 }
 
-function filterEmployees() {
-  const q = (document.getElementById('empSearch')?.value || '').toLowerCase();
-  // ... (កូដដើម)
 const debounceFilterEmployees = debounce(() => { empPage = 1; filterEmployees(); }, 250);
+
 function filterEmployees() {
   const q = (document.getElementById('empSearch')?.value || '').toLowerCase();
   const st = document.getElementById('empStatusF')?.value || '';
@@ -3516,9 +3514,9 @@ function openEmpForm(id) {
               <option value="on_leave" ${emp.status==='on_leave'?'selected':''}>On Leave</option>
             </select>
           </div>
-          <div><label class="text-sm font-medium">Base Salary (USD)</label><input id="f_salary" type="number" class="input" value="${emp.base_salary || 0}"></div>
-        </div>
-      </div>
+           <div><label class="text-sm font-medium">Base Salary (USD)</label><input id="f_salary" type="number" class="input" value="${emp.base_salary || 0}"></div>
+          
+          <!-- ✅ ដាក់កូដទាំង២ នេះនៅទីនេះ មុនពេលបិទ div -->
           <div>
             <label class="text-sm font-medium">ប្រភេទផ្លូវ (Route Type)</label>
             <select id="f_route_type" class="input">
@@ -3537,6 +3535,9 @@ function openEmpForm(id) {
               <option value="other" ${emp.truck_type === 'other' ? 'selected' : ''}>ផ្សេងៗ (Other)</option>
             </select>
           </div>
+        </div>
+      </div>
+
       <div id="tab-insurance" class="tab-content hidden">
         <div class="flex justify-between items-center mb-3">
           <h4 class="font-bold text-slate-700">🛡️ Insurance</h4>
