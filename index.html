@@ -1233,7 +1233,7 @@ body.dark-mode .asset-upload-zone:hover {
             <div class="section-title">LOGISTICS</div>
       <!-- ✅ បន្ថែម Menu រថយន្តនៅទីនេះ -->
       <a href="#" onclick="showPage('vehicles');return false;" data-page="vehicles" class="sidebar-link flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition text-sm">
-        <span>🚚</span><span>រថយន្ត (Vehicles)</span>
+        <span>🔧</span><span>ការថែទាំរថយន្ត</span>
       </a>
       <a href="#" onclick="showPage('inventory');return false;" data-page="inventory" class="sidebar-link flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition text-sm">
         <span>📦</span><span>Inventory</span>
@@ -2263,7 +2263,49 @@ function createInitialData() {
   DB.contracts = [];
   DB.inventory = [
     { id: DB.nextId.inv++, code: 'INV001', name: 'A4 Paper', category: 'Stationery', unit: 'Ream', quantity: 145, min_stock: 50, unit_price: 5.5, location: 'WH-A', supplier_id: null },
-    { id: DB.nextId.inv++, code: 'INV002', name: 'Toner HP 26A', category: 'Printer', unit: 'Piece', quantity: 8, min_stock: 10, unit_price: 85, location: 'WH-B', supplier_id: null }
+    { id: DB.nextId.inv++, code: 'INV002', name: 'Toner HP 26A', category: 'Printer', unit: 'Piece', quantity: 8, min_stock: 10, unit_price: 85, location: 'WH-B', supplier_id: null },
+    { id: DB.nextId.inv++, code: 'INV003', name: 'ប៊ិចខៀវ (Blue Pen)', category: 'Stationery', unit: 'Box', quantity: 50, min_stock: 10, max_stock: 100, unit_price: 3.5, location_name: 'WH-A', supplier_id: null },
+    { id: DB.nextId.inv++, code: 'INV004', name: 'សៀវភៅកត់ត្រា (Notebook)', category: 'Stationery', unit: 'Piece', quantity: 200, min_stock: 50, max_stock: 500, unit_price: 1.2, location_name: 'WH-A', supplier_id: null },
+    { id: DB.nextId.inv++, code: 'INV005', name: 'ទឹកបរិសុទ្ធ (Drinking Water)', category: 'Beverage', unit: 'Box', quantity: 30, min_stock: 20, max_stock: 100, unit_price: 4.0, location_name: 'WH-C', supplier_id: null },
+    { id: DB.nextId.inv++, code: 'INV006', name: 'ក្រដាសជូតដៃ (Tissue Box)', category: 'Household', unit: 'Box', quantity: 80, min_stock: 30, max_stock: 200, unit_price: 2.5, location_name: 'WH-C', supplier_id: null },
+    { id: DB.nextId.inv++, code: 'INV007', name: 'សាប៊ូលាងដៃ (Hand Soap)', category: 'Household', unit: 'Bottle', quantity: 45, min_stock: 15, max_stock: 100, unit_price: 3.0, location_name: 'WH-C', supplier_id: null },
+    { id: DB.nextId.inv++, code: 'INV008', name: 'ម៉ាស (Face Mask)', category: 'Safety', unit: 'Box', quantity: 100, min_stock: 20, max_stock: 300, unit_price: 5.0, location_name: 'WH-D', supplier_id: null },
+    { id: DB.nextId.inv++, code: 'INV009', name: 'ស្រោមដៃ (Gloves)', category: 'Safety', unit: 'Pair', quantity: 150, min_stock: 50, max_stock: 500, unit_price: 1.5, location_name: 'WH-D', supplier_id: null },
+    { id: DB.nextId.inv++, code: 'INV010', name: 'ខ្សែ USB (USB Cable)', category: 'IT Equipment', unit: 'Piece', quantity: 25, min_stock: 10, max_stock: 100, unit_price: 6.0, location_name: 'WH-B', supplier_id: null },
+    { id: DB.nextId.inv++, code: 'INV011', name: 'កូនកាំបិតកាត់ (Blade)', category: 'Stationery', unit: 'Pack', quantity: 60, min_stock: 20, max_stock: 150, unit_price: 2.0, location_name: 'WH-A', supplier_id: null },
+    { id: DB.nextId.inv++, code: 'INV012', name: 'ទឹកថ្នាំ Canon (Ink)', category: 'Printer', unit: 'Bottle', quantity: 15, min_stock: 5, max_stock: 50, unit_price: 12.0, location_name: 'WH-B', supplier_id: null },
+    { id: DB.nextId.inv++, code: 'INV013', name: 'ទឹកលាងដៃ (Sanitizer)', category: 'Safety', unit: 'Bottle', quantity: 40, min_stock: 15, max_stock: 100, unit_price: 4.5, location_name: 'WH-D', supplier_id: null },
+    { id: DB.nextId.inv++, code: 'INV014', name: 'ស្កុតថ្លា (Clear Tape)', category: 'Stationery', unit: 'Roll', quantity: 35, min_stock: 10, max_stock: 100, unit_price: 2.0, location_name: 'WH-A', supplier_id: null },
+    { id: DB.nextId.inv++, code: 'INV015', name: 'ម្សៅជក់ (Clips)', category: 'Stationery', unit: 'Box', quantity: 90, min_stock: 30, max_stock: 200, unit_price: 1.0, location_name: 'WH-A', supplier_id: null },
+        // ✅ បន្ថែមទិន្នន័យគំរូបន្ថែមទៀត
+    // សម្ភារៈអគ្គិសនី (Electrical)
+    { id: DB.nextId.inv++, code: 'INV016', name: 'អំពូល LED (LED Bulb)', category: 'Electrical', unit: 'Piece', quantity: 120, min_stock: 30, max_stock: 300, unit_price: 2.5, location_name: 'WH-E', supplier_id: null },
+    { id: DB.nextId.inv++, code: 'INV017', name: 'ឌុយបញ្ចូលភ្លើង (Power Plug)', category: 'Electrical', unit: 'Piece', quantity: 45, min_stock: 15, max_stock: 100, unit_price: 3.0, location_name: 'WH-E', supplier_id: null },
+    { id: DB.nextId.inv++, code: 'INV018', name: 'ខ្សែភ្លើង (Electric Wire)', category: 'Electrical', unit: 'Roll', quantity: 10, min_stock: 5, max_stock: 30, unit_price: 25.0, location_name: 'WH-E', supplier_id: null },
+
+    // គ្រឿងបន្លាស់រថយន្ត (Vehicle Parts)
+    { id: DB.nextId.inv++, code: 'INV019', name: 'ទឹកម៉ាស៊ីន (Engine Oil)', category: 'Vehicle Parts', unit: 'Bottle', quantity: 35, min_stock: 10, max_stock: 50, unit_price: 18.0, location_name: 'WH-F', supplier_id: null },
+    { id: DB.nextId.inv++, code: 'INV020', name: 'កង់ឡាន (Tire)', category: 'Vehicle Parts', unit: 'Piece', quantity: 8, min_stock: 4, max_stock: 20, unit_price: 120.0, location_name: 'WH-F', supplier_id: null },
+    { id: DB.nextId.inv++, code: 'INV021', name: 'ទឹកហូរកញ្ចក់ (Windshield Fluid)', category: 'Vehicle Parts', unit: 'Bottle', quantity: 20, min_stock: 5, max_stock: 50, unit_price: 4.0, location_name: 'WH-F', supplier_id: null },
+
+    // គ្រឿងសម្ភារៈសំណង់ (Construction)
+    { id: DB.nextId.inv++, code: 'INV022', name: 'ស៊ីម៉ងត៍ (Cement)', category: 'Construction', unit: 'Bag', quantity: 50, min_stock: 20, max_stock: 200, unit_price: 5.0, location_name: 'WH-G', supplier_id: null },
+    { id: DB.nextId.inv++, code: 'INV023', name: 'ខ្សាច់ (Sand)', category: 'Construction', unit: 'm³', quantity: 15, min_stock: 5, max_stock: 50, unit_price: 15.0, location_name: 'WH-G', supplier_id: null },
+
+    // គ្រឿងបរិភោគ និងភេសជ្ជៈ (Food & Beverage)
+    { id: DB.nextId.inv++, code: 'INV024', name: 'កាហ្វេ (Coffee)', category: 'Beverage', unit: 'Pack', quantity: 40, min_stock: 10, max_stock: 100, unit_price: 6.0, location_name: 'WH-C', supplier_id: null },
+    { id: DB.nextId.inv++, code: 'INV025', name: 'ស្ករគ្រាប់ (Sugar)', category: 'Beverage', unit: 'Kg', quantity: 25, min_stock: 10, max_stock: 50, unit_price: 1.5, location_name: 'WH-C', supplier_id: null },
+    { id: DB.nextId.inv++, code: 'INV026', name: 'ទឹកឃ្មុំ (Honey)', category: 'Beverage', unit: 'Bottle', quantity: 12, min_stock: 5, max_stock: 30, unit_price: 8.0, location_name: 'WH-C', supplier_id: null },
+
+    // សម្ភារៈសម្អាត (Cleaning Supplies)
+    { id: DB.nextId.inv++, code: 'INV027', name: 'ទឹកសម្អាតកំរាលឥដ្ឋ (Floor Cleaner)', category: 'Cleaning', unit: 'Bottle', quantity: 30, min_stock: 10, max_stock: 80, unit_price: 3.5, location_name: 'WH-D', supplier_id: null },
+    { id: DB.nextId.inv++, code: 'INV028', name: 'ច្រាសដុសខ្នង (Broom)', category: 'Cleaning', unit: 'Piece', quantity: 15, min_stock: 5, max_stock: 30, unit_price: 2.0, location_name: 'WH-D', supplier_id: null },
+    { id: DB.nextId.inv++, code: 'INV029', name: 'ធុងសំរាម (Trash Bin)', category: 'Cleaning', unit: 'Piece', quantity: 20, min_stock: 5, max_stock: 50, unit_price: 4.0, location_name: 'WH-D', supplier_id: null },
+
+    // គ្រឿងសម្ភារៈ IT បន្ថែម
+    { id: DB.nextId.inv++, code: 'INV030', name: 'ក្តារចុច (Keyboard)', category: 'IT Equipment', unit: 'Piece', quantity: 18, min_stock: 5, max_stock: 50, unit_price: 12.0, location_name: 'WH-B', supplier_id: null },
+    { id: DB.nextId.inv++, code: 'INV031', name: 'កូនកាំបិតកាត់ (Mouse Pad)', category: 'IT Equipment', unit: 'Piece', quantity: 22, min_stock: 10, max_stock: 60, unit_price: 3.0, location_name: 'WH-B', supplier_id: null },
+    { id: DB.nextId.inv++, code: 'INV032', name: 'ថាសរឹង (Hard Drive)', category: 'IT Equipment', unit: 'Piece', quantity: 5, min_stock: 2, max_stock: 15, unit_price: 65.0, location_name: 'WH-B', supplier_id: null }
   ];
   DB.suppliers = [];
   DB.purchaseOrders = [];
@@ -3103,6 +3145,16 @@ function renderEmployees() {
             <option value="container">កុងតឺន័រ</option>
             <option value="other">ផ្សេងៗ</option>
           </select>
+          <!-- ✅ បន្ថែម Filter សម្រាប់រយៈពេលធ្វើការ (ឆ្នាំ) -->
+          <select id="empYearF" onchange="empPage=1;filterEmployees()" class="input" style="width:160px;">
+            <option value="">-- រយៈពេលធ្វើការ --</option>
+            <option value="less_1">ក្រោម ១ ឆ្នាំ</option>
+            <option value="1_3">១ ដល់ ៣ ឆ្នាំ</option>
+            <option value="3_6">៣ ដល់ ៦ ឆ្នាំ</option>
+            <option value="6_10">៦ ដល់ ១០ ឆ្នាំ</option>
+            <option value="10_15">១០ ដល់ ១៥ ឆ្នាំ</option>
+            <option value="over_15">លើសពី ១៥ ឆ្នាំ</option>
+          </select>
           <!-- ✅ Branch Filter -->
           <select id="empBranchF" onchange="empPage=1;filterEmployees()" class="input" style="width:180px;">
             <option value="">-- គ្រប់សាខា --</option>
@@ -3177,6 +3229,7 @@ function filterEmployees() {
   // ✅ ទាញយកតម្លៃពី Filter ថ្មី
   const routeF = document.getElementById('empRouteF')?.value || '';
   const truckF = document.getElementById('empTruckF')?.value || '';
+  const yearF = document.getElementById('empYearF')?.value || '';
 
   const list = DB.employees.filter(e => {
     const yearsOfService = calculateYearsOfService(e.hire_date);
@@ -3192,8 +3245,24 @@ function filterEmployees() {
     // ✅ ពិនិត្យ Filter ថ្មី
     const matchRoute = !routeF || e.route_type === routeF;
     const matchTruck = !truckF || e.truck_type === truckF;
+    // ✅ គណនាឆ្នាំដើម្បីធ្វើ Filter
+    let matchYear = true;
+    if (yearF && e.hire_date) {
+      const hireYear = new Date(e.hire_date).getFullYear();
+      const currentYear = new Date().getFullYear();
+      const years = currentYear - hireYear;
+      
+      if (yearF === 'less_1') matchYear = years < 1;
+      else if (yearF === '1_3') matchYear = years >= 1 && years <= 3;
+      else if (yearF === '3_6') matchYear = years > 3 && years <= 6;
+      else if (yearF === '6_10') matchYear = years > 6 && years <= 10;
+      else if (yearF === '10_15') matchYear = years > 10 && years <= 15;
+      else if (yearF === 'over_15') matchYear = years > 15;
+    } else if (yearF && !e.hire_date) {
+      matchYear = false;
+    }
 
-    return m && matchStatus && matchDept && matchBranch && matchRoute && matchTruck;
+    return m && matchStatus && matchDept && matchBranch && matchRoute && matchTruck && matchYear;
   });
   
   const total = list.length;
@@ -3262,20 +3331,37 @@ function exportEmployeesReportExcel() {
   const st = document.getElementById('empStatusF')?.value || '';
   const deptId = +document.getElementById('empDeptF')?.value || null;
   const branchId = +document.getElementById('empBranchF')?.value || null;
+  const routeF = document.getElementById('empRouteF')?.value || '';
+  const truckF = document.getElementById('empTruckF')?.value || '';
+  const yearF = document.getElementById('empYearF')?.value || '';
 
-    const list = DB.employees.filter(e => {
-    // ✅ ពង្រីកការស្វែងរក (Search) ឱ្យរកឃើញ ផ្លូវ, ឡាន, ឆ្នាំ
+  const list = DB.employees.filter(e => {
     const yearsOfService = calculateYearsOfService(e.hire_date);
     const routeText = e.route_type === 'long' ? 'ផ្លូវវែង' : e.route_type === 'short' ? 'ផ្លូវខ្លី' : '';
     const truckText = e.truck_type === '6_wheels' ? 'កង់ ៦' : e.truck_type === '10_wheels' ? 'កង់ ១០' : e.truck_type === 'container' ? 'កុងតឺន័រ' : '';
-    
     const searchString = `${e.full_name} ${e.employee_id} ${e.code} ${routeText} ${truckText} ${yearsOfService}`.toLowerCase();
     
     const m = !q || searchString.includes(q);
     const matchStatus = !st || e.status === st;
     const matchDept = !deptId || e.department_id === deptId;
     const matchBranch = !branchId || e.branch_id === branchId;
-    return m && matchStatus && matchDept && matchBranch;
+    
+    // ✅ បន្ថែមការត្រងតាម Filter ថ្មីៗ
+    const matchRoute = !routeF || e.route_type === routeF;
+    const matchTruck = !truckF || e.truck_type === truckF;
+    let matchYear = true;
+    if (yearF && e.hire_date) {
+      const hireYear = new Date(e.hire_date).getFullYear();
+      const currentYear = new Date().getFullYear();
+      const years = currentYear - hireYear;
+      if (yearF === 'less_1') matchYear = years < 1;
+      else if (yearF === '1_3') matchYear = years >= 1 && years <= 3;
+      else if (yearF === '3_5') matchYear = years > 3 && years <= 5;
+      else if (yearF === '5_10') matchYear = years > 5 && years <= 10;
+      else if (yearF === 'over_10') matchYear = years > 10;
+    }
+
+    return m && matchStatus && matchDept && matchBranch && matchRoute && matchTruck && matchYear;
   });
   if (!list.length) {
     toast('❌ គ្មានទិន្នន័យ', 'error');
@@ -4515,6 +4601,9 @@ function viewEmpProfile(id) {
           <div class="info-row"><span class="info-label">Position</span><span class="info-value">${escapeHtml(getPosName(e.position_id))}</span></div>
           <div class="info-row"><span class="info-label">Grade</span><span class="info-value">${escapeHtml(getGradeName(e.grade_id))}</span></div>
           <div class="info-row"><span class="info-label">Join Date</span><span class="info-value">${e.hire_date || '-'}</span></div>
+          <div class="info-row"><span class="info-label">រយៈពេលធ្វើការ (Service)</span><span class="info-value text-blue-600 font-bold">${calculateYearsOfService(e.hire_date)}</span></div>
+          <div class="info-row"><span class="info-label">ប្រភេទផ្លូវ (Route)</span><span class="info-value">${e.route_type === 'long' ? 'ផ្លូវវែង' : e.route_type === 'short' ? 'ផ្លូវខ្លី' : '-'}</span></div>
+          <div class="info-row"><span class="info-label">ប្រភេទឡាន (Truck)</span><span class="info-value">${e.truck_type === '6_wheels' ? 'កង់ ៦' : e.truck_type === '10_wheels' ? 'កង់ ១០' : e.truck_type === 'container' ? 'កុងតឺន័រ' : e.truck_type === 'other' ? 'ផ្សេងៗ' : '-'}</span></div>
         </div>
       </div>
 
@@ -4546,7 +4635,20 @@ function viewEmpProfile(id) {
         <div>${e.skills.map(s => `<span class="skill-chip">${escapeHtml(s)}</span>`).join('')}</div>
       </div>
     ` : ''}
-
+      ${e.documents && e.documents.length > 0 ? `
+      <div class="card mt-4">
+        <h3 class="font-bold mb-3 pb-2 border-b">📎 ឯកសារភ្ជាប់ (${e.documents.length})</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+          ${e.documents.map((d, i) => `
+            <div class="border rounded-lg p-2 text-center hover:bg-slate-50 cursor-pointer" onclick="window.open('${d.data}', '_blank')">
+              <div class="text-3xl mb-1">${d.isPDF ? '📕' : d.isImage ? '🖼️' : d.isWord ? '📘' : '📄'}</div>
+              <div class="text-xs truncate font-medium">${escapeHtml(d.name)}</div>
+              <div class="text-[10px] text-slate-500">${d.size}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    ` : ''}
     <div class="card mt-4">
       <h3 class="font-bold mb-3 pb-2 border-b">⏰ Recent Attendance</h3>
       <table class="w-full text-sm">
@@ -5042,6 +5144,18 @@ function printProfilePDF(id) {
             <span class="info-label">ថ្ងៃចូល:</span>
             <span class="info-value">${e.hire_date || '-'}</span>
           </div>
+          <div class="info-pair">
+            <span class="info-label">រយៈពេលធ្វើការ:</span>
+            <span class="info-value">${calculateYearsOfService(e.hire_date)}</span>
+          </div>
+          <div class="info-pair">
+            <span class="info-label">ប្រភេទផ្លូវ:</span>
+            <span class="info-value">${e.route_type === 'long' ? 'ផ្លូវវែង' : e.route_type === 'short' ? 'ផ្លូវខ្លី' : '-'}</span>
+          </div>
+          <div class="info-pair">
+            <span class="info-label">ប្រភេទឡាន:</span>
+            <span class="info-value">${e.truck_type === '6_wheels' ? 'កង់ ៦' : e.truck_type === '10_wheels' ? 'កង់ ១០' : e.truck_type === 'container' ? 'កុងតឺន័រ' : e.truck_type === 'other' ? 'ផ្សេងៗ' : '-'}</span>
+          </div>
         </div>
         
         <div class="info-card">
@@ -5080,10 +5194,20 @@ function printProfilePDF(id) {
         <div class="list-grid">${historyRows}</div>
       </div>
       
-      <!-- ✅ Documents -->
+            <!-- ✅ Documents -->
       <div class="full-card">
-        <h3>📎 ឯកសារ</h3>
-        <div class="list-grid">${docsRows}</div>
+        <h3>📎 ឯកសារភ្ជាប់ (${(e.documents || []).length})</h3>
+        <div class="list-grid">
+          ${(e.documents || []).length > 0 
+            ? (e.documents || []).map(d => `
+                <div class="list-item">
+                  <div class="list-item-title">${d.isPDF ? '📕' : d.isImage ? '🖼️' : '📄'} ${escapeHtml(d.name)}</div>
+                  <div class="list-item-sub">${d.size || ''} · ${d.category || 'other'}</div>
+                </div>
+              `).join('')
+            : '<div class="empty-text">មិនមានឯកសារ</div>'
+          }
+        </div>
       </div>
       
       <!-- ✅ Insurance -->
@@ -5304,20 +5428,37 @@ function exportEmployeesReportPDF2() {
   const st = document.getElementById('empStatusF')?.value || '';
   const deptId = +document.getElementById('empDeptF')?.value || null;
   const branchId = +document.getElementById('empBranchF')?.value || null;
+  const routeF = document.getElementById('empRouteF')?.value || '';
+  const truckF = document.getElementById('empTruckF')?.value || '';
+  const yearF = document.getElementById('empYearF')?.value || '';
 
-    const list = DB.employees.filter(e => {
-    // ✅ ពង្រីកការស្វែងរក (Search) ឱ្យរកឃើញ ផ្លូវ, ឡាន, ឆ្នាំ
+  const list = DB.employees.filter(e => {
     const yearsOfService = calculateYearsOfService(e.hire_date);
     const routeText = e.route_type === 'long' ? 'ផ្លូវវែង' : e.route_type === 'short' ? 'ផ្លូវខ្លី' : '';
     const truckText = e.truck_type === '6_wheels' ? 'កង់ ៦' : e.truck_type === '10_wheels' ? 'កង់ ១០' : e.truck_type === 'container' ? 'កុងតឺន័រ' : '';
-    
     const searchString = `${e.full_name} ${e.employee_id} ${e.code} ${routeText} ${truckText} ${yearsOfService}`.toLowerCase();
     
     const m = !q || searchString.includes(q);
     const matchStatus = !st || e.status === st;
     const matchDept = !deptId || e.department_id === deptId;
     const matchBranch = !branchId || e.branch_id === branchId;
-    return m && matchStatus && matchDept && matchBranch;
+    
+    // ✅ បន្ថែមការត្រងតាម Filter ថ្មីៗ
+    const matchRoute = !routeF || e.route_type === routeF;
+    const matchTruck = !truckF || e.truck_type === truckF;
+    let matchYear = true;
+    if (yearF && e.hire_date) {
+      const hireYear = new Date(e.hire_date).getFullYear();
+      const currentYear = new Date().getFullYear();
+      const years = currentYear - hireYear;
+      if (yearF === 'less_1') matchYear = years < 1;
+      else if (yearF === '1_3') matchYear = years >= 1 && years <= 3;
+      else if (yearF === '3_5') matchYear = years > 3 && years <= 5;
+      else if (yearF === '5_10') matchYear = years > 5 && years <= 10;
+      else if (yearF === 'over_10') matchYear = years > 10;
+    }
+
+    return m && matchStatus && matchDept && matchBranch && matchRoute && matchTruck && matchYear;
   });
 
   if (!list.length) {
@@ -5402,6 +5543,12 @@ function exportEmployeesReportPDF2() {
           font-family: 'Moul', serif; /* ✅ Khmer OS Muol Light */
           font-size: 9px; line-height: 1.4;
         }
+        th:nth-child(3), td:nth-child(3) { width: 18%; }
+        th:nth-child(4), td:nth-child(4) { width: 5%; } 
+        th:nth-child(7), td:nth-child(7) { width: 10%; } 
+        th:nth-child(8), td:nth-child(8) { width: 12%; }
+        th:nth-child(13), td:nth-child(13) { width: 10%; } 
+        th:nth-child(14), td:nth-child(14) { width: 10%; }
         td.name { text-align: left; padding-left: 6px; }
         td.money { text-align: right; padding-right: 6px; }
         .footer {
@@ -5450,11 +5597,14 @@ function exportEmployeesReportPDF2() {
           <tr>
             <th>ល.រ</th>
             <th>អត្តលេខ</th>
-            <th>កូដ</th>
             <th>ឈ្មោះបុគ្គលិក</th>
             <th>ភេទ</th>
             <th>លេខទូរស័ព្ទ</th>
-            <th>ផ្នែក</th>
+            <th>អត្តសញ្ញាណប័ណ្ណ</th>
+            <th>ប័ណ្ណបើកបរ</th>
+            <th>ថ្ងៃផុតសុពលភាពប័ណ្ណបើកបរ</th>
+            <th>ប្រភេទផ្លូវ</th>
+            <th>ប្រភេទឡាន</th>
             <th>មុខតំណែង</th>
             <th>សាខា</th>
             <th>ថ្ងៃចូលបម្រើការងារ</th>
@@ -5467,11 +5617,14 @@ function exportEmployeesReportPDF2() {
             <tr>
               <td>${String(idx + 1).padStart(2, '0')}</td>
               <td>${e.employee_id || ''}</td>
-              <td>${e.code || ''}</td>
               <td class="name">${e.full_name || ''}</td>
               <td>${e.gender === 'M' ? 'ប្រុស' : 'ស្រី'}</td>
               <td>${e.phone || ''}</td>
-              <td class="name">${getDeptName(e.department_id)}</td>
+              <td>${e.national_id || '-'}</td>
+              <td>${e.driving_license_no || '-'}</td>
+              <td>${e.driving_license_expiry || '-'}</td>
+              <td>${e.route_type === 'long' ? 'ផ្លូវវែង' : e.route_type === 'short' ? 'ផ្លូវខ្លី' : '-'}</td>
+              <td>${e.truck_type === '6_wheels' ? 'កង់ ៦' : e.truck_type === '10_wheels' ? 'កង់ ១០' : e.truck_type === 'container' ? 'កុងតឺន័រ' : e.truck_type === 'other' ? 'ផ្សេងៗ' : '-'}</td>
               <td class="name">${getPosName(e.position_id)}</td>
               <td>${DB.branches.find(b => b.id === e.branch_id)?.name || '-'}</td>
               <td>${e.hire_date || ''}</td>
@@ -6689,19 +6842,30 @@ function exportAttendanceReportPDF2() {
         }
         
         /* ✅ Table */
-        table {
+                table {
           width: 100%; border-collapse: collapse;
-          font-family: 'Siemreap', sans-serif; font-size: 10px;
+          font-family: 'Siemreap', sans-serif;
+          font-size: 9px; /* ✅ បង្កើនទំហំអក្សរឱ្យធំជាងមុនបន្តិច ដើម្បីងាយស្រួលអាន */
+          table-layout: auto; /* ✅ ឱ្យតារាងបន្ទាត់តាមទំហំអក្សរ */
         }
         th, td {
-          border: 1px solid #333; padding: 5px 6px;
-          text-align: center; vertical-align: middle;
+          border: 1px solid #333; 
+          padding: 5px 4px; /* ✅ បង្កើនចន្លោះខាងក្នុងបន្តិច */
+          text-align: center; 
+          vertical-align: middle;
+          word-wrap: break-word; /* ✅ បើពាក្យវែងពេក ឱ្យវាធ្លាក់បន្ទាត់ស្អាត */
         }
         th {
           background: #1e40af; color: white;
-          font-family: 'Moul', serif; font-size: 9px; line-height: 1.4;
+          font-family: 'Moul', serif;
+          font-size: 8px; /* ✅ ក្បាលតារាងឱ្យតូចបន្តិច ដើម្បីកុំឱ្យវាធំជាងទិន្នន័យ */
+          line-height: 1.3;
         }
-        td.name { text-align: left; padding-left: 6px; }
+        td.name { 
+          text-align: left; 
+          padding-left: 5px; 
+          min-width: 120px; /* ✅ កំណត់ឱ្យជួរឈរឈ្មោះ មានទំហំធំជាងគេ */
+        }
         
         /* ✅ Status Badge */
         .badge {
@@ -7144,11 +7308,14 @@ function exportLeaveReportPDF2() {
         /* ✅ Table */
         table {
           width: 100%; border-collapse: collapse;
-          font-family: 'Siemreap', sans-serif; font-size: 10px;
+          font-family: 'Siemreap', sans-serif; font-size: 9px;
+          table-layout: fixed; /* ✅ បង្ខំឱ្យតារាងគោរពតាមទំហំ */
         }
         th, td {
           border: 1px solid #333; padding: 5px 6px;
           text-align: center; vertical-align: middle;
+          word-wrap: break-word; /* ✅ បង្ខំឱ្យអក្សរវែងៗធ្លាក់បន្ទាត់ */
+          white-space: normal;   /* ✅ ធានាថាវាមិនទប់ទល់នឹងការធ្លាក់បន្ទាត់ */
         }
         th {
           background: #1e40af; color: white;
@@ -13446,34 +13613,44 @@ function renderInventory() {
 function renderVehicles() {
   document.getElementById('pageContent').innerHTML = `
     <div class="card">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="font-bold text-lg">🚚 គ្រប់គ្រងរថយន្ត</h3>
-        <button onclick="exportVehiclesExcel()" class="btn btn-secondary btn-sm">📊 Excel</button>
+      <div class="flex flex-wrap justify-between items-center gap-3 mb-4 pb-4 border-b">
+        <div>
+          <h3 class="font-bold text-lg">📝 កំណត់ត្រាការថែទាំ និងពិនិត្យឡាន</h3>
+          <p class="text-xs text-slate-500 mt-1">Daily Vehicle Check & Maintenance</p>
+        </div>
+        <div class="flex gap-2 flex-wrap">
+          <button onclick="exportVehiclesExcel()" class="btn btn-secondary btn-sm">📊 Excel</button>
           <button onclick="exportVehiclesPDF()" class="btn btn-secondary btn-sm">📕 PDF</button>
-        <button onclick="openVehicleForm()" class="btn btn-primary">+ បន្ថែមរថយន្ត</button>
+          <button onclick="openVehicleForm()" class="btn btn-primary btn-sm">+ កត់ត្រាថ្មី</button>
+        </div>
       </div>
+      
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
           <thead class="bg-slate-50 border-b-2">
             <tr>
+              <th class="text-left p-2">ថ្ងៃខែឆ្នាំ</th>
               <th class="text-left p-2">លេខឡាន</th>
-              <th class="text-left p-2">ប្រភេទ</th>
+              <th class="text-left p-2">អ្នកបើកបរ (តៃកុង)</th>
               <th class="text-center p-2">ស្ថានភាព</th>
-              <th class="text-left p-2">លេខម៉ាស៊ីន</th>
-              <th class="text-left p-2">ធានារ៉ាប់រង</th>
-              <th class="text-right p-2">ទម្ងន់អតិបរមា</th>
+              <th class="text-right p-2">ចំណាយ ($)</th>
+              <th class="text-left p-2">ការងារដែលបានធ្វើ / ចំណាំ</th>
               <th class="text-center p-2">សកម្មភាព</th>
             </tr>
           </thead>
           <tbody>
-            ${DB.vehicles && DB.vehicles.length ? DB.vehicles.map(v => `
+            ${DB.vehicles && DB.vehicles.length ? DB.vehicles.slice().reverse().map(v => `
               <tr class="border-b hover:bg-slate-50">
-                <td class="p-2 font-bold text-blue-600">${v.plate_no}</td>
-                <td class="p-2">${v.type}</td>
-                <td class="p-2 text-center">${statusBadge(v.status)}</td>
-                <td class="p-2 font-mono text-xs">${v.engine_no}</td>
-                <td class="p-2 text-xs">${v.insurance_date || '-'}</td>
-                <td class="p-2 text-right font-bold">${(v.max_weight || 0).toLocaleString()} Kg</td>
+                <td class="p-2 text-xs">${v.maintenance_date || '-'}</td>
+                <td class="p-2 font-bold text-blue-600">${escapeHtml(v.plate_no)}</td>
+                <td class="p-2 text-xs">${escapeHtml(v.driver_name || '-')}</td>
+                <td class="p-2 text-center">
+                  <span class="badge ${v.status === 'ល្អ' ? 'badge-green' : v.status === 'ខូច' ? 'badge-red' : 'badge-yellow'}">
+                    ${escapeHtml(v.status || '-')}
+                  </span>
+                </td>
+                <td class="p-2 text-right text-red-600">$${(v.cost || 0).toFixed(2)}</td>
+                <td class="p-2 text-xs">${escapeHtml(v.note || '-')}</td>
                 <td class="p-2 text-center">
                   <button onclick="deleteVehicle(${v.id})" class="text-red-500 hover:bg-red-50 px-2 py-1 rounded">🗑️</button>
                 </td>
@@ -13486,64 +13663,167 @@ function renderVehicles() {
   `;
 }
 
-// បើក Form បន្ថែមរថយន្ត
+// ✅ កែ Form បន្ថែមការថែទាំ
 function openVehicleForm() {
-  document.getElementById('modalTitle').textContent = '🚚 បន្ថែមរថយន្តថ្មី';
+  document.getElementById('modalTitle').textContent = '🔧 បន្ថែមកំណត់ត្រាការថែទាំរថយន្ត';
   document.getElementById('modalContainer').classList.add('modal-md');
+  document.getElementById('modalContainer').classList.remove('modal-xl', 'modal-lg');
+  
   document.getElementById('modalBody').innerHTML = `
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div><label class="text-sm font-medium">លេខឡាន <span class="text-red-500">*</span></label><input id="v_plate" class="input" placeholder="ឧ. 2A-1234"></div>
-      <div><label class="text-sm font-medium">ប្រភេទរថយន្ត</label>
-        <select id="v_type" class="input">
-          <option>ឡានដឹកទំនិញធំ</option>
-          <option>ឡានដឹកទំនិញតូច</option>
-          <option>កុងតឺន័រ</option>
-          <option>ឡានត្រជាក់</option>
-        </select>
+    <form onsubmit="saveVehicle(event)">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
+        <div>
+          <label class="text-sm font-medium">លេខឡាន <span class="text-red-500">*</span></label>
+          <input id="v_plate" class="input" placeholder="ឧ. 2A-1234" required>
+        </div>
+        
+        <div>
+          <label class="text-sm font-medium">ប្រភេទថែទាំ</label>
+          <select id="v_type" class="input">
+            <option value="ប្តូរប្រេងម៉ាស៊ីន">ប្តូរប្រេងម៉ាស៊ីន</option>
+            <option value="ពិនិត្យសម្ពាធកង់">ពិនិត្យសម្ពាធកង់</option>
+            <option value="ជួសជុលម៉ាស៊ីន">ជួសជុលម៉ាស៊ីន</option>
+            <option value="ផ្សេងៗ">ផ្សេងៗ</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="text-sm font-medium">ថ្ងៃថែទាំ <span class="text-red-500">*</span></label>
+          <input id="v_date" type="date" class="input" value="${new Date().toISOString().split('T')[0]}" required>
+        </div>
+        
+        <div>
+          <label class="text-sm font-medium">ចំណាយ ($)</label>
+          <input id="v_cost" type="number" step="0.01" class="input" value="0">
+        </div>
+        
+        <div>
+          <label class="text-sm font-medium">អ្នកជួសជុល / ហាង</label>
+          <input id="v_tech" class="input" placeholder="ឧ. ហាងជួសជុល A">
+        </div>
+        
+        <div class="col-span-1 md:col-span-2">
+          <label class="text-sm font-medium">ចំណាំ / បញ្ហាដែលបានជួសជុល</label>
+          <textarea id="v_note" rows="2" class="input" placeholder="បញ្ចូលព័ត៌មានបន្ថែម..."></textarea>
+        </div>
+        
       </div>
-      <div><label class="text-sm font-medium">ស្ថានភាព</label>
-        <select id="v_status" class="input">
-          <option value="available">ទំនេរ</option>
-          <option value="in_use">កំពុងដឹក</option>
-          <option value="maintenance">ថែទាំ</option>
-          <option value="broken">ខូច</option>
-        </select>
+      
+      <div class="flex justify-end gap-2 mt-6 pt-4 border-t">
+        <button type="button" onclick="closeModal()" class="btn btn-secondary">បោះបង់</button>
+        <button type="submit" class="btn btn-primary">💾 រក្សាទុកការថែទាំ</button>
       </div>
-      <div><label class="text-sm font-medium">លេខសម្គាល់ម៉ាស៊ីន</label><input id="v_engine" class="input" placeholder="ENG-001"></div>
-      <div><label class="text-sm font-medium">កាលបរិច្ឆេទចុះបញ្ជី</label><input id="v_reg" type="date" class="input"></div>
-      <div><label class="text-sm font-medium">កាលបរិច្ឆេទធានារ៉ាប់រង</label><input id="v_ins" type="date" class="input"></div>
-      <div><label class="text-sm font-medium">ទម្ងន់អនុញ្ញាតអតិបរមា (Kg)</label><input id="v_weight" type="number" class="input" value="10000"></div>
-      <div><label class="text-sm font-medium">កាលវិភាគថែទាំបន្ទាប់</label><input id="v_maint" type="date" class="input"></div>
-    </div>
-    <div class="flex justify-end gap-2 mt-6 pt-4 border-t">
-      <button onclick="closeModal()" class="btn btn-secondary">បោះបង់</button>
-      <button onclick="saveVehicle()" class="btn btn-primary">💾 រក្សាទុក</button>
-    </div>
+    </form>
   `;
   openModal();
 }
 
-// រក្សាទុករថយន្ត
-function saveVehicle() {
+// ✅ កែ Function Save ទិន្នន័យ
+function saveVehicle(e) {
+  if (e) e.preventDefault();
+  
   const plate = document.getElementById('v_plate').value.trim();
   if (!plate) return toast('❌ សូមបំពេញលេខឡាន', 'error');
 
   DB.vehicles.push({
     id: DB.nextId.vehicle++,
     plate_no: plate,
-    type: document.getElementById('v_type').value,
-    status: document.getElementById('v_status').value,
-    engine_no: document.getElementById('v_engine').value,
-    reg_date: document.getElementById('v_reg').value,
-    insurance_date: document.getElementById('v_ins').value,
-    max_weight: +document.getElementById('v_weight').value || 0,
-    next_maintenance: document.getElementById('v_maint').value
+    maintenance_type: document.getElementById('v_type').value,
+    maintenance_date: document.getElementById('v_date').value,
+    cost: +document.getElementById('v_cost').value || 0,
+    technician: document.getElementById('v_tech').value.trim(),
+    note: document.getElementById('v_note').value.trim()
   });
   
   saveDB(); 
   closeModal(); 
   renderVehicles(); 
-  toast('✅ បន្ថែមរថយន្តជោគជ័យ');
+  toast('✅ បន្ថែមកំណត់ត្រាថែទាំជោគជ័យ');
+}
+
+// បើក Form បន្ថែមរថយន្ត
+function openVehicleForm() {
+  document.getElementById('modalTitle').textContent = '📝 កត់ត្រាការពិនិត្យឡានប្រចាំថ្ងៃ';
+  document.getElementById('modalContainer').classList.add('modal-md');
+  document.getElementById('modalContainer').classList.remove('modal-xl', 'modal-lg');
+  
+  document.getElementById('modalBody').innerHTML = `
+    <form onsubmit="saveVehicle(event)">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
+        <div>
+          <label class="text-sm font-medium">លេខឡាន <span class="text-red-500">*</span></label>
+          <input id="v_plate" class="input" placeholder="ឧ. 2A-1234" required>
+        </div>
+        
+          <div>
+          <label class="text-sm font-medium">អ្នកបើកបរ (តៃកុង) <span class="text-red-500">*</span></label>
+          <select id="v_driver" class="input" required>
+            <option value="">-- ជ្រើសរើសតៃកុង --</option>
+            <!-- ✅ ទាញយកបុគ្គលិកទាំងអស់ដែលកំពុងសកម្ម -->
+            ${DB.employees.filter(e => e.status === 'active').map(e => `<option value="${e.full_name}">${e.full_name} (${getPosName(e.position_id)})</option>`).join('')}
+          </select>
+        </div>
+        
+        <div>
+          <label class="text-sm font-medium">ថ្ងៃខែឆ្នាំ <span class="text-red-500">*</span></label>
+          <input id="v_date" type="date" class="input" value="${new Date().toISOString().split('T')[0]}" required>
+        </div>
+
+        <div>
+          <label class="text-sm font-medium">ស្ថានភាពឡាន</label>
+          <select id="v_status" class="input">
+            <option value="ល្អ">✅ ល្អធម្មតា (អាចបើកបាន)</option>
+            <option value="មានបញ្ហាតិចតួច">⚠️ មានបញ្ហាតិចតួច</option>
+            <option value="ខូច">❌ ខូច (ត្រូវការជួសជុល)</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="text-sm font-medium">ការចំណាយប្រចាំថ្ងៃ ($)</label>
+          <input id="v_cost" type="number" step="0.01" class="input" value="0" placeholder="បើមាន...">
+        </div>
+        
+        <div class="col-span-1 md:col-span-2">
+          <label class="text-sm font-medium">ការងារដែលបានធ្វើ / បញ្ហាដែលបានជួប</label>
+          <textarea id="v_note" rows="3" class="input" placeholder="ឧ. បូមខ្យល់កង់, ពិនិត្យខ្លាញ់គោ, លាងឡាន, ម៉ាស៊ីនក្តៅ..."></textarea>
+        </div>
+        
+      </div>
+      
+      <div class="flex justify-end gap-2 mt-6 pt-4 border-t">
+        <button type="button" onclick="closeModal()" class="btn btn-secondary">បោះបង់</button>
+        <button type="submit" class="btn btn-primary">💾 រក្សាទុក</button>
+      </div>
+    </form>
+  `;
+  openModal();
+}
+
+// រក្សាទុករថយន្ត
+function saveVehicle(e) {
+  if (e) e.preventDefault();
+  
+  const plate = document.getElementById('v_plate').value.trim();
+  const driver = document.getElementById('v_driver').value;
+  
+  if (!plate || !driver) return toast('❌ សូមបំពេញលេខឡាន និងឈ្មោះតៃកុង', 'error');
+
+  DB.vehicles.push({
+    id: DB.nextId.vehicle++,
+    plate_no: plate,
+    driver_name: driver,
+    maintenance_date: document.getElementById('v_date').value,
+    status: document.getElementById('v_status').value,
+    cost: +document.getElementById('v_cost').value || 0,
+    note: document.getElementById('v_note').value.trim()
+  });
+  
+  saveDB(); 
+  closeModal(); 
+  renderVehicles(); 
+  toast('✅ កត់ត្រាជោគជ័យ');
 }
 
 // លុបរថយន្ត
@@ -13561,17 +13841,15 @@ function exportVehiclesExcel() {
   }
 
   const data = DB.vehicles.map(v => ({
-    'លេខឡាន': v.plate_no,
-    'ប្រភេទ': v.type,
-    'ស្ថានភាព': v.status === 'available' ? 'ទំនេរ' : v.status === 'in_use' ? 'កំពុងដឹក' : v.status === 'maintenance' ? 'ថែទាំ' : 'ខូច',
-    'លេខម៉ាស៊ីន': v.engine_no || '-',
-    'ថ្ងៃចុះបញ្ជី': v.reg_date || '-',
-    'ថ្ងៃធានារ៉ាប់រង': v.insurance_date || '-',
-    'ទម្ងន់អតិបរមា (Kg)': v.max_weight || 0,
-    'ថែទាំបន្ទាប់': v.next_maintenance || '-'
+    'ថ្ងៃខែឆ្នាំ': v.maintenance_date || '-',
+    'លេខឡាន': v.plate_no || '-',
+    'អ្នកបើកបរ (តៃកុង)': v.driver_name || '-',
+    'ស្ថានភាព': v.status || '-',
+    'ចំណាយ ($)': v.cost || 0,
+    'ការងារដែលបានធ្វើ / ចំណាំ': v.note || '-'
   }));
 
-  exportXLSX(data, 'Vehicles_Report');
+  exportXLSX(data, 'Vehicle_Daily_Check');
 }
 
 // =====================================================
@@ -13590,32 +13868,26 @@ function exportVehiclesPDF() {
     <html lang="km">
     <head>
       <meta charset="UTF-8">
-      <title>Vehicles Report</title>
+      <title>Vehicle Maintenance Report</title>
       <link href="https://fonts.googleapis.com/css2?family=Moul&family=Siemreap&display=swap" rel="stylesheet">
       <style>
         @page { size: A4 landscape; margin: 8mm; }
         * { box-sizing: border-box; }
-        body {
-          font-family: 'Siemreap', sans-serif; /* ✅ Font ខ្លឹមសារខាងក្រោម */
-          margin: 0; padding: 15px; color: #1e293b; font-size: 11px;
-        }
-        .header {
-          display: flex; justify-content: space-between; align-items: flex-start;
-          margin-bottom: 12px; padding-bottom: 10px; border-bottom: 2px solid #1e40af; min-height: 90px;
-        }
+        body { font-family: 'Siemreap', sans-serif; margin: 0; padding: 15px; color: #1e293b; font-size: 11px; }
+        
+        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 2px solid #1e40af; min-height: 90px; }
         .header-left { display: flex; flex-direction: column; align-items: center; text-align: center; width: 220px; }
         .logo-box { width: 65px; height: 65px; display: flex; align-items: center; justify-content: center; margin-bottom: 5px; }
         .logo-box img { width: 100%; height: 100%; object-fit: contain; }
-        
-        .company-name-kh { font-family: 'Moul', serif; font-size: 11px; color: #1e40af; margin: 0; line-height: 1.5; white-space: nowrap; }
-        .company-name-en { font-family: 'Moul', serif; font-size: 9px; color: #1e40af; margin: 3px 0 0; white-space: nowrap; }
+        .company-name-kh { font-family: 'Moul', serif; font-size: 11px; color: #1e40af; margin: 0; line-height: 1.5; }
+        .company-name-en { font-family: 'Moul', serif; font-size: 9px; color: #1e40af; margin: 3px 0 0; }
         .header-right { text-align: center; font-family: 'Moul', serif; font-size: 12px; line-height: 1.8; color: #1e40af; padding-top: 6px; }
         
         .title { font-family: 'Moul', serif; font-size: 16px; margin: 12px 0 3px; text-align: center; color: #1e40af; }
         .subtitle { font-family: 'Moul', serif; font-size: 11px; margin: 0 0 15px; text-align: center; color: #1e40af; }
         
         table { width: 100%; border-collapse: collapse; font-family: 'Siemreap', sans-serif; font-size: 10px; }
-        th, td { border: 1px solid #333; padding: 5px 8px; text-align: center; vertical-align: middle; }
+        th, td { border: 1px solid #333; padding: 5px 8px; text-align: center; vertical-align: middle; word-wrap: break-word; }
         th { background: #1e40af; color: white; font-family: 'Moul', serif; font-size: 9px; line-height: 1.4; }
         td.name { text-align: left; padding-left: 8px; }
         
@@ -13645,33 +13917,31 @@ function exportVehiclesPDF() {
         </div>
       </div>
       
-      <div class="title">របាយការណ៍បញ្ជីរថយន្ត</div>
-      <div class="subtitle">Vehicles Report - គិតត្រឹមថ្ងៃទី ${new Date().getDate()} ខែ ${new Date().getMonth()+1} ឆ្នាំ ${new Date().getFullYear()}</div>
+      <div class="title">របាយការណ៍កំណត់ត្រាការថែទាំរថយន្ត</div>
+      <div class="subtitle">Vehicle Maintenance Report - គិតត្រឹមថ្ងៃទី ${new Date().getDate()} ខែ ${new Date().getMonth()+1} ឆ្នាំ ${new Date().getFullYear()}</div>
       
       <table>
         <thead>
           <tr>
-            <th>ល.រ</th>
-            <th>លេខឡាន</th>
-            <th>ប្រភេទ</th>
-            <th>ស្ថានភាព</th>
-            <th>លេខម៉ាស៊ីន</th>
-            <th>ថ្ងៃចុះបញ្ជី</th>
-            <th>ធានារ៉ាប់រង</th>
-            <th>ទម្ងន់ (Kg)</th>
+            <th style="width: 5%;">ល.រ</th>
+            <th style="width: 12%;">ថ្ងៃខែឆ្នាំ</th>
+            <th style="width: 15%;">លេខឡាន</th>
+            <th style="width: 20%;">អ្នកបើកបរ (តៃកុង)</th>
+            <th style="width: 10%;">ស្ថានភាព</th>
+            <th style="width: 10%;">ចំណាយ ($)</th>
+            <th>ការងារដែលបានធ្វើ / ចំណាំ</th>
           </tr>
         </thead>
         <tbody>
           ${DB.vehicles.map((v, idx) => `
             <tr>
               <td>${String(idx + 1).padStart(2, '0')}</td>
-              <td class="name font-bold">${v.plate_no}</td>
-              <td>${v.type}</td>
-              <td>${v.status === 'available' ? 'ទំនេរ' : v.status === 'in_use' ? 'កំពុងដឹក' : v.status === 'maintenance' ? 'ថែទាំ' : 'ខូច'}</td>
-              <td>${v.engine_no || '-'}</td>
-              <td>${v.reg_date || '-'}</td>
-              <td>${v.insurance_date || '-'}</td>
-              <td>${(v.max_weight || 0).toLocaleString()}</td>
+              <td>${v.maintenance_date || '-'}</td>
+              <td class="name font-bold">${escapeHtml(v.plate_no)}</td>
+              <td class="name">${escapeHtml(v.driver_name || '-')}</td>
+              <td>${escapeHtml(v.status || '-')}</td>
+              <td>$${(v.cost || 0).toFixed(2)}</td>
+              <td class="name">${escapeHtml(v.note || '-')}</td>
             </tr>
           `).join('')}
         </tbody>
@@ -13914,9 +14184,11 @@ function deleteInventory(id) {
 
 // ✅ Stock Movement Modal
 function openStockMovementModal(itemId) {
+  // ✅ ទាញយកទំនិញទាំងអស់ពី Database
   const items = DB.inventory;
-  if (!items.length) {
-    toast('❌ គ្មានទំនិញ', 'error');
+  
+  if (!items || items.length === 0) {
+    toast('❌ គ្មានទំនិញក្នុងស្តុក សូមបន្ថែមទំនិញជាមុនសិន', 'error');
     return;
   }
   
@@ -13930,10 +14202,11 @@ function openStockMovementModal(itemId) {
         <div>
           <label class="text-sm font-medium">ទំនិញ <span class="text-red-500">*</span></label>
           <select id="mov_item" class="input" required onchange="updateStockPreview()">
-            <option value="">-- ជ្រើសទំនិញ --</option>
+            <option value="">-- ជ្រើសរើសទំនិញ --</option>
+            <!-- ✅ បង្ហាញបញ្ជីទំនិញទាំងអស់ជាមួយកូដ និងចំនួននៅសល់ -->
             ${items.map(i => `
               <option value="${i.id}" data-qty="${i.quantity}" ${itemId === i.id ? 'selected' : ''}>
-                ${i.code} - ${i.name} (នៅសល់: ${i.quantity})
+                ${i.code} - ${i.name} (នៅសល់: ${i.quantity} ${i.unit || ''})
               </option>
             `).join('')}
           </select>
@@ -16023,6 +16296,10 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('userRole').textContent = currentUser.role.replace('_',' ').toUpperCase();
       document.getElementById('userAvatar').textContent = currentUser.name.charAt(0);
       document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      const settingsMenu = document.getElementById('menu-settings');
+      if (settingsMenu && currentUser.role === 'super_admin') {
+        settingsMenu.classList.remove('hidden');
+      }
       updateBadges();
       showPage('dashboard');
       startSessionTimer();
