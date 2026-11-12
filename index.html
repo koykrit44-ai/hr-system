@@ -3126,6 +3126,8 @@ function renderEmployees() {
             <option value="active">${t('stActive')}</option>
             <option value="probation">${t('stProbation')}</option>
             <option value="on_leave">${t('stOnLeave')}</option>
+            <option value="resigned">លាឈប់ពីការងារ (Resigned)</option>
+            <option value="terminated">បញ្ឈប់បុគ្គលិក (Terminated)</option>
           </select>
           <!-- ✅ Department Filter -->
           <select id="empDeptF" onchange="empPage=1;filterEmployees()" class="input" style="width:180px;">
@@ -3176,6 +3178,7 @@ function renderEmployees() {
           <button onclick="exportEmployeesReportExcel()" class="btn btn-secondary">📊 Report Excel</button>
           <button onclick="exportEmployeesReportPDF2()" class="btn btn-secondary">📕 Report PDF</button>
           ${canCreate() ? `<button onclick="openEmpForm()" class="btn btn-primary">${t('empAdd')}</button>` : ''}
+          <button onclick="openBulkTransferModal()" class="btn btn-warning">🔄 ផ្ទេរផ្នែកជាក្រុម</button>
         </div>
       </div>
 
@@ -3231,7 +3234,7 @@ function filterEmployees() {
   const truckF = document.getElementById('empTruckF')?.value || '';
   const yearF = document.getElementById('empYearF')?.value || '';
 
-  const list = DB.employees.filter(e => {
+    const list = DB.employees.filter(e => {
     const yearsOfService = calculateYearsOfService(e.hire_date);
     const routeText = e.route_type === 'long' ? 'ផ្លូវវែង' : e.route_type === 'short' ? 'ផ្លូវខ្លី' : '';
     const truckText = e.truck_type === '6_wheels' ? 'កង់ ៦' : e.truck_type === '10_wheels' ? 'កង់ ១០' : e.truck_type === 'container' ? 'កុងតឺន័រ' : '';
@@ -3241,28 +3244,39 @@ function filterEmployees() {
     const matchStatus = !st || e.status === st;
     const matchDept = !deptId || e.department_id === deptId;
     const matchBranch = !branchId || e.branch_id === branchId;
-    
-    // ✅ ពិនិត្យ Filter ថ្មី
     const matchRoute = !routeF || e.route_type === routeF;
     const matchTruck = !truckF || e.truck_type === truckF;
-    // ✅ គណនាឆ្នាំដើម្បីធ្វើ Filter
+
     let matchYear = true;
     if (yearF && e.hire_date) {
       const hireYear = new Date(e.hire_date).getFullYear();
       const currentYear = new Date().getFullYear();
       const years = currentYear - hireYear;
-      
       if (yearF === 'less_1') matchYear = years < 1;
       else if (yearF === '1_3') matchYear = years >= 1 && years <= 3;
-      else if (yearF === '3_6') matchYear = years > 3 && years <= 6;
-      else if (yearF === '6_10') matchYear = years > 6 && years <= 10;
-      else if (yearF === '10_15') matchYear = years > 10 && years <= 15;
-      else if (yearF === 'over_15') matchYear = years > 15;
-    } else if (yearF && !e.hire_date) {
-      matchYear = false;
+      else if (yearF === '3_5') matchYear = years > 3 && years <= 5;
+      else if (yearF === '5_10') matchYear = years > 5 && years <= 10;
+      else if (yearF === 'over_10') matchYear = years > 10;
+    }
+
+    // ✅ បន្ថែមកូដនេះដើម្បីលាក់បុគ្គលិកដែលឈប់ ឬបញ្ឈប់ បើមិនបានស្វែងរក
+    const isResignedOrTerminated = e.status === 'resigned' || e.status === 'terminated';
+    const showResigned = q.includes('resigned') || q.includes('terminated') || st === 'resigned' || st === 'terminated';
+    
+    // ប្រសិនបើគាត់ជាបុគ្គលិកឈប់ ហើយអ្នកមិនបានស្វែងរកគាត់ ឬជ្រើសរើស status គាត់ ឱ្យលាក់គាត់ចោល
+    if (isResignedOrTerminated && !showResigned) {
+      return false;
     }
 
     return m && matchStatus && matchDept && matchBranch && matchRoute && matchTruck && matchYear;
+  });
+  // ✅ បន្ថែមកូដនេះដើម្បីតម្រៀបតាមឈ្មោះផ្នែក (A-Z)
+  list.sort((a, b) => {
+    const deptA = getDeptName(a.department_id).toLowerCase();
+    const deptB = getDeptName(b.department_id).toLowerCase();
+    if (deptA < deptB) return -1;
+    if (deptA > deptB) return 1;
+    return 0;
   });
   
   const total = list.length;
@@ -3335,7 +3349,7 @@ function exportEmployeesReportExcel() {
   const truckF = document.getElementById('empTruckF')?.value || '';
   const yearF = document.getElementById('empYearF')?.value || '';
 
-  const list = DB.employees.filter(e => {
+    const list = DB.employees.filter(e => {
     const yearsOfService = calculateYearsOfService(e.hire_date);
     const routeText = e.route_type === 'long' ? 'ផ្លូវវែង' : e.route_type === 'short' ? 'ផ្លូវខ្លី' : '';
     const truckText = e.truck_type === '6_wheels' ? 'កង់ ៦' : e.truck_type === '10_wheels' ? 'កង់ ១០' : e.truck_type === 'container' ? 'កុងតឺន័រ' : '';
@@ -3345,10 +3359,10 @@ function exportEmployeesReportExcel() {
     const matchStatus = !st || e.status === st;
     const matchDept = !deptId || e.department_id === deptId;
     const matchBranch = !branchId || e.branch_id === branchId;
-    
-    // ✅ បន្ថែមការត្រងតាម Filter ថ្មីៗ
     const matchRoute = !routeF || e.route_type === routeF;
     const matchTruck = !truckF || e.truck_type === truckF;
+
+    // ✅ បន្ថែមកូដត្រងតាមរយៈពេលធ្វើការ (ឆ្នាំ)
     let matchYear = true;
     if (yearF && e.hire_date) {
       const hireYear = new Date(e.hire_date).getFullYear();
@@ -3356,9 +3370,17 @@ function exportEmployeesReportExcel() {
       const years = currentYear - hireYear;
       if (yearF === 'less_1') matchYear = years < 1;
       else if (yearF === '1_3') matchYear = years >= 1 && years <= 3;
-      else if (yearF === '3_5') matchYear = years > 3 && years <= 5;
-      else if (yearF === '5_10') matchYear = years > 5 && years <= 10;
-      else if (yearF === 'over_10') matchYear = years > 10;
+      else if (yearF === '3_6') matchYear = years > 3 && years <= 6;
+      else if (yearF === '6_10') matchYear = years > 6 && years <= 10;
+      else if (yearF === '10_15') matchYear = years > 10 && years <= 15;
+      else if (yearF === 'over_15') matchYear = years > 15;
+    }
+
+    // ✅ បន្ថែមកូដលាក់បុគ្គលិកដែលឈប់ ឬបញ្ឈប់
+    const isResignedOrTerminated = e.status === 'resigned' || e.status === 'terminated';
+    const showResigned = q.includes('resigned') || q.includes('terminated') || st === 'resigned' || st === 'terminated';
+    if (isResignedOrTerminated && !showResigned) {
+      return false;
     }
 
     return m && matchStatus && matchDept && matchBranch && matchRoute && matchTruck && matchYear;
@@ -3593,11 +3615,15 @@ function openEmpForm(id) {
             <select id="f_grade" class="input">${DB.jobGrades.map(g => `<option value="${g.id}" ${emp.grade_id===g.id?'selected':''}>${g.code} - ${g.name}</option>`).join('')}</select>
           </div>
           <div><label class="text-sm font-medium">Join Date</label><input id="f_hire" type="date" class="input" value="${emp.hire_date || new Date().toISOString().split('T')[0]}"></div>
-          <div><label class="text-sm font-medium">Status</label>
+            <div><label class="text-sm font-medium">Status</label>
             <select id="f_status" class="input">
               <option value="probation" ${emp.status==='probation'?'selected':''}>Probation</option>
               <option value="active" ${emp.status==='active'?'selected':''}>Active</option>
               <option value="on_leave" ${emp.status==='on_leave'?'selected':''}>On Leave</option>
+              <!-- ✅ បន្ថែមជម្រើសថ្មីនៅទីនេះ -->
+              <option value="resigned" ${emp.status==='resigned'?'selected':''}>លាឈប់ពីការងារ (Resigned)</option>
+              <option value="terminated" ${emp.status==='terminated'?'selected':''}>បញ្ឈប់បុគ្គលិក (Terminated)</option>
+              <!-- ✅ ចប់ -->
             </select>
           </div>
            <div><label class="text-sm font-medium">Base Salary (USD)</label><input id="f_salary" type="number" class="input" value="${emp.base_salary || 0}"></div>
@@ -3689,6 +3715,147 @@ function openEmpForm(id) {
   renderInsuranceList();
   openModal();
 }
+// ✅ បើក Form ផ្ទេរផ្នែក
+function openBulkTransferModal() {
+  document.getElementById('modalContainer').classList.add('modal-md');
+  document.getElementById('modalContainer').classList.remove('modal-xl', 'modal-lg');
+  document.getElementById('modalTitle').textContent = '🔄 ផ្ទេរផ្នែកបុគ្គលិកជាក្រុម (តាមលក្ខខណ្ឌ)';
+  
+  document.getElementById('modalBody').innerHTML = `
+    <div class="space-y-4">
+      <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
+        💡 ជ្រើសរើស <b>ផ្នែកចាស់</b> និង <b>មុខតំណែងចាស់</b> ដើម្បីទាញយកបុគ្គលិកទាំងអស់ដែលមានលក្ខខណ្ឌនោះ រួចជ្រើសរើស <b>ផ្នែកថ្មី</b> ដើម្បីផ្ទេរពួកគាត់ទាំងអស់គ្នាក្នុងពេលតែមួយ។
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 bg-slate-50 p-3 rounded-lg border">
+        <div>
+          <label class="text-sm font-medium">ផ្នែកចាស់ (From Dept)</label>
+          <select id="bulk_from_dept" class="input" onchange="updateBulkPreview()">
+            <option value="">-- គ្រប់ផ្នែក --</option>
+            ${DB.departments.map(d => `<option value="${d.id}">${d.name}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="text-sm font-medium">មុខតំណែងចាស់ (From Position)</label>
+          <select id="bulk_from_pos" class="input" onchange="updateBulkPreview()">
+            <option value="">-- គ្រប់មុខតំណែង --</option>
+            ${DB.positions.map(p => `<option value="${p.id}">${p.title}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+
+      <div class="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+        <div class="text-sm font-medium text-amber-800">បុគ្គលិកដែលនឹងត្រូវផ្ទេរ: <span id="bulk_count" class="font-bold text-lg">0</span> នាក់</div>
+        <div id="bulk_preview" class="text-xs text-amber-700 mt-1 max-h-20 overflow-y-auto"></div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 bg-green-50 p-3 rounded-lg border border-green-200">
+        <div>
+          <label class="text-sm font-medium text-green-800">ផ្នែកថ្មី (To Dept) <span class="text-red-500">*</span></label>
+          <select id="bulk_new_dept" class="input" required>
+            <option value="">-- ជ្រើសរើសផ្នែកថ្មី --</option>
+            ${DB.departments.map(d => `<option value="${d.id}">${d.name}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="text-sm font-medium text-green-800">មុខតំណែងថ្មី (ជម្រើស)</label>
+          <select id="bulk_new_pos" class="input">
+            <option value="">-- រក្សាមុខតំណែងដើម --</option>
+            ${DB.positions.map(p => `<option value="${p.id}">${p.title}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+    </div>
+    
+    <div class="flex justify-end gap-2 mt-6 pt-4 border-t">
+      <button type="button" onclick="closeModal()" class="btn btn-secondary">បោះបង់</button>
+      <!-- ✅ ប្តូរទៅប្រើប៊ូតុងធម្មតា ដើម្បីកុំឱ្យ Form ធ្វើអន្តរាគមន៍ -->
+      <button type="button" onclick="saveBulkTransfer()" class="btn btn-primary">💾 ផ្ទេរផ្នែក</button>
+    </div>
+  `;
+  openModal();
+  updateBulkPreview();
+}
+
+// ✅ បង្ហាញចំនួនអ្នកដែលនឹងត្រូវផ្ទេរ
+function updateBulkPreview() {
+  const fromDeptVal = document.getElementById('bulk_from_dept')?.value;
+  const fromPosVal = document.getElementById('bulk_from_pos')?.value;
+  
+  const fromDept = fromDeptVal ? +fromDeptVal : null;
+  const fromPos = fromPosVal ? +fromPosVal : null;
+
+  const matchedEmps = DB.employees.filter(e => {
+    if (e.status === 'resigned' || e.status === 'terminated') return false;
+    const matchDept = !fromDept || e.department_id === fromDept;
+    const matchPos = !fromPos || e.position_id === fromPos;
+    return matchDept && matchPos;
+  });
+
+  document.getElementById('bulk_count').textContent = matchedEmps.length;
+  
+  const previewEl = document.getElementById('bulk_preview');
+  if (matchedEmps.length > 0) {
+    previewEl.innerHTML = matchedEmps.slice(0, 10).map(e => `<span class="inline-block bg-white border px-1 rounded mr-1 mb-1">${e.full_name}</span>`).join('') + 
+      (matchedEmps.length > 10 ? ` ... និងអ្នកផ្សេងទៀត` : '');
+  } else {
+    previewEl.innerHTML = 'មិនមានបុគ្គលិកត្រូវនឹងលក្ខខណ្ឌនេះទេ';
+  }
+}
+
+// ✅ រក្សាទុកទិន្នន័យពេលចុចប៊ូតុង
+function saveBulkTransfer() {
+  try {
+    const fromDeptVal = document.getElementById('bulk_from_dept')?.value;
+    const fromPosVal = document.getElementById('bulk_from_pos')?.value;
+    const newDeptVal = document.getElementById('bulk_new_dept')?.value;
+    const newPosVal = document.getElementById('bulk_new_pos')?.value;
+
+    if (!newDeptVal) return toast('❌ សូមជ្រើសរើសផ្នែកថ្មី', 'error');
+
+    const fromDept = fromDeptVal ? +fromDeptVal : null;
+    const fromPos = fromPosVal ? +fromPosVal : null;
+    const newDeptId = +newDeptVal;
+    const newPosId = newPosVal ? +newPosVal : null;
+
+    const empsToTransfer = DB.employees.filter(e => {
+      if (e.status === 'resigned' || e.status === 'terminated') return false;
+      const matchDept = !fromDept || e.department_id === fromDept;
+      const matchPos = !fromPos || e.position_id === fromPos;
+      return matchDept && matchPos;
+    });
+
+    if (empsToTransfer.length === 0) {
+      return toast('❌ មិនមានបុគ្គលិកត្រូវនឹងលក្ខខណ្ឌដើម្បីផ្ទេរទេ', 'error');
+    }
+
+    if (!confirm(`តើអ្នកប្រាកដជាចង់ផ្ទេរបុគ្គលិកចំនួន ${empsToTransfer.length} នាក់នេះទៅផ្នែកថ្មីឬ?`)) return;
+
+    empsToTransfer.forEach(emp => {
+      emp.department_id = newDeptId;
+      if (newPosId) emp.position_id = newPosId;
+    });
+
+    logAudit(currentUser.id, 'BULK_TRANSFER_DEPT', 'employee', null, `Transferred ${empsToTransfer.length} employees`);
+    
+    // រក្សាទុក
+    saveDB();
+    
+    // បិទ Form និង Refresh តារាង
+    closeModal();
+    
+    // ពន្យារពេលបន្តិច ដើម្បីឱ្យ saveDB ដំណើរការចប់សិន
+    setTimeout(() => {
+      filterEmployees();
+      toast(`✅ ផ្ទេរបុគ្គលិកចំនួន ${empsToTransfer.length} នាក់ដោយជោគជ័យ`);
+    }, 300);
+
+  } catch (error) {
+    console.error("Error transferring:", error);
+    toast('❌ មានបញ្ហាក្នុងការផ្ទេរ: ' + error.message, 'error');
+  }
+}
+
 
 function switchTab(e, tabId) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -5432,7 +5599,7 @@ function exportEmployeesReportPDF2() {
   const truckF = document.getElementById('empTruckF')?.value || '';
   const yearF = document.getElementById('empYearF')?.value || '';
 
-  const list = DB.employees.filter(e => {
+    const list = DB.employees.filter(e => {
     const yearsOfService = calculateYearsOfService(e.hire_date);
     const routeText = e.route_type === 'long' ? 'ផ្លូវវែង' : e.route_type === 'short' ? 'ផ្លូវខ្លី' : '';
     const truckText = e.truck_type === '6_wheels' ? 'កង់ ៦' : e.truck_type === '10_wheels' ? 'កង់ ១០' : e.truck_type === 'container' ? 'កុងតឺន័រ' : '';
@@ -5442,10 +5609,10 @@ function exportEmployeesReportPDF2() {
     const matchStatus = !st || e.status === st;
     const matchDept = !deptId || e.department_id === deptId;
     const matchBranch = !branchId || e.branch_id === branchId;
-    
-    // ✅ បន្ថែមការត្រងតាម Filter ថ្មីៗ
     const matchRoute = !routeF || e.route_type === routeF;
     const matchTruck = !truckF || e.truck_type === truckF;
+
+    // ✅ បន្ថែមកូដត្រងតាមរយៈពេលធ្វើការ (ឆ្នាំ)
     let matchYear = true;
     if (yearF && e.hire_date) {
       const hireYear = new Date(e.hire_date).getFullYear();
@@ -5453,13 +5620,21 @@ function exportEmployeesReportPDF2() {
       const years = currentYear - hireYear;
       if (yearF === 'less_1') matchYear = years < 1;
       else if (yearF === '1_3') matchYear = years >= 1 && years <= 3;
-      else if (yearF === '3_5') matchYear = years > 3 && years <= 5;
-      else if (yearF === '5_10') matchYear = years > 5 && years <= 10;
-      else if (yearF === 'over_10') matchYear = years > 10;
+      else if (yearF === '3_6') matchYear = years > 3 && years <= 6;
+      else if (yearF === '6_10') matchYear = years > 6 && years <= 10;
+      else if (yearF === '10_15') matchYear = years > 10 && years <= 15;
+      else if (yearF === 'over_15') matchYear = years > 15;
+    }
+
+    // ✅ បន្ថែមកូដលាក់បុគ្គលិកដែលឈប់ ឬបញ្ឈប់
+    const isResignedOrTerminated = e.status === 'resigned' || e.status === 'terminated';
+    const showResigned = q.includes('resigned') || q.includes('terminated') || st === 'resigned' || st === 'terminated';
+    if (isResignedOrTerminated && !showResigned) {
+      return false;
     }
 
     return m && matchStatus && matchDept && matchBranch && matchRoute && matchTruck && matchYear;
-  });
+  });  
 
   if (!list.length) {
     toast('❌ គ្មានទិន្នន័យ', 'error');
@@ -5529,26 +5704,43 @@ function exportEmployeesReportPDF2() {
           font-size: 12px;
           margin: 0 0 15px; text-align: center; color: #1e40af;
         }
-        table {
+                table {
           width: 100%; border-collapse: collapse;
-          font-family: 'Siemreap', sans-serif; /* ✅ Khmer OS Siemreap */
-          font-size: 10px;
+          font-family: 'Siemreap', sans-serif; 
+          font-size: 8.5px; /* ✅ បង្កើនទំហំអក្សរបន្តិចឱ្យងាយអាន */
+          table-layout: fixed; /* ✅ បង្ខំឱ្យតារាងគោរពតាមទំហំជួរឈរដែលកំណត់ */
         }
         th, td {
-          border: 1px solid #333; padding: 4px 5px;
-          text-align: center; vertical-align: middle;
+          border: 1px solid #333; 
+          padding: 4px 3px;
+          text-align: center; 
+          vertical-align: middle;
+          word-wrap: break-word; /* ✅ បង្ខំឱ្យអក្សរវែងៗធ្លាក់បន្ទាត់ */
+          white-space: normal; 
         }
         th {
           background: #1e40af; color: white;
-          font-family: 'Moul', serif; /* ✅ Khmer OS Muol Light */
-          font-size: 9px; line-height: 1.4;
+          font-family: 'Moul', serif; 
+          font-size: 8px; line-height: 1.3;
         }
-        th:nth-child(3), td:nth-child(3) { width: 18%; }
-        th:nth-child(4), td:nth-child(4) { width: 5%; } 
-        th:nth-child(7), td:nth-child(7) { width: 10%; } 
-        th:nth-child(8), td:nth-child(8) { width: 12%; }
-        th:nth-child(13), td:nth-child(13) { width: 10%; } 
-        th:nth-child(14), td:nth-child(14) { width: 10%; }
+        td.name { text-align: left; padding-left: 5px; }
+        
+                /* ✅ កំណត់ទំហំជួរឈរឱ្យសមស្រប */
+        th:nth-child(1), td:nth-child(1) { width: 4%; }  /* ល.រ */
+        th:nth-child(2), td:nth-child(2) { width: 8%; }  /* អត្តលេខ */
+        th:nth-child(3), td:nth-child(3) { width: 14%; } /* ឈ្មោះបុគ្គលិក */
+        th:nth-child(4), td:nth-child(4) { width: 4%; }  /* ភេទ */
+        th:nth-child(5), td:nth-child(5) { width: 10%; } /* លេខទូរស័ព្ទ */
+        th:nth-child(6), td:nth-child(6) { width: 10%; } /* អត្តសញ្ញាណប័ណ្ណ */
+        th:nth-child(7), td:nth-child(7) { width: 10%; } /* ប័ណ្ណបើកបរ */
+        th:nth-child(8), td:nth-child(8) { width: 5%; }  /* ប្រភេទផ្លូវ (តូច) */
+        th:nth-child(9), td:nth-child(9) { width: 5%; }  /* ប្រភេទឡាន (តូច) */
+        th:nth-child(10), td:nth-child(10) { width: 12%; } /* មុខតំណែង (ធំ) */
+        th:nth-child(11), td:nth-child(11) { width: 10%; } /* សាខា (ធំ) */
+        th:nth-child(12), td:nth-child(12) { width: 10%; } /* ថ្ងៃចូលធ្វើការ (ធំ) */
+        th:nth-child(13), td:nth-child(13) { width: 8%; }  /* ✅ រយៈពេលធ្វើការ (ថ្មី) */
+        th:nth-child(14), td:nth-child(14) { width: 7%; }  /* ប្រាក់ខែ */
+        th:nth-child(15), td:nth-child(15) { width: 5%; }  /* ស្ថានភាព */
         td.name { text-align: left; padding-left: 6px; }
         td.money { text-align: right; padding-right: 6px; }
         .footer {
@@ -5592,6 +5784,17 @@ function exportEmployeesReportPDF2() {
       </div>
       <div class="title">បញ្ជីឈ្មោះបុគ្គលិក</div>
       <div class="subtitle">គិតត្រឹមថ្ងៃទី ${new Date().getDate()} ខែ ${new Date().getMonth()+1} ឆ្នាំ ${new Date().getFullYear()}</div>
+      <!-- ✅ បន្ថែមកូដនេះដើម្បីបង្ហាញលក្ខខណ្ឌ Filter -->
+      <div style="text-align: center; font-size: 10px; margin-bottom: 10px; font-family: 'Siemreap', sans-serif; color: #475569;">
+        ${q ? `<span style="margin: 0 5px;">🔍 ស្វែងរក: <b>${q}</b></span>` : ''}
+        ${st ? `<span style="margin: 0 5px;">📌 ស្ថានភាព: <b>${st}</b></span>` : ''}
+        ${deptId ? `<span style="margin: 0 5px;">🏢 ផ្នែក: <b>${getDeptName(deptId)}</b></span>` : ''}
+        ${branchId ? `<span style="margin: 0 5px;">🏬 សាខា: <b>${DB.branches.find(b => b.id === branchId)?.name || ''}</b></span>` : ''}
+        ${routeF ? `<span style="margin: 0 5px;">🛣️ ផ្លូវ: <b>${routeF === 'long' ? 'ផ្លូវវែង' : 'ផ្លូវខ្លី'}</b></span>` : ''}
+        ${truckF ? `<span style="margin: 0 5px;">🚚 ឡាន: <b>${truckF === '6_wheels' ? 'កង់ ៦' : truckF === '10_wheels' ? 'កង់ ១០' : 'ផ្សេងៗ'}</b></span>` : ''}
+        ${yearF ? `<span style="margin: 0 5px;">⏳ រយៈពេល: <b>${yearF === 'less_1' ? 'ក្រោម ១ ឆ្នាំ' : yearF === '1_3' ? '១-៣ ឆ្នាំ' : yearF === '3_6' ? '៣-៦ ឆ្នាំ' : yearF === '6_10' ? '៦-១០ ឆ្នាំ' : yearF === '10_15' ? '១០-១៥ ឆ្នាំ' : 'លើស ១៥ ឆ្នាំ'}</b></span>` : ''}
+      </div>
+      <!-- ✅ ចប់ -->
       <table>
         <thead>
           <tr>
@@ -5602,12 +5805,13 @@ function exportEmployeesReportPDF2() {
             <th>លេខទូរស័ព្ទ</th>
             <th>អត្តសញ្ញាណប័ណ្ណ</th>
             <th>ប័ណ្ណបើកបរ</th>
-            <th>ថ្ងៃផុតសុពលភាពប័ណ្ណបើកបរ</th>
+             <!-- <th>ថ្ងៃផុតសុពលភាពប័ណ្ណបើកបរ</th> -->
             <th>ប្រភេទផ្លូវ</th>
             <th>ប្រភេទឡាន</th>
             <th>មុខតំណែង</th>
             <th>សាខា</th>
             <th>ថ្ងៃចូលបម្រើការងារ</th>
+            <th>រយៈពេលធ្វើការ</th>
             <th>ប្រាក់ខែគោល</th>
             <th>ស្ថានភាព</th>
           </tr>
@@ -5622,12 +5826,13 @@ function exportEmployeesReportPDF2() {
               <td>${e.phone || ''}</td>
               <td>${e.national_id || '-'}</td>
               <td>${e.driving_license_no || '-'}</td>
-              <td>${e.driving_license_expiry || '-'}</td>
+               <!-- <td>${e.driving_license_expiry || '-'}</td> -->
               <td>${e.route_type === 'long' ? 'ផ្លូវវែង' : e.route_type === 'short' ? 'ផ្លូវខ្លី' : '-'}</td>
               <td>${e.truck_type === '6_wheels' ? 'កង់ ៦' : e.truck_type === '10_wheels' ? 'កង់ ១០' : e.truck_type === 'container' ? 'កុងតឺន័រ' : e.truck_type === 'other' ? 'ផ្សេងៗ' : '-'}</td>
               <td class="name">${getPosName(e.position_id)}</td>
               <td>${DB.branches.find(b => b.id === e.branch_id)?.name || '-'}</td>
               <td>${e.hire_date || ''}</td>
+              <td>${calculateYearsOfService(e.hire_date)}</td>
               <td class="money">$${parseFloat(e.base_salary || 0).toFixed(2)}</td>
               <td>${e.status || ''}</td>
             </tr>
@@ -16203,6 +16408,12 @@ function statusBadge(status) {
     on_leave:'badge-blue', in_use:'badge-blue', in_stock:'badge-blue',
     absent:'badge-red', rejected:'badge-red', terminated:'badge-red', maintenance:'badge-red', damaged:'badge-red', cancelled:'badge-red',
     resigned:'badge-gray' };
+    const labels = {
+    active: 'សកម្ម', probation: 'សាកល្បង', on_leave: 'ឈប់សម្រាក',
+    resigned: 'លាឈប់', terminated: 'បញ្ឈប់'
+  };
+  
+  const label = labels[status] || status;
   return `<span class="badge ${m[status] || 'badge-gray'}">${escapeHtml(status)}</span>`;
 }
 
