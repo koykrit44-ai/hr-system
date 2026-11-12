@@ -3337,10 +3337,8 @@ function filterEmployees() {
   pag += '</div>';
   document.getElementById('empPagination').innerHTML = pag;
 }
-// =====================================================
-// ✅ EXPORT EMPLOYEES REPORT - EXCEL (តាម Filter)
-// =====================================================
 function exportEmployeesReportExcel() {
+  // ✅ ទាញយកតម្លៃពី Filter ទាំងអស់
   const q = (document.getElementById('empSearch')?.value || '').toLowerCase();
   const st = document.getElementById('empStatusF')?.value || '';
   const deptId = +document.getElementById('empDeptF')?.value || null;
@@ -3349,7 +3347,8 @@ function exportEmployeesReportExcel() {
   const truckF = document.getElementById('empTruckF')?.value || '';
   const yearF = document.getElementById('empYearF')?.value || '';
 
-    const list = DB.employees.filter(e => {
+  // ✅ ត្រងទិន្នន័យតាម Filter
+  const list = DB.employees.filter(e => {
     const yearsOfService = calculateYearsOfService(e.hire_date);
     const routeText = e.route_type === 'long' ? 'ផ្លូវវែង' : e.route_type === 'short' ? 'ផ្លូវខ្លី' : '';
     const truckText = e.truck_type === '6_wheels' ? 'កង់ ៦' : e.truck_type === '10_wheels' ? 'កង់ ១០' : e.truck_type === 'container' ? 'កុងតឺន័រ' : '';
@@ -3362,7 +3361,6 @@ function exportEmployeesReportExcel() {
     const matchRoute = !routeF || e.route_type === routeF;
     const matchTruck = !truckF || e.truck_type === truckF;
 
-    // ✅ បន្ថែមកូដត្រងតាមរយៈពេលធ្វើការ (ឆ្នាំ)
     let matchYear = true;
     if (yearF && e.hire_date) {
       const hireYear = new Date(e.hire_date).getFullYear();
@@ -3370,13 +3368,11 @@ function exportEmployeesReportExcel() {
       const years = currentYear - hireYear;
       if (yearF === 'less_1') matchYear = years < 1;
       else if (yearF === '1_3') matchYear = years >= 1 && years <= 3;
-      else if (yearF === '3_6') matchYear = years > 3 && years <= 6;
-      else if (yearF === '6_10') matchYear = years > 6 && years <= 10;
-      else if (yearF === '10_15') matchYear = years > 10 && years <= 15;
-      else if (yearF === 'over_15') matchYear = years > 15;
+      else if (yearF === '3_5') matchYear = years > 3 && years <= 5;
+      else if (yearF === '5_10') matchYear = years > 5 && years <= 10;
+      else if (yearF === 'over_10') matchYear = years > 10;
     }
 
-    // ✅ បន្ថែមកូដលាក់បុគ្គលិកដែលឈប់ ឬបញ្ឈប់
     const isResignedOrTerminated = e.status === 'resigned' || e.status === 'terminated';
     const showResigned = q.includes('resigned') || q.includes('terminated') || st === 'resigned' || st === 'terminated';
     if (isResignedOrTerminated && !showResigned) {
@@ -3385,72 +3381,94 @@ function exportEmployeesReportExcel() {
 
     return m && matchStatus && matchDept && matchBranch && matchRoute && matchTruck && matchYear;
   });
+
   if (!list.length) {
     toast('❌ គ្មានទិន្នន័យ', 'error');
     return;
   }
 
-  const headerRow = [
-    'ល.រ', 'អត្តលេខ', 'កូដ', 'ឈ្មោះបុគ្គលិក',
-    'ភេទ', 'ថ្ងៃកំណើត', 'លេខទូរស័ព្ទ', 'អ៊ីមែល',
-    'ផ្នែក', 'មុខតំណែង', 'កម្រិត', 'សាខា', 'ថ្ងៃចូលបម្រើការងារ',
-    'ប្រាក់ខែគោល', 'ស្ថានភាព'
-  ];
-
-  const dataRows = list.map((e, idx) => [
-    String(idx + 1).padStart(2, '0'),
-    e.employee_id || '',
-    e.code || '',
-    e.full_name || '',
-    e.gender === 'M' ? 'ប្រុស' : 'ស្រី',
-    e.date_of_birth || '',
-    e.phone || '',
-    e.email || '',
-    getDeptName(e.department_id),
-    getPosName(e.position_id),
-    getGradeName(e.grade_id),
-    DB.branches.find(b => b.id === e.branch_id)?.name || '-',
-    e.hire_date || '',
-    parseFloat(e.base_salary || 0).toFixed(2),
-    e.status || ''
-  ]);
-
-  const wsData = [
-    ['ក្រុមហ៊ុន សុកន ត្រេនស្ព័ត ឯ.ក'],
-    ['SOKAN TRANSPORT PTE., LTD.'],
-    ['បញ្ជីឈ្មោះបុគ្គលិក'],
-    [`បញ្ជីឈ្មោះបុគ្គលិក គិតត្រឹមថ្ងៃទី ${new Date().getDate()} ខែ ${new Date().getMonth()+1} ឆ្នាំ ${new Date().getFullYear()}`],
-    [],
-    headerRow,
-    ...dataRows
-  ];
-
-  const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-  ws['!cols'] = [
-    { wch: 6 }, { wch: 14 }, { wch: 12 }, { wch: 25 },
-    { wch: 8 }, { wch: 14 }, { wch: 16 }, { wch: 25 },
-    { wch: 25 }, { wch: 30 }, { wch: 10 }, { wch: 20 }, { wch: 16 },
-    { wch: 14 }, { wch: 12 }
-  ];
-
-  ws['!merges'] = [
-    { s: { r: 0, c: 0 }, e: { r: 0, c: 14 } },
-    { s: { r: 1, c: 0 }, e: { r: 1, c: 14 } },
-    { s: { r: 2, c: 0 }, e: { r: 2, c: 14 } },
-    { s: { r: 3, c: 0 }, e: { r: 3, c: 14 } }
-  ];
-
-  ws['!rows'] = [
-    { hpt: 25 }, { hpt: 22 }, { hpt: 25 }, { hpt: 20 }, { hpt: 5 },
-    { hpt: 30 },
-    ...dataRows.map(() => ({ hpt: 25 }))
-  ];
-
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Employees');
-  XLSX.writeFile(wb, `Employee_Master_${new Date().toISOString().split('T')[0]}.xlsx`);
-  toast('📊 Excel Downloaded');
+
+  // ✅ Sheet 1: Employee Master (មូលដ្ឋាន)
+  const headerRow1 = [
+    'ល.រ', 'អត្តលេខ', 'កូដ', 'ឈ្មោះបុគ្គលិក', 'ភេទ', 'ថ្ងៃកំណើត', 'សញ្ជាតិ', 'ស្ថានភាពគ្រួសារ',
+    'អត្តសញ្ញាណប័ណ្ណ', 'ថ្ងៃផុតកំណត់អ.ប័ណ្ណ', 'លេខទូរស័ព្ទ', 'អ៊ីមែល', 'អាសយដ្ឋាន',
+    'ទំនាក់ទំនងបន្ទាន់', 'ឈ្មោះអ្នកបន្ទាន់', 'លេខទូរស័ព្ទបន្ទាន់',
+    'សាខា', 'ផ្នែក', 'មុខតំណែង', 'កម្រិត', 'ថ្ងៃចូលបម្រើការងារ', 'រយៈពេលធ្វើការ',
+    'ប្រភេទផ្លូវ', 'ប្រភេទឡាន', 'ប្រាក់ខែគោល', 'ស្ថានភាព'
+  ];
+  const dataRows1 = list.map((e, idx) => [
+    String(idx + 1).padStart(2, '0'), e.employee_id || '', e.code || '', e.full_name || '',
+    e.gender === 'M' ? 'ប្រុស' : 'ស្រី', e.date_of_birth || '', e.nationality || 'Khmer', e.marital_status || 'single',
+    e.national_id || '', e.national_id_expiry || '', e.phone || '', e.email || '', e.current_address || '',
+    e.emergency_relationship || '', e.emergency_name || '', e.emergency_phone || '',
+    DB.branches.find(b => b.id === e.branch_id)?.name || '', getDeptName(e.department_id), getPosName(e.position_id), getGradeName(e.grade_id),
+    e.hire_date || '', calculateYearsOfService(e.hire_date),
+    e.route_type === 'long' ? 'ផ្លូវវែង' : e.route_type === 'short' ? 'ផ្លូវខ្លី' : '-',
+    e.truck_type === '6_wheels' ? 'កង់ ៦' : e.truck_type === '10_wheels' ? 'កង់ ១០' : e.truck_type === 'container' ? 'កុងតឺន័រ' : '-',
+    parseFloat(e.base_salary || 0).toFixed(2), e.status || ''
+  ]);
+  const ws1 = XLSX.utils.aoa_to_sheet([headerRow1, ...dataRows1]);
+  XLSX.utils.book_append_sheet(wb, ws1, '1. Employee Master');
+
+  // ✅ Sheet 2: Education
+  const dataRows2 = [];
+  list.forEach(e => {
+    (e.education || []).forEach(edu => {
+      dataRows2.push([e.employee_id || '', e.full_name, edu.level || '', edu.school || '', edu.degree || '', edu.field || '', edu.year || '']);
+    });
+  });
+  const headerRow2 = ['អត្តលេខ', 'ឈ្មោះបុគ្គលិក', 'កម្រិតវប្បធម៌', 'គ្រឹះស្ថាន', 'សញ្ញាបត្រ', 'ជំនាញ', 'ឆ្នាំបញ្ចប់'];
+  const ws2 = XLSX.utils.aoa_to_sheet([headerRow2, ...dataRows2]);
+  XLSX.utils.book_append_sheet(wb, ws2, '2. Education');
+
+  // ✅ Sheet 3: Skills
+  const dataRows3 = [];
+  list.forEach(e => {
+    (e.skills || []).forEach(skill => {
+      dataRows3.push([e.employee_id || '', e.full_name, skill]);
+    });
+  });
+  const headerRow3 = ['អត្តលេខ', 'ឈ្មោះបុគ្គលិក', 'ជំនាញ'];
+  const ws3 = XLSX.utils.aoa_to_sheet([headerRow3, ...dataRows3]);
+  XLSX.utils.book_append_sheet(wb, ws3, '3. Skills');
+
+  // ✅ Sheet 4: Employment History
+  const dataRows4 = [];
+  list.forEach(e => {
+    (e.employment_history || []).forEach(hist => {
+      dataRows4.push([e.employee_id || '', e.full_name, hist.company || '', hist.position || '', hist.from || '', hist.to || '', hist.salary || '']);
+    });
+  });
+  const headerRow4 = ['អត្តលេខ', 'ឈ្មោះបុគ្គលិក', 'ក្រុមហ៊ុនចាស់', 'មុខតំណែងចាស់', 'ចាប់ផ្តើម', 'បញ្ចប់', 'ប្រាក់ខែ'];
+  const ws4 = XLSX.utils.aoa_to_sheet([headerRow4, ...dataRows4]);
+  XLSX.utils.book_append_sheet(wb, ws4, '4. Employment History');
+
+  // ✅ Sheet 5: Insurance
+  const dataRows5 = [];
+  list.forEach(e => {
+    (e.insurances || []).forEach(ins => {
+      dataRows5.push([e.employee_id || '', e.full_name, ins.type || '', ins.card_no || '', ins.start_date || '', ins.status || '']);
+    });
+  });
+  const headerRow5 = ['អត្តលេខ', 'ឈ្មោះបុគ្គលិក', 'ប្រភេទធានារ៉ាប់រង', 'លេខកាត', 'ថ្ងៃចាប់ផ្តើម', 'ស្ថានភាព'];
+  const ws5 = XLSX.utils.aoa_to_sheet([headerRow5, ...dataRows5]);
+  XLSX.utils.book_append_sheet(wb, ws5, '5. Insurance');
+
+  // ✅ Sheet 6: Documents
+  const dataRows6 = [];
+  list.forEach(e => {
+    (e.documents || []).forEach(doc => {
+      dataRows6.push([e.employee_id || '', e.full_name, doc.name || '', doc.category || '', doc.size || '', new Date(doc.uploaded_at).toLocaleDateString()]);
+    });
+  });
+  const headerRow6 = ['អត្តលេខ', 'ឈ្មោះបុគ្គលិក', 'ឈ្មោះឯកសារ', 'ប្រភេទ', 'ទំហំ', 'កាលបរិច្ឆេទ'];
+  const ws6 = XLSX.utils.aoa_to_sheet([headerRow6, ...dataRows6]);
+  XLSX.utils.book_append_sheet(wb, ws6, '6. Documents');
+
+  // រក្សាទុក File
+  XLSX.writeFile(wb, `Employee_Full_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+  toast('📊 Excel Downloaded (ទាំង ៦ Sheet)');
 }
 
 function deleteEmp(id) {
