@@ -2766,15 +2766,15 @@ function doLogin(e) {
       return;
     });
   
-  // ✅ បង្កើត OTP និងផ្ញើអ៊ីមែលភ្លាមៗ មិនទាន់ឱ្យ Login
+  // ✅ បង្កើត OTP និងផ្ញើអ៊ីមែល
   currentOTP = Math.floor(100000 + Math.random() * 900000).toString();
   otpExpiryTime = Date.now() + 5 * 60 * 1000; // ផុតកំណត់ ៥ នាទី
 
-  // ចាប់ផ្តើម EmailJS (ដាក់ Public Key ពិតរបស់អ្នក)
-  emailjs.init("ដាក់_PUBLIC_KEY_របស់អ្នកនៅទីនេះ");
+  // ចាប់ផ្តើម EmailJS ជាមួយ Public Key ពិតរបស់អ្នក
+  emailjs.init("j85KZoShGR6jieSp1"); // ✅ ដាក់ Public Key នៅទីនេះ
   
-  // ផ្ញើអ៊ីមែល (ដាក់ Service ID និង Template ID ពិតរបស់អ្នក)
-  emailjs.send("hr_system", "ដាក់_TEMPLATE_ID_របស់អ្នកនៅទីនេះ", {
+  // ផ្ញើអ៊ីមែលជាមួយ Service ID និង Template ID
+  emailjs.send("hr_system", "template_27sgug9", { // ✅ ដាក់ Service ID និង Template ID នៅទីនេះ
     to_email: "koykrit44@gmail.com",
     otp_code: currentOTP
   }).then(() => {
