@@ -14,6 +14,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 <style>
   * { font-family: 'Khmer OS', 'Noto Sans Khmer', 'Segoe UI', system-ui, sans-serif; }
   body { background: #f1f5f9; }
@@ -1987,6 +1988,8 @@ const DB = {
   }
 };
 let currentUser = null;
+let currentOTP = null;
+let otpExpiryTime = null;
 let charts = {};
 
 // =====================================================
@@ -2735,7 +2738,12 @@ function doLogin(e) {
   const p = document.getElementById('loginPass').value;
   const err = document.getElementById('loginError');
   err.classList.add('hidden');
-  if (!u || !p) { err.textContent = '❌ សូមបំពេញព័ត៌មាន'; err.classList.remove('hidden'); return; }
+  
+  if (!u || !p) { 
+    err.textContent = '❌ សូមបំពេញព័ត៌មាន'; 
+    err.classList.remove('hidden'); 
+    return; 
+  }
   
   const user = DB.users.find(x => (x.username.toLowerCase() === u.toLowerCase() || x.email === u));
   if (!user) {
@@ -2745,7 +2753,8 @@ function doLogin(e) {
     saveDB();
     return;
   }
-   // ✅ Firebase Authentication
+
+  // ✅ Firebase Authentication
   fbAuth.signInWithEmailAndPassword(user.email, p)
     .then(() => {
       console.log('✅ Firebase login success');
@@ -2757,13 +2766,55 @@ function doLogin(e) {
       return;
     });
   
+  // ✅ បង្កើត OTP និងផ្ញើអ៊ីមែលភ្លាមៗ មិនទាន់ឱ្យ Login
+  currentOTP = Math.floor(100000 + Math.random() * 900000).toString();
+  otpExpiryTime = Date.now() + 5 * 60 * 1000; // ផុតកំណត់ ៥ នាទី
+
+  // ចាប់ផ្តើម EmailJS (ដាក់ Public Key ពិតរបស់អ្នក)
+  emailjs.init("ដាក់_PUBLIC_KEY_របស់អ្នកនៅទីនេះ");
   
+  // ផ្ញើអ៊ីមែល (ដាក់ Service ID និង Template ID ពិតរបស់អ្នក)
+  emailjs.send("hr_system", "ដាក់_TEMPLATE_ID_របស់អ្នកនៅទីនេះ", {
+    to_email: "koykrit44@gmail.com",
+    otp_code: currentOTP
+  }).then(() => {
+    // បង្ហាញ Form បញ្ចូល OTP
+    document.getElementById('modalContainer').classList.add('modal-md');
+    document.getElementById('modalTitle').textContent = '🔐 បញ្ចូលលេខកូដ 2FA';
+    document.getElementById('modalBody').innerHTML = `
+      <div class="space-y-4 text-center">
+        <p class="text-sm text-slate-600">លេខកូដ ៦ ខ្ទង់ត្រូវបានផ្ញើទៅ <b>koykrit44@gmail.com</b></p>
+        <input id="otp_input" type="text" maxlength="6" class="input text-center text-2xl tracking-widest font-mono" placeholder="000000">
+        <button type="button" onclick="verifyOTP('${u}')" class="btn btn-primary w-full">ផ្ទៀងផ្ទាត់</button>
+      </div>
+    `;
+    openModal();
+  }).catch((error) => {
+    console.error("Email error:", error);
+    toast('❌ មិនអាចផ្ញើ OTP បានទេ', 'error');
+  });
+}
+function verifyOTP(username) {
+  const code = document.getElementById('otp_input').value.trim();
+  
+  if (!code || code !== currentOTP) {
+    return toast('❌ លេខកូដមិនត្រឹមត្រូវ', 'error');
+  }
+  if (Date.now() > otpExpiryTime) {
+    return toast('❌ លេខកូដផុតកំណត់ សូមព្យាយាមម្តងទៀត', 'error');
+  }
+
+  closeModal();
+  const user = DB.users.find(x => x.username.toLowerCase() === username.toLowerCase() || x.email === username);
+  if (!user) return toast('❌ រកមិនឃើញអ្នកប្រើ', 'error');
+
+  // បន្តដំណើរការ Login ធម្មតា
   currentUser = { ...user };
   delete currentUser.password;
   sessionStorage.setItem(SESSION_KEY, JSON.stringify(currentUser));
   sessionStorage.setItem(ACTIVITY_KEY, Date.now().toString());
   
-  logAudit(user.id, 'LOGIN_SUCCESS', 'auth', null, `${user.username} logged in`);
+  logAudit(user.id, 'LOGIN_SUCCESS_2FA', 'auth', null, `${user.username} logged in with 2FA`);
   document.getElementById('loginUser').value = '';
   document.getElementById('loginPass').value = '';
   document.getElementById('loginScreen').classList.add('hidden');
@@ -2771,15 +2822,12 @@ function doLogin(e) {
   document.getElementById('userName').textContent = user.name;
   document.getElementById('userRole').textContent = getRoleLabel(user.role);
   document.getElementById('userAvatar').textContent = user.name.charAt(0);
-       // ✅ បង្ហាញ Menu Setting តែ Super Admin
-      const settingsMenu = document.getElementById('menu-settings');
-      if (settingsMenu) {
-        if (user.role === 'super_admin') {
-          settingsMenu.classList.remove('hidden');
-        } else {
-          settingsMenu.classList.add('hidden');
-        }
-      }
+  
+  const settingsMenu = document.getElementById('menu-settings');
+  if (settingsMenu) {
+    if (user.role === 'super_admin') settingsMenu.classList.remove('hidden');
+    else settingsMenu.classList.add('hidden');
+  }
   document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   
   updateBadges();
