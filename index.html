@@ -3176,67 +3176,178 @@ function getRoleLabel(role) {
 // =====================================================
 // LOGIN / LOGOUT
 // =====================================================
+// =====================================================
+// FIXED AUTH + 2FA + FIREBASE SYNC
+// =====================================================
+let _pending2FA = null;
+
+function generateOTP() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+function sendOTPEmail(otpCode, userObj) {
+  const templateParams = {
+    to_email: 'sokritmao@gmail.com',
+    user_name: userObj.name || userObj.username,
+    otp_code: otpCode
+  };
+
+  if (typeof showLoading === 'function') showLoading(true, 'កំពុងផ្ញើលេខកូដទៅ Gmail...');
+
+  if (typeof emailjs === 'undefined') {
+    if (typeof showLoading === 'function') showLoading(false);
+    alert('មិនទាន់បានផ្ទុក EmailJS ទេ។ សូមពិនិត្យការតភ្ជាប់អ៊ីនធឺណិត។');
+    return;
+  }
+
+  emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
+    .then(function(response) {
+      console.log('✅ ផ្ញើអ៊ីមែលបានជោគជ័យ!', response.status);
+      if (typeof showLoading === 'function') showLoading(false);
+      showOTPModal(userObj);
+    }, function(error) {
+      console.error('❌ ការផ្ញើបរាជ័យ...', error);
+      if (typeof showLoading === 'function') showLoading(false);
+      alert('មានបញ្ហាក្នុងការផ្ញើលេខកូដ។ សូមពិនិត្យ Console ឬការកំណត់ EmailJS។');
+    });
+}
+
+function showOTPModal(userObj) {
+  const modal = document.getElementById('modal');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalBody = document.getElementById('modalBody');
+
+  modalTitle.innerHTML = '🔐 ការផ្ទៀងផ្ទាត់សុវត្ថិភាព (2FA)';
+  modalBody.innerHTML = `
+    <div class="text-center mb-4">
+      <p class="text-sm text-slate-700">លេខកូដ 6 ខ្ទង់ ត្រូវបានផ្ញើទៅ Gmail៖<br><b>sokritmao@gmail.com</b></p>
+    </div>
+    <div id="otpError" class="hidden bg-red-50 text-red-700 p-2 rounded mb-3 text-xs"></div>
+    <form onsubmit="verifyOTP(event)" class="space-y-4">
+      <div>
+        <input id="otpInput" type="text" inputmode="numeric" maxlength="6" class="input text-center text-2xl font-bold tracking-widest" placeholder="••••••" required autofocus>
+      </div>
+      <button type="submit" class="btn btn-primary w-full">ផ្ទៀងផ្ទាត់</button>
+    </form>
+  `;
+
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  setTimeout(() => document.getElementById('otpInput')?.focus(), 80);
+}
+
+function verifyOTP(event) {
+  event.preventDefault();
+  const inputCode = (document.getElementById('otpInput')?.value || '').trim();
+  const errBox = document.getElementById('otpError');
+
+  if (!_pending2FA || Date.now() > _pending2FA.expiresAt) {
+    _pending2FA = null;
+    errBox.textContent = '❌ លេខកូដផុតកំណត់ហើយ។ សូម Login ម្ដងទៀត។';
+    errBox.classList.remove('hidden');
+    return;
+  }
+
+  if (inputCode === _pending2FA.code) {
+    const loggedUser = _pending2FA.user;
+    _pending2FA = null;
+
+    currentUser = loggedUser;
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(currentUser));
+    sessionStorage.setItem(ACTIVITY_KEY, Date.now().toString());
+    if (typeof startSessionTimer === 'function') startSessionTimer();
+
+    if (typeof closeModal === 'function') closeModal();
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('appScreen').classList.remove('hidden');
+
+    const nameEl = document.getElementById('userName');
+    const roleEl = document.getElementById('userRole');
+    const avatarEl = document.getElementById('userAvatar');
+    if (nameEl) nameEl.textContent = currentUser.name || currentUser.username;
+    if (roleEl) roleEl.textContent = typeof getRoleLabel === 'function' ? getRoleLabel(currentUser.role) : currentUser.role;
+    if (avatarEl) avatarEl.textContent = (currentUser.name || currentUser.username || 'U').charAt(0).toUpperCase();
+
+    if (typeof logAudit === 'function') logAudit(currentUser.id, 'LOGIN', 'auth', currentUser.id, `2FA Login: ${currentUser.username}`);
+    if (typeof updateBadges === 'function') updateBadges();
+    if (typeof showPage === 'function') showPage('dashboard');
+    if (typeof toast === 'function') toast('✅ ចូលប្រើប្រាស់ជោគជ័យ');
+  } else {
+    errBox.textContent = '❌ លេខកូដមិនត្រឹមត្រូវ។ សូមព្យាយាមម្តងទៀត។';
+    errBox.classList.remove('hidden');
+    const inp = document.getElementById('otpInput');
+    if (inp) { inp.value = ''; inp.focus(); }
+  }
+}
+
 async function doLogin(event) {
   event.preventDefault();
-  const username = document.getElementById('loginUser').value.trim();
-  const password = document.getElementById('loginPass').value;
+  const usernameInput = (document.getElementById('loginUser')?.value || '').trim().toLowerCase();
+  const passwordInput = document.getElementById('loginPass')?.value || '';
   const errorBox = document.getElementById('loginError');
-  errorBox.classList.add('hidden');
+  if (errorBox) errorBox.classList.add('hidden');
 
   try {
     if (typeof showLoading === 'function') showLoading(true, 'កំពុងផ្ទៀងផ្ទាត់...');
 
-    // ១. ស្វែងរកគណនី
-    const usersSnap = await fbDB.ref('users').once('value');
-    const users = usersSnap.val() || {};
-    let matchedUser = null;
-    let matchedKey = null;
+    // ផ្ទៀងផ្ទាត់ពី DB.users (ដែល sync ពី Firebase hr_data/users) ឬ localStorage
+    let candidateUsers = Array.isArray(DB.users) && DB.users.length ? DB.users : [];
 
-    for (const key of Object.keys(users)) {
-      const u = users[key];
-      if (!u) continue;
-      const uname = (u.username || '').toLowerCase();
-      const email = (u.email || '').toLowerCase();
-      const input  = username.toLowerCase();
+    if (!candidateUsers.length && typeof fbDB !== 'undefined') {
+      const hrSnap = await fbDB.ref('hr_data/users').once('value');
+      const hrUsers = hrSnap.val();
+      if (Array.isArray(hrUsers)) candidateUsers = hrUsers;
+      else if (hrUsers && typeof hrUsers === 'object') candidateUsers = Object.values(hrUsers);
 
-      if (uname === input || email === input) {
-        matchedUser = u;
-        matchedKey = key;
-        break;
+      if (!candidateUsers.length) {
+        const rootSnap = await fbDB.ref('users').once('value');
+        const rootUsers = rootSnap.val();
+        if (Array.isArray(rootUsers)) candidateUsers = rootUsers;
+        else if (rootUsers && typeof rootUsers === 'object') candidateUsers = Object.values(rootUsers);
       }
     }
+
+    const matchedUser = candidateUsers.find(u => {
+      if (!u) return false;
+      const uname = String(u.username || '').trim().toLowerCase();
+      const email = String(u.email || '').trim().toLowerCase();
+      return uname === usernameInput || (email && email === usernameInput);
+    });
 
     if (!matchedUser) {
       throw new Error('ឈ្មោះអ្នកប្រើ ឬលេខសម្ងាត់មិនត្រឹមត្រូវ');
     }
 
-    // ២. ផ្ទៀងផ្ទាត់លេខសម្ងាត់
-    const hash = matchedUser.passwordHash || matchedUser.password || '';
+    const storedHash = matchedUser.passwordHash || matchedUser.password || '';
     let isValid = false;
 
-    if (hash.startsWith('$2')) {
-      isValid = await bcrypt.compare(password, hash);
-    } else {
-      isValid = (password === hash);
+    if (typeof verifyPassword === 'function') {
+      isValid = verifyPassword(passwordInput, storedHash);
+    }
+    if (!isValid && storedHash && !storedHash.startsWith('$2') && !storedHash.startsWith('simple$')) {
+      isValid = passwordInput === storedHash;
     }
 
     if (!isValid) {
       throw new Error('ឈ្មោះអ្នកប្រើ ឬលេខសម្ងាត់មិនត្រឹមត្រូវ');
     }
 
-    // ៣. ✅ បើត្រូវ ផ្ញើ OTP ទៅ Gmail ជំនួសការចូលភ្លាមៗ
     if (typeof showLoading === 'function') showLoading(false);
-    
-    const otp = generateOTP();
-    sendOTPEmail(otp, matchedUser.name || matchedUser.username);
-    
-    // ចំណាំ៖ មិនត្រូវបិទ loginScreen នៅទីនេះទេ! រង់ចាំឱ្យអ្នកប្រើបញ្ចូល OTP ត្រូវសិន។
 
+    const otp = generateOTP();
+    _pending2FA = {
+      code: otp,
+      user: matchedUser,
+      expiresAt: Date.now() + 5 * 60 * 1000
+    };
+    sendOTPEmail(otp, matchedUser);
   } catch (err) {
     if (typeof showLoading === 'function') showLoading(false);
     console.error('Login error:', err);
-    errorBox.textContent = err.message || 'ឈ្មោះអ្នកប្រើ ឬលេខសម្ងាត់មិនត្រឹមត្រូវ';
-    errorBox.classList.remove('hidden');
+    if (errorBox) {
+      errorBox.textContent = err.message || 'ឈ្មោះអ្នកប្រើ ឬលេខសម្ងាត់មិនត្រឹមត្រូវ';
+      errorBox.classList.remove('hidden');
+    }
   }
 }
 
