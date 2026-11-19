@@ -716,9 +716,9 @@ const fbAuth = firebase.auth();
 // =====================================================
 // ចាប់ផ្តើមកូដ 2FA (OTP តាមរយៈ EmailJS)
 // =====================================================
-const EMAILJS_PUBLIC_KEY  = 'Ec-PanylDoFgWcguQ';
-const EMAILJS_SERVICE_ID  = 'service_3rv2ikm';
-const EMAILJS_TEMPLATE_ID = 'template_knkax4e';
+const EMAILJS_PUBLIC_KEY  = '3Xx8-wRGrOzYnxSpe';
+const EMAILJS_SERVICE_ID  = 'service_6trd909';
+const EMAILJS_TEMPLATE_ID = 'template_o43qn23';
 
 if (typeof emailjs !== 'undefined') {
   emailjs.init(EMAILJS_PUBLIC_KEY);
@@ -730,7 +730,7 @@ function generateOTP() {
 
 function sendOTPEmail(otpCode, userName) {
   const templateParams = {
-    to_email: 'koykrit44@gmail.com',
+    to_email: 'sokritmao@gmail.com',
     user_name: userName,
     otp_code: otpCode
   };
@@ -757,7 +757,7 @@ function showOTPModal(otpCode, userName) {
   modalTitle.innerHTML = '🔐 ការផ្ទៀងផ្ទាត់សុវត្ថិភាព (2FA)';
   modalBody.innerHTML = `
     <div class="text-center mb-4">
-      <p class="text-sm text-slate-700">លេខកូដ 6 ខ្ទង់ ត្រូវបានផ្ញើទៅ Gmail៖<br><b>koykrit44@gmail.com</b></p>
+      <p class="text-sm text-slate-700">លេខកូដ 6 ខ្ទង់ ត្រូវបានផ្ញើទៅ Gmail៖<br><b>sokritmao@gmail.com</b></p>
     </div>
     <div id="otpError" class="hidden bg-red-50 text-red-700 p-2 rounded mb-3 text-xs"></div>
     <form onsubmit="verifyOTP(event, '${otpCode}', '${userName}')" class="space-y-4">
