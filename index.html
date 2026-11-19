@@ -738,15 +738,24 @@ function sendOTPEmail(otpCode, userName) {
   if (typeof showLoading === 'function') showLoading(true, 'កំពុងផ្ញើលេខកូដទៅ Gmail...');
 
   emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
-    .then(function(response) {
-      console.log('✅ ផ្ញើអ៊ីមែលបានជោគជ័យ!', response.status, response.text);
-      if (typeof showLoading === 'function') showLoading(false);
-      showOTPModal(otpCode, userName);
-    }, function(error) {
-      console.error('❌ ការផ្ញើបរាជ័យ...', error);
-      if (typeof showLoading === 'function') showLoading(false);
-      alert('មានបញ្ហាក្នុងការផ្ញើលេខកូដ។ សូមពិនិត្យ Console ឬការកំណត់ EmailJS។');
-    });
+  .then(function(response) {
+    console.log('✅ ផ្ញើអ៊ីមែលបានជោគជ័យ!', response.status);
+
+    // ១. បិទ loading function ប្រសិនបើមាន
+    if (typeof showLoading === 'function') showLoading(false);
+
+    // ២. បង្ខំលាក់ overlay ដែលមានអក្សរ "Working..."
+    forceHideWorkingOverlay();
+
+    // ៣. បង្ហាញ modal បញ្ចូល OTP
+    showOTPModal(userObj);
+  })
+  .catch(function(error) {
+    console.error('❌ ការផ្ញើបរាជ័យ...', error);
+    if (typeof showLoading === 'function') showLoading(false);
+    forceHideWorkingOverlay();
+    alert('មានបញ្ហាក្នុងការផ្ញើលេខកូដ។');
+  });
 }
 
 function showOTPModal(otpCode, userName) {
@@ -3211,7 +3220,16 @@ function sendOTPEmail(otpCode, userObj) {
       alert('មានបញ្ហាក្នុងការផ្ញើលេខកូដ។ សូមពិនិត្យ Console ឬការកំណត់ EmailJS។');
     });
 }
-
+function forceHideWorkingOverlay() {
+  document.querySelectorAll('div, section, span').forEach(el => {
+    const txt = (el.textContent || '').trim();
+    if (txt === 'Working...' && el.offsetParent !== null) {
+      const box = el.closest('.fixed, [class*="fixed"], [style*="position: fixed"]') || el;
+      box.classList.add('hidden');
+      box.style.display = 'none';
+    }
+  });
+}
 function showOTPModal(userObj) {
   const modal = document.getElementById('modal');
   const modalTitle = document.getElementById('modalTitle');
