@@ -17,7 +17,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html-docx-js/dist/html-docx.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <style>
@@ -3094,67 +3093,67 @@ function getRoleLabel(role) {
 // =====================================================
 // LOGIN / LOGOUT
 // =====================================================
-function doLogin(e) {
+async function doLogin(e) {
   e.preventDefault();
   const u = document.getElementById('loginUser').value.trim();
   const p = document.getElementById('loginPass').value;
   const err = document.getElementById('loginError');
   err.classList.add('hidden');
-  
-  if (!u || !p) { 
-    err.textContent = '❌ សូមបំពេញព័ត៌មាន'; 
-    err.classList.remove('hidden'); 
-    return; 
-  }
-  
-  const user = DB.users.find(x => (x.username.toLowerCase() === u.toLowerCase() || x.email === u));
+  if (!u || !p) { err.textContent = '❌ ' + t('fillRequired'); err.classList.remove('hidden'); return; }
+
+  const user = DB.users.find(x => (x.username.toLowerCase() === u.toLowerCase() || (x.email && x.email.toLowerCase() === u.toLowerCase())));
   if (!user) {
-    err.textContent = '❌ ឈ្មោះឬលេខសម្ងាត់មិនត្រឹមត្រូវ';
+    err.textContent = '❌ ' + t('loginInvalid');
     err.classList.remove('hidden');
     logAudit(null, 'LOGIN_FAILED', 'auth', null, `Failed: ${u}`);
     saveDB();
     return;
   }
 
-  // ✅ Firebase Authentication
-  fbAuth.signInWithEmailAndPassword(user.email, p)
-    .then(() => {
-      console.log('✅ Firebase login success');
-    })
-    .catch((error) => {
-      console.error('Firebase login error:', error);
-      err.textContent = '❌ ឈ្មោះឬលេខសម្ងាត់មិនត្រឹមត្រូវ';
-      err.classList.remove('hidden');
-      return;
-    });
-  
-  // ✅ បង្កើត OTP និងផ្ញើអ៊ីមែល
-  currentOTP = Math.floor(100000 + Math.random() * 900000).toString();
-  otpExpiryTime = Date.now() + 5 * 60 * 1000; // ផុតកំណត់ ៥ នាទី
+  let authenticated = false;
+  if (typeof fbAuth !== 'undefined' && user.email) {
+    try {
+      await fbAuth.signInWithEmailAndPassword(user.email, p);
+      authenticated = true;
+    } catch (error) {
+      authenticated = verifyPassword(p, user.password);
+    }
+  } else {
+    authenticated = verifyPassword(p, user.password);
+  }
 
-  // ចាប់ផ្តើម EmailJS ជាមួយ Public Key ពិតរបស់អ្នក
-  emailjs.init("j85KZoShGR6jieSp1"); // ✅ ដាក់ Public Key នៅទីនេះ
-  
-  // ផ្ញើអ៊ីមែលជាមួយ Service ID និង Template ID
-  emailjs.send("hr_system", "template_27sgug9", { // ✅ ដាក់ Service ID និង Template ID នៅទីនេះ
-    to_email: "koykrit44@gmail.com",
-    otp_code: currentOTP
-  }).then(() => {
-    // បង្ហាញ Form បញ្ចូល OTP
-    document.getElementById('modalContainer').classList.add('modal-md');
-    document.getElementById('modalTitle').textContent = '🔐 បញ្ចូលលេខកូដ 2FA';
-    document.getElementById('modalBody').innerHTML = `
-      <div class="space-y-4 text-center">
-        <p class="text-sm text-slate-600">លេខកូដ ៦ ខ្ទង់ត្រូវបានផ្ញើទៅ <b>koykrit44@gmail.com</b></p>
-        <input id="otp_input" type="text" maxlength="6" class="input text-center text-2xl tracking-widest font-mono" placeholder="000000">
-        <button type="button" onclick="verifyOTP('${u}')" class="btn btn-primary w-full">ផ្ទៀងផ្ទាត់</button>
-      </div>
-    `;
-    openModal();
-  }).catch((error) => {
-    console.error("Email error:", error);
-    toast('❌ មិនអាចផ្ញើ OTP បានទេ', 'error');
-  });
+  if (!authenticated) {
+    err.textContent = '❌ ' + t('loginInvalid');
+    err.classList.remove('hidden');
+    logAudit(null, 'LOGIN_FAILED', 'auth', null, `Failed: ${u}`);
+    return;
+  }
+
+  currentUser = { ...user };
+  delete currentUser.password;
+  sessionStorage.setItem(SESSION_KEY, JSON.stringify(currentUser));
+  sessionStorage.setItem(ACTIVITY_KEY, Date.now().toString());
+
+  logAudit(user.id, 'LOGIN_SUCCESS', 'auth', null, `${user.username} logged in`);
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('appScreen').classList.remove('hidden');
+  document.getElementById('userName').textContent = user.name;
+  document.getElementById('userRole').textContent = getRoleLabel(user.role);
+  document.getElementById('userAvatar').textContent = user.name.charAt(0);
+  const settingsMenu = document.getElementById('menu-settings');
+  if (settingsMenu) {
+    settingsMenu.classList.toggle('hidden', user.role !== 'super_admin');
+  }
+  document.getElementById('currentDate').textContent = formatCurrentDateText();
+
+  applyStaticTranslations();
+  updateBadges();
+  showPage('dashboard');
+  startSessionTimer();
+  toast((currentLang === 'km' ? '✅ សូមស្វាគមន៍ ' : '✅ Welcome ') + user.name);
+  saveDB();
 }
 
 function doLogout(auto = false) {
@@ -3658,6 +3657,8 @@ function exportEmployeesReportExcel() {
 
     return m && matchStatus && matchDept && matchBranch && matchRoute && matchTruck && matchYear;
   });
+
+  list.sort(compareEmployeesByRole);
 
   if (!list.length) {
     toast('❌ ' + t('empNoData'), 'error');
@@ -5435,7 +5436,6 @@ function printEmployeeContract(empId) {
   printHtmlDocument(html);
 }
 
-
 // ✅ Function បំប្លែងលេខទៅជាអក្សរខ្មែរ (តាមវេយ្យាករណ៍ខ្មែរត្រឹមត្រូវ)
 function numberToKhmerWords(num) {
   const khmerNumbers = ['សូន្យ', 'មួយ', 'ពីរ', 'បី', 'បួន', 'ប្រាំ', 'ប្រាំមួយ', 'ប្រាំពីរ', 'ប្រាំបី', 'ប្រាំបួន'];
@@ -6268,7 +6268,9 @@ function exportEmployeesReportPDF2() {
     }
 
     return m && matchStatus && matchDept && matchBranch && matchRoute && matchTruck && matchYear;
-  });  
+  });
+
+  list.sort(compareEmployeesByRole);
 
   if (!list.length) {
     toast('❌ គ្មានទិន្នន័យ', 'error');
@@ -6492,23 +6494,27 @@ function exportEmployeesReportPDF2() {
 // ✅ ORGANIZATION CHART - ចាត់ថ្នាក់តាម Grade (ស្អាត)
 // =====================================================
 function renderOrgChart() {
-  if (!DB.employees.length) {
+  const activeEmps = DB.employees.filter(e => e.status !== 'resigned' && e.status !== 'terminated');
+  if (!activeEmps.length) {
     document.getElementById('pageContent').innerHTML = `
       <div class="card text-center py-12 text-slate-400">
         <div class="text-4xl mb-3">👥</div>
-        <p>មិនមានបុគ្គលិក</p>
+        <p>${t('empNoData')}</p>
       </div>
     `;
     return;
   }
   
-  // ✅ ចាត់ថ្នាក់បុគ្គលិកតាម Grade Level
+  // ✅ ចាត់ថ្នាក់បុគ្គលិកតាម Grade / Role Level (មិនបង្ហាញអ្នកលាឈប់ និងអ្នកបញ្ឈប់)
   const employeesByGrade = {};
-  DB.employees.forEach(e => {
-    const grade = DB.jobGrades.find(g => g.id === e.grade_id);
-    const level = grade?.level || 1;
+  activeEmps.forEach(e => {
+    const rank = getEmployeeRoleRank(e);
+    const level = rank > 0 ? rank : 1;
     if (!employeesByGrade[level]) employeesByGrade[level] = [];
     employeesByGrade[level].push(e);
+  });
+  Object.keys(employeesByGrade).forEach(lvl => {
+    employeesByGrade[lvl].sort(compareEmployeesByRole);
   });
   
   // ✅ តម្រៀប Level ពីខ្ពស់ទៅទាប
@@ -6535,10 +6541,10 @@ function renderOrgChart() {
   };
 
   const stats = {
-    total: DB.employees.length,
-    active: DB.employees.filter(e => e.status === 'active').length,
+    total: activeEmps.length,
+    active: activeEmps.filter(e => e.status === 'active').length,
     levels: levels.length,
-    departments: [...new Set(DB.employees.map(e => e.department_id))].length
+    departments: [...new Set(activeEmps.map(e => e.department_id))].length
   };
 
   document.getElementById('pageContent').innerHTML = `
@@ -6696,6 +6702,9 @@ function editOrg(type, id) {
   const isKm = currentLang === 'km';
   const valKm = type === 'position' ? (item.title_km || item.title || '') : (item.name_km || item.name || '');
   const valEn = type === 'position' ? (item.title_en || item.title || '') : (item.name_en || item.name || '');
+  const gradeOptions = type === 'position'
+    ? `<div><label class="text-sm font-medium">${t('jobGrades')}</label><select id="org_grade_id" class="input">${DB.jobGrades.slice().sort((a, b) => b.level - a.level).map(g => `<option value="${g.id}" ${item.grade_id === g.id ? 'selected' : ''}>${escapeHtml(g.code)} - ${escapeHtml(locName(g))} (${t('posLevel')} ${g.level})</option>`).join('')}</select></div>`
+    : '';
 
   document.getElementById('modalContainer').classList.add('modal-md');
   document.getElementById('modalContainer').classList.remove('modal-xl', 'modal-lg');
@@ -6705,6 +6714,7 @@ function editOrg(type, id) {
       <div><label class="text-sm font-medium">${t('code')} <span class="text-red-500">*</span></label><input id="org_code" class="input" value="${escapeHtml(item.code || '')}"></div>
       <div><label class="text-sm font-medium">${isKm ? 'ឈ្មោះ (ភាសាខ្មែរ)' : 'Name (Khmer)'} <span class="text-red-500">*</span></label><input id="org_name_km" class="input" value="${escapeHtml(valKm)}"></div>
       <div><label class="text-sm font-medium">${isKm ? 'ឈ្មោះ (ភាសាអង់គ្លេស)' : 'Name (English)'}</label><input id="org_name_en" class="input" value="${escapeHtml(valEn)}"></div>
+      ${gradeOptions}
     </div>
     <div class="flex justify-end gap-2 mt-6 pt-4 border-t">
       <button onclick="closeModal()" class="btn btn-secondary">${t('cancel')}</button>
@@ -6724,6 +6734,9 @@ function openOrgModal(type) {
     team: 'Team A',
     position: 'HR Manager'
   };
+  const gradeOptions = type === 'position'
+    ? `<div><label class="text-sm font-medium">${t('jobGrades')}</label><select id="org_grade_id" class="input">${DB.jobGrades.slice().sort((a, b) => b.level - a.level).map(g => `<option value="${g.id}" ${g.level === 3 ? 'selected' : ''}>${escapeHtml(g.code)} - ${escapeHtml(locName(g))} (${t('posLevel')} ${g.level})</option>`).join('')}</select></div>`
+    : '';
   document.getElementById('modalContainer').classList.add('modal-md');
   document.getElementById('modalContainer').classList.remove('modal-xl', 'modal-lg');
   document.getElementById('modalTitle').textContent = `➕ ${t('add')} ${getOrgTypeLabel(type)}`;
@@ -6741,6 +6754,7 @@ function openOrgModal(type) {
         <label class="text-sm font-medium">${isKm ? 'ឈ្មោះ (ភាសាអង់គ្លេស)' : 'Name (English)'}</label>
         <input id="org_name_en" class="input" placeholder="${placeholders[type] || ''}" maxlength="100">
       </div>
+      ${gradeOptions}
     </div>
     <div class="flex justify-end gap-2 mt-6 pt-4 border-t">
       <button onclick="closeModal()" class="btn btn-secondary">${t('cancel')}</button>
@@ -6763,9 +6777,13 @@ function saveEditOrg(type, id) {
 
   item.code = code;
   if (type === 'position') {
+    const gradeId = +(document.getElementById('org_grade_id')?.value || item.grade_id || 3);
+    const grade = DB.jobGrades.find(g => g.id === gradeId);
     item.title = nameKm;
     item.title_km = nameKm;
     item.title_en = nameEn;
+    item.grade_id = gradeId;
+    item.level = grade ? Number(grade.level) : (item.level || 3);
   } else {
     item.name = nameKm;
     item.name_km = nameKm;
@@ -6807,11 +6825,15 @@ function exportOrgPDF(type) {
     return;
   }
   
-  // ✅ រៀបចំ Data
+  // ✅ រៀបចំ Data (តម្រៀបតាមលំដាប់តួនាទី)
   const companies = DB.companies || [];
   const branches = DB.branches || [];
-  const departments = DB.departments || [];
-  const positions = DB.positions || [];
+  const departments = (DB.departments || []).slice().sort((a, b) => {
+    const maxA = Math.max(0, ...DB.employees.filter(e => e.department_id === a.id).map(getEmployeeRoleRank));
+    const maxB = Math.max(0, ...DB.employees.filter(e => e.department_id === b.id).map(getEmployeeRoleRank));
+    return maxB - maxA;
+  });
+  const positions = (DB.positions || []).slice().sort((a, b) => getPositionLevel(b.id) - getPositionLevel(a.id));
   
   // ✅ Departments Rows
   const deptRows = departments.map((d, idx) => {
@@ -7162,7 +7184,8 @@ function exportAssetsPDF() {
   doc.setTextColor(255,255,255);
   doc.setFontSize(16);
   doc.text('ASSETS LIST', 148, 14, { align: 'center' });
-  const rows = DB.assets.map(a => [a.code, a.name, a.category || '-', a.value, a.status]);
+  const rows = sortByRole(DB.assets, a => findEmployeeRef({ id: a.current_holder_id, name: a.current_holder_name }))
+    .map(a => [a.code, a.name, a.category || '-', a.value, a.status]);
   doc.autoTable({
     startY: 25,
     head: [['Code', 'Name', 'Category', 'Value ($)', 'Status']],
@@ -7182,7 +7205,8 @@ function exportContractsPDF() {
   doc.setTextColor(255,255,255);
   doc.setFontSize(16);
   doc.text('CONTRACTS LIST', 148, 14, { align: 'center' });
-  const rows = DB.contracts.map(c => [c.code, c.title, c.type || '-', c.value, c.status]);
+  const rows = sortByRole(DB.contracts, c => findEmployeeRef({ id: c.employee_id, name: c.party }))
+    .map(c => [c.code, c.title, c.type || '-', c.value, c.status]);
   doc.autoTable({
     startY: 25,
     head: [['Code', 'Title', 'Type', 'Value ($)', 'Status']],
@@ -7244,7 +7268,11 @@ function saveOrg(type) {
   else if (type === 'department') DB.departments.push({ id: DB.nextId.dept++, company_id: 1, branch_id: 1, code, name: nameKm, name_km: nameKm, name_en: nameEn, manager_id: null, status: 'active' });
   else if (type === 'division') DB.divisions.push({ id: DB.nextId.div++, code, name: nameKm, name_km: nameKm, name_en: nameEn });
   else if (type === 'team') DB.teams.push({ id: DB.nextId.team++, code, name: nameKm, name_km: nameKm, name_en: nameEn });
-  else if (type === 'position') DB.positions.push({ id: DB.nextId.pos++, code, title: nameKm, title_km: nameKm, title_en: nameEn, department_id: null, grade_id: 3, level: 3 });
+  else if (type === 'position') {
+    const gradeId = +(document.getElementById('org_grade_id')?.value || 3);
+    const grade = DB.jobGrades.find(g => g.id === gradeId);
+    DB.positions.push({ id: DB.nextId.pos++, code, title: nameKm, title_km: nameKm, title_en: nameEn, department_id: null, grade_id: gradeId, level: grade ? Number(grade.level) : 3 });
+  }
 
   saveDB(); closeModal();
   if (type === 'position') renderPositions();
@@ -7324,7 +7352,7 @@ function renderPositions() {
             <th class="text-right p-3">${t('actions')}</th>
           </tr></thead>
           <tbody>
-            ${DB.positions.map(p => `
+            ${DB.positions.slice().sort((a, b) => getPositionLevel(b.id) - getPositionLevel(a.id)).map(p => `
               <tr class="border-b table-row">
                 <td class="p-3 font-mono text-xs">${escapeHtml(p.code)}</td>
                 <td class="p-3">${escapeHtml(locTitle(p))}</td>
@@ -7506,7 +7534,7 @@ function bulkCheckOut() {
 
 function exportAttendanceReportExcel() {
   const date = document.getElementById('attDate')?.value || new Date().toISOString().split('T')[0];
-  const employees = DB.employees.filter(e => ['active','probation','on_leave'].includes(e.status));
+  const employees = sortByRole(DB.employees.filter(e => ['active','probation','on_leave'].includes(e.status)));
   if (!employees.length) { toast('❌ ' + t('empNoData'), 'error'); return; }
 
   const isKm = currentLang === 'km';
@@ -7567,7 +7595,7 @@ function exportAttendanceReportExcel() {
 function exportAttendanceReportPDF2() {
   const date = document.getElementById('attDate')?.value || new Date().toISOString().split('T')[0];
   
-  const employees = DB.employees.filter(e => ['active','probation','on_leave'].includes(e.status));
+  const employees = sortByRole(DB.employees.filter(e => ['active','probation','on_leave'].includes(e.status)));
   
   if (!employees.length) {
     toast('❌ គ្មានទិន្នន័យ', 'error');
@@ -7883,7 +7911,7 @@ function exportAttendancePDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF('l');
   const date = document.getElementById('attDate').value;
-  const rows = DB.employees.map(e => {
+  const rows = sortByRole(DB.employees.filter(e => e.status !== 'resigned' && e.status !== 'terminated')).map(e => {
     const a = DB.attendance.find(x => x.employee_id === e.id && x.work_date === date);
     return [e.full_name, e.employee_id || '', a?.check_in || '-', a?.check_out || '-', a?.status || '-'];
   });
@@ -7963,7 +7991,7 @@ function exportLeaveReportExcel() {
     ? ['ល.រ', 'កូដ', 'ឈ្មោះបុគ្គលិក', 'ប្រភេទច្បាប់', 'ចាប់ផ្តើម', 'បញ្ចប់', 'ចំនួនថ្ងៃ', 'មូលហេតុ', 'ស្ថានភាព']
     : ['No.', 'Code', 'Employee', 'Leave Type', 'Start Date', 'End Date', 'Days', 'Reason', 'Status'];
 
-  const dataRows = DB.leaves.map((l, idx) => {
+  const dataRows = sortByRole(DB.leaves, l => findEmployeeRef({ id: l.employee_id })).map((l, idx) => {
     const statusLabel = l.status === 'pending' ? t('stPending') : l.status === 'approved' ? t('stApproved') : l.status === 'rejected' ? t('stRejected') : l.status;
     return [
       String(idx + 1).padStart(2, '0'),
@@ -8269,7 +8297,7 @@ function exportLeaveReportPDF2() {
           </tr>
         </thead>
         <tbody>
-          ${DB.leaves.map((l, idx) => {
+          ${sortByRole(DB.leaves, l => findEmployeeRef({ id: l.employee_id })).map((l, idx) => {
             const statusLabel = l.status === 'pending' ? 'រង់ចាំ' : 
                                 l.status === 'approved' ? 'អនុម័ត' : 
                                 l.status === 'rejected' ? 'បដិសេធ' : l.status;
@@ -8525,7 +8553,7 @@ function renderPayroll() {
 function exportPayrollReportExcel() {
   const m = +document.getElementById('payMonth').value;
   const y = +document.getElementById('payYear').value;
-  const list = DB.payrolls.filter(p => p.period_month === m && p.period_year === y);
+  const list = sortByRole(DB.payrolls.filter(p => p.period_month === m && p.period_year === y), p => findEmployeeRef({ id: p.employee_id }));
   if (!list.length) { toast('❌ ' + t('empNoData'), 'error'); return; }
 
   const isKm = currentLang === 'km';
@@ -8593,7 +8621,7 @@ function exportPayrollReportExcel() {
 function exportPayrollReportPDF2() {
   const m = +document.getElementById('payMonth').value;
   const y = +document.getElementById('payYear').value;
-  const list = DB.payrolls.filter(p => p.period_month === m && p.period_year === y);
+  const list = sortByRole(DB.payrolls.filter(p => p.period_month === m && p.period_year === y), p => findEmployeeRef({ id: p.employee_id }));
   
   if (!list.length) {
     toast('❌ គ្មានទិន្នន័យ', 'error');
@@ -8780,7 +8808,7 @@ function exportPayrollReportPDF2() {
 function exportPayrollReportPDF() {
   const m = +document.getElementById('payMonth').value;
   const y = +document.getElementById('payYear').value;
-  const list = DB.payrolls.filter(p => p.period_month === m && p.period_year === y);
+  const list = sortByRole(DB.payrolls.filter(p => p.period_month === m && p.period_year === y), p => findEmployeeRef({ id: p.employee_id }));
   
   if (!list.length) {
     toast('❌ គ្មានទិន្នន័យ', 'error');
@@ -9553,7 +9581,7 @@ function exportPayrollPDF() {
   const doc = new jsPDF('l');
   const m = +document.getElementById('payMonth').value;
   const y = +document.getElementById('payYear').value;
-  const list = DB.payrolls.filter(p => p.period_month === m && p.period_year === y);
+  const list = sortByRole(DB.payrolls.filter(p => p.period_month === m && p.period_year === y), p => findEmployeeRef({ id: p.employee_id }));
   if (!list.length) return toast('❌ គ្មានទិន្នន័យ', 'error');
   
   doc.setFillColor(37, 99, 235);
@@ -9872,7 +9900,7 @@ function exportDocumentsExcel() {
     ? ['ល.រ', 'កូដ', 'ឈ្មោះឯកសារ', 'ប្រភេទ', 'ទំហំ', 'កាលបរិច្ឆេទ']
     : ['No.', 'Code', 'Document Name', 'Category', 'Size', 'Date'];
 
-  const dataRows = DB.documents.map((d, idx) => {
+  const dataRows = sortByRole(DB.documents, d => findEmployeeRef({ id: d.employee_id })).map((d, idx) => {
     const cat = getDocCategory(d.category);
     return [
       String(idx + 1).padStart(2, '0'),
@@ -9921,7 +9949,10 @@ function exportDocumentsPDF2() {
 
   const docsByCategory = {};
   DOC_CATEGORIES.forEach(cat => {
-    docsByCategory[cat.code] = DB.documents.filter(d => getDocCategory(d.category).code === cat.code);
+    docsByCategory[cat.code] = sortByRole(
+      DB.documents.filter(d => getDocCategory(d.category).code === cat.code),
+      d => findEmployeeRef({ id: d.employee_id })
+    );
   });
   
   const html = `
@@ -10603,7 +10634,12 @@ function exportAssetHistoryExcel() {
     return;
   }
 
-  const data = filtered.map(h => {
+  const sortedFiltered = sortByRole(filtered, h => {
+    const asset = DB.assets.find(a => a.id === h.asset_id);
+    return asset ? findEmployeeRef({ id: asset.current_holder_id, name: asset.current_holder_name }) : null;
+  });
+
+  const data = sortedFiltered.map(h => {
     const asset = DB.assets.find(a => a.id === h.asset_id);
     const user = DB.users.find(u => u.id === h.user_id);
     const holder = asset?.current_holder_id ? DB.employees.find(e => e.id === asset.current_holder_id) : null;
@@ -10656,7 +10692,12 @@ function exportAssetHistoryPDF() {
     return matchQ && matchDept && matchBranch;
   });
 
-  if (!filtered.length) {
+  const sortedFiltered = sortByRole(filtered, h => {
+    const asset = DB.assets.find(a => a.id === h.asset_id);
+    return asset ? findEmployeeRef({ id: asset.current_holder_id, name: asset.current_holder_name }) : null;
+  });
+
+  if (!sortedFiltered.length) {
     toast('❌ គ្មានទិន្នន័យ', 'error');
     return;
   }
@@ -10798,7 +10839,7 @@ function exportAssetHistoryPDF() {
           </tr>
         </thead>
         <tbody>
-          ${filtered.map((h, idx) => {
+          ${sortedFiltered.map((h, idx) => {
             const asset = DB.assets.find(a => a.id === h.asset_id);
             const user = DB.users.find(u => u.id === h.user_id);
             const holder = asset?.current_holder_id ? DB.employees.find(e => e.id === asset.current_holder_id) : null;
@@ -11024,7 +11065,7 @@ function switchIssueTab(tab) {
 }
 
 function exportIssueReportExcel() {
-  const issues = DB.assetIssues || [];
+  const issues = sortByRole(DB.assetIssues || [], i => findEmployeeRef({ id: i.employee_id, name: i.employee_name }));
   if (!issues.length) {
     toast('❌ ' + t('empNoData'), 'error');
     return;
@@ -11074,9 +11115,9 @@ function exportIssueReportExcel() {
 // ✅ ISSUE REPORT - PDF
 // =====================================================
 function exportIssueReportPDF2() {
-  const issues = DB.assetIssues || [];
-  const returns = DB.assetReturns || [];
-  const transfers = DB.assetTransfers || [];
+  const issues = sortByRole(DB.assetIssues || [], i => findEmployeeRef({ id: i.employee_id, name: i.employee_name }));
+  const returns = sortByRole(DB.assetReturns || [], r => findEmployeeRef({ id: r.employee_id, name: r.employee_name }));
+  const transfers = sortByRole(DB.assetTransfers || [], tr => findEmployeeRef({ id: tr.to_employee_id || tr.from_employee_id, name: tr.to_employee_name || tr.from_employee_name }));
   
   if (!issues.length && !returns.length && !transfers.length) {
     toast('❌ គ្មានទិន្នន័យ', 'error');
@@ -12378,7 +12419,7 @@ function exportAssetsReportExcel() {
     t('status'), t('assetCondition'), t('location'), t('assetHolder')
   ];
 
-  const dataRows = DB.assets.map(a => [
+  const dataRows = sortByRole(DB.assets, a => findEmployeeRef({ id: a.current_holder_id, name: a.current_holder_name })).map(a => [
     a.asset_id || '',
     a.item_name || '',
     a.category_name || '',
@@ -12546,7 +12587,7 @@ function exportAssetsReportPDF2() {
           </tr>
         </thead>
         <tbody>
-          ${DB.assets.map(a => `
+          ${sortByRole(DB.assets, a => findEmployeeRef({ id: a.current_holder_id, name: a.current_holder_name })).map(a => `
             <tr>
               <td>${escapeHtml(a.asset_id)}</td>
               <td class="name">${escapeHtml(a.item_name)}</td>
@@ -13441,7 +13482,7 @@ function exportContractsExcel() {
     t('conStart'), t('conEnd'), `${t('conValue')} ($)`, t('status'), t('createdAt')
   ];
 
-  const dataRows = DB.contracts.map((c, idx) => [
+  const dataRows = sortByRole(DB.contracts, c => findEmployeeRef({ id: c.employee_id, name: c.party })).map((c, idx) => [
     String(idx + 1).padStart(2, '0'),
     c.code || '',
     c.title || '',
@@ -13606,7 +13647,7 @@ function exportContractsPDF2() {
           </tr>
         </thead>
         <tbody>
-          ${DB.contracts.map((c, idx) => `
+          ${sortByRole(DB.contracts, c => findEmployeeRef({ id: c.employee_id, name: c.party })).map((c, idx) => `
             <tr>
               <td>${String(idx + 1).padStart(2, '0')}</td>
               <td>${escapeHtml(c.code || '')}</td>
@@ -14302,7 +14343,7 @@ function exportVehiclesExcel() {
     return toast(`❌ ${t('empNoData')}`, 'error');
   }
 
-  const data = DB.vehicles.map(v => ({
+  const data = sortByRole(DB.vehicles, v => findEmployeeRef({ id: v.driver_id, name: v.driver_name })).map(v => ({
     [t('vehIssueDate')]: v.maintenance_date || '-',
     [t('vehPlate')]: v.plate_no || '-',
     [t('vehType')]: v.vehicle_type ? getCatalogLabel(MASTER_CATALOGS.truckType, v.vehicle_type) : '-',
@@ -14398,7 +14439,7 @@ function exportVehiclesPDF() {
           </tr>
         </thead>
         <tbody>
-          ${DB.vehicles.map((v, idx) => `
+          ${sortByRole(DB.vehicles, v => findEmployeeRef({ id: v.driver_id, name: v.driver_name })).map((v, idx) => `
             <tr>
               <td>${String(idx + 1).padStart(2, '0')}</td>
               <td>${v.maintenance_date || '-'}</td>
@@ -15716,7 +15757,7 @@ function openStockBalancePDF() {
 function exportAssetRegisterExcel() {
   if (!DB.assets.length) return toast('❌ ' + t('empNoData'), 'error');
   
-  const data = DB.assets.map(a => {
+  const data = sortByRole(DB.assets, a => findEmployeeRef({ id: a.current_holder_id, name: a.current_holder_name })).map(a => {
     const cat = DB.assetCategories.find(c => c.id === a.category_id || c.name === a.category_name);
     const loc = DB.assetLocations.find(l => l.id === a.location_id);
     return {
@@ -15752,7 +15793,7 @@ function exportAssetRegisterPDF() {
       { label: t('totalValue'), value: '$' + totalValue.toLocaleString(), color: '#7c3aed' }
     ],
     [[t('assetCode'), t('assetName'), t('assetCategory'), t('assetSerial'), t('assetPurchasePrice'), t('status'), t('location')]],
-    DB.assets.map(a => {
+    sortByRole(DB.assets, a => findEmployeeRef({ id: a.current_holder_id, name: a.current_holder_name })).map(a => {
       const cat = DB.assetCategories.find(c => c.id === a.category_id || c.name === a.category_name);
       const loc = DB.assetLocations.find(l => l.id === a.location_id);
       return [
@@ -15771,7 +15812,7 @@ function exportAssetRegisterPDF() {
 // =====================================================
 function exportAssetByEmployeeExcel() {
   const data = [];
-  DB.employees.forEach(emp => {
+  sortByRole(DB.employees).forEach(emp => {
     const assets = DB.assets.filter(a => a.current_holder_id === emp.id);
     if (assets.length) {
       assets.forEach(a => {
@@ -15794,7 +15835,7 @@ function exportAssetByEmployeeExcel() {
 
 function exportAssetByEmployeePDF() {
   const rows = [];
-  DB.employees.forEach(emp => {
+  sortByRole(DB.employees).forEach(emp => {
     const assets = DB.assets.filter(a => a.current_holder_id === emp.id);
     if (assets.length) {
       rows.push([emp.full_name, getDeptName(emp.department_id), assets.length, 
@@ -15818,7 +15859,12 @@ function exportAssetByEmployeePDF() {
 // =====================================================
 function exportAssetByDepartmentExcel() {
   const data = [];
-  DB.departments.forEach(dept => {
+  const sortedDepts = DB.departments.slice().sort((a, b) => {
+    const maxA = Math.max(0, ...DB.employees.filter(e => e.department_id === a.id).map(getEmployeeRoleRank));
+    const maxB = Math.max(0, ...DB.employees.filter(e => e.department_id === b.id).map(getEmployeeRoleRank));
+    return maxB - maxA;
+  });
+  sortedDepts.forEach(dept => {
     const emps = DB.employees.filter(e => e.department_id === dept.id);
     const assetCount = DB.assets.filter(a => 
       emps.some(e => e.id === a.current_holder_id)
@@ -15839,7 +15885,12 @@ function exportAssetByDepartmentExcel() {
 
 function exportAssetByDepartmentPDF() {
   const rows = [];
-  DB.departments.forEach(dept => {
+  const sortedDepts = DB.departments.slice().sort((a, b) => {
+    const maxA = Math.max(0, ...DB.employees.filter(e => e.department_id === a.id).map(getEmployeeRoleRank));
+    const maxB = Math.max(0, ...DB.employees.filter(e => e.department_id === b.id).map(getEmployeeRoleRank));
+    return maxB - maxA;
+  });
+  sortedDepts.forEach(dept => {
     const emps = DB.employees.filter(e => e.department_id === dept.id);
     const assets = DB.assets.filter(a => emps.some(e => e.id === a.current_holder_id));
     if (assets.length) {
@@ -15955,7 +16006,7 @@ function exportStockMovementPDF() {
 // =====================================================
 function exportIssueReturnExcel() {
   const data = [];
-  (DB.assetIssues || []).forEach(i => {
+  sortByRole(DB.assetIssues || [], i => findEmployeeRef({ id: i.employee_id, name: i.employee_name })).forEach(i => {
     data.push({
       [t('category')]: 'ISSUE',
       [t('code')]: i.code,
@@ -15965,7 +16016,7 @@ function exportIssueReturnExcel() {
       [t('status')]: locAssetStatus(i.status)
     });
   });
-  (DB.assetReturns || []).forEach(r => {
+  sortByRole(DB.assetReturns || [], r => findEmployeeRef({ id: r.employee_id, name: r.employee_name })).forEach(r => {
     data.push({
       [t('category')]: 'RETURN',
       [t('code')]: r.code,
@@ -15981,8 +16032,8 @@ function exportIssueReturnExcel() {
 }
 
 function exportIssueReturnPDF() {
-  const issues = DB.assetIssues || [];
-  const returns = DB.assetReturns || [];
+  const issues = sortByRole(DB.assetIssues || [], i => findEmployeeRef({ id: i.employee_id, name: i.employee_name }));
+  const returns = sortByRole(DB.assetReturns || [], r => findEmployeeRef({ id: r.employee_id, name: r.employee_name }));
   if (!issues.length && !returns.length) return toast('❌ ' + t('empNoData'), 'error');
   
   openGenericReportPDF(
@@ -16005,8 +16056,8 @@ function exportIssueReturnPDF() {
 // ✅ 8. LOST / DAMAGED REPORT
 // =====================================================
 function exportLostDamagedExcel() {
-  const lost = DB.assetLost || [];
-  const damaged = DB.assetDamages || [];
+  const lost = sortByRole(DB.assetLost || [], l => findEmployeeRef({ id: l.employee_id, name: l.employee_name }));
+  const damaged = sortByRole(DB.assetDamages || [], d => findEmployeeRef({ id: d.employee_id, name: d.user_name || d.employee_name }));
   const data = [];
   
   lost.forEach(l => data.push({
@@ -16023,8 +16074,8 @@ function exportLostDamagedExcel() {
 }
 
 function exportLostDamagedPDF() {
-  const lost = DB.assetLost || [];
-  const damaged = DB.assetDamages || [];
+  const lost = sortByRole(DB.assetLost || [], l => findEmployeeRef({ id: l.employee_id, name: l.employee_name }));
+  const damaged = sortByRole(DB.assetDamages || [], d => findEmployeeRef({ id: d.employee_id, name: d.user_name || d.employee_name }));
   if (!lost.length && !damaged.length) return toast('❌ ' + t('empNoData'), 'error');
   
   openGenericReportPDF(
@@ -16046,7 +16097,10 @@ function exportLostDamagedPDF() {
 // ✅ 9. REPAIR COST REPORT
 // =====================================================
 function exportRepairCostExcel() {
-  const maintenance = DB.assetMaintenance || [];
+  const maintenance = sortByRole(DB.assetMaintenance || [], m => {
+    const asset = DB.assets.find(a => a.id === m.asset_id || a.asset_id === m.asset_code);
+    return asset ? findEmployeeRef({ id: asset.current_holder_id, name: asset.current_holder_name }) : null;
+  });
   if (!maintenance.length) return toast('❌ ' + t('empNoData'), 'error');
   
   const data = maintenance.map(m => ({
@@ -16059,7 +16113,10 @@ function exportRepairCostExcel() {
 }
 
 function exportRepairCostPDF() {
-  const maintenance = DB.assetMaintenance || [];
+  const maintenance = sortByRole(DB.assetMaintenance || [], m => {
+    const asset = DB.assets.find(a => a.id === m.asset_id || a.asset_id === m.asset_code);
+    return asset ? findEmployeeRef({ id: asset.current_holder_id, name: asset.current_holder_name }) : null;
+  });
   if (!maintenance.length) return toast('❌ ' + t('empNoData'), 'error');
   
   const totalCost = maintenance.reduce((s,m) => s + (m.cost || 0), 0);
@@ -16088,7 +16145,9 @@ function exportWarrantyExpiryExcel() {
   
   const data = assets.map(a => {
     const daysLeft = Math.ceil((new Date(a.warranty_expiry) - new Date()) / (1000*60*60*24));
+    const holder = findEmployeeRef({ id: a.current_holder_id, name: a.current_holder_name });
     return {
+      _holder: holder,
       [t('assetCode')]: a.asset_id,
       [t('assetName')]: locName({ name: a.item_name, name_km: a.item_name_km, name_en: a.item_name_en }),
       [t('assetSerial')]: a.serial_number || '',
@@ -16096,7 +16155,10 @@ function exportWarrantyExpiryExcel() {
       'Days Left': daysLeft,
       [t('status')]: daysLeft < 0 ? t('stExpired') : daysLeft < 30 ? t('conExpiringSoon') : t('stNormal')
     };
-  }).sort((a,b) => a['Days Left'] - b['Days Left']);
+  }).sort((a,b) => {
+    const cmp = compareEmployeesByRole(a._holder, b._holder);
+    return cmp !== 0 ? cmp : (a['Days Left'] - b['Days Left']);
+  }).map(({ _holder, ...row }) => row);
   
   exportXLSX(data, 'Warranty_Expiry');
 }
@@ -16107,8 +16169,12 @@ function exportWarrantyExpiryPDF() {
   
   const sorted = assets.map(a => {
     const days = Math.ceil((new Date(a.warranty_expiry) - new Date()) / (1000*60*60*24));
-    return { ...a, daysLeft: days };
-  }).sort((a,b) => a.daysLeft - b.daysLeft);
+    const holder = findEmployeeRef({ id: a.current_holder_id, name: a.current_holder_name });
+    return { ...a, daysLeft: days, _holder: holder };
+  }).sort((a,b) => {
+    const cmp = compareEmployeesByRole(a._holder, b._holder);
+    return cmp !== 0 ? cmp : (a.daysLeft - b.daysLeft);
+  });
   
   openGenericReportPDF(
     'របាយការណ៍ការធានាផុតកំណត់',
@@ -16166,7 +16232,10 @@ function exportStockCountPDF() {
 // ✅ 12. DISPOSAL REPORT
 // =====================================================
 function exportDisposalExcel() {
-  const disposals = DB.assetDisposals || [];
+  const disposals = sortByRole(DB.assetDisposals || [], d => {
+    const asset = DB.assets.find(a => a.id === d.asset_id || a.asset_id === d.asset_code);
+    return asset ? findEmployeeRef({ id: asset.current_holder_id, name: asset.current_holder_name }) : null;
+  });
   if (!disposals.length) return toast('❌ ' + t('empNoData'), 'error');
   
   const data = disposals.map(d => ({
@@ -16180,7 +16249,10 @@ function exportDisposalExcel() {
 }
 
 function exportDisposalPDF() {
-  const disposals = DB.assetDisposals || [];
+  const disposals = sortByRole(DB.assetDisposals || [], d => {
+    const asset = DB.assets.find(a => a.id === d.asset_id || a.asset_id === d.asset_code);
+    return asset ? findEmployeeRef({ id: asset.current_holder_id, name: asset.current_holder_name }) : null;
+  });
   if (!disposals.length) return toast('❌ ' + t('empNoData'), 'error');
   
   openGenericReportPDF(
@@ -16362,19 +16434,19 @@ function exportReport(type) {
   if (type === 'employees') {
     title = 'EMPLOYEES';
     head = [['ID', 'Code', 'Name', 'Gender', 'Dept', 'Phone', 'Salary', 'Status']];
-    body = DB.employees.map(e => [e.employee_id || '', e.code, e.full_name, e.gender, getDeptName(e.department_id), e.phone, `$${e.base_salary}`, e.status]);
+    body = sortByRole(DB.employees).map(e => [e.employee_id || '', e.code, e.full_name, e.gender, getDeptName(e.department_id), e.phone, `$${e.base_salary}`, e.status]);
   } else if (type === 'attendance') {
     title = 'ATTENDANCE';
     head = [['Employee', 'Date', 'In', 'Out', 'Status']];
-    body = DB.attendance.slice(0, 500).map(a => [getEmpName(a.employee_id), a.work_date, a.check_in || '-', a.check_out || '-', a.status]);
+    body = sortByRole(DB.attendance.slice(0, 500), a => findEmployeeRef({ id: a.employee_id })).map(a => [getEmpName(a.employee_id), a.work_date, a.check_in || '-', a.check_out || '-', a.status]);
   } else if (type === 'leave') {
     title = 'LEAVE';
     head = [['Code', 'Employee', 'Type', 'Start', 'End', 'Days', 'Status']];
-    body = DB.leaves.map(l => [l.code, getEmpName(l.employee_id), getLeaveType(l.leave_type_id), l.start_date, l.end_date, l.total_days, l.status]);
+    body = sortByRole(DB.leaves, l => findEmployeeRef({ id: l.employee_id })).map(l => [l.code, getEmpName(l.employee_id), getLeaveType(l.leave_type_id), l.start_date, l.end_date, l.total_days, l.status]);
   } else if (type === 'payroll') {
     title = 'PAYROLL';
     head = [['#', 'ID', 'Name', 'Base', 'NSSF', 'Tax', 'Net']];
-    body = DB.payrolls.map((p, idx) => {
+    body = sortByRole(DB.payrolls, p => findEmployeeRef({ id: p.employee_id })).map((p, idx) => {
       const e = DB.employees.find(x => x.id === p.employee_id);
       return [idx+1, e?.employee_id || '', e?.full_name || '', `$${p.base_salary.toFixed(2)}`, `-$${p.nssf_employee.toFixed(2)}`, `-$${p.tax_amount.toFixed(2)}`, `$${p.net_salary.toFixed(2)}`];
     });
@@ -16756,6 +16828,43 @@ function getEmpName(id) { return DB.employees.find(e => e.id === id)?.full_name 
 function getDeptName(id) { return locName(DB.departments.find(d => d.id === id)); }
 function getPosName(id) { return locTitle(DB.positions.find(p => p.id === id)); }
 function getGradeName(id) { return DB.jobGrades.find(g => g.id === id)?.code || '-'; }
+function getPositionLevel(posId) {
+  if (!posId) return 0;
+  const pos = DB.positions.find(p => p.id === posId);
+  if (!pos) return 0;
+  if (Number(pos.level) > 0) return Number(pos.level);
+  const g = DB.jobGrades.find(gr => gr.id === pos.grade_id);
+  return Number(g?.level || 0);
+}
+function getEmployeeRoleRank(emp) {
+  if (!emp) return -1;
+  const posLevel = getPositionLevel(emp.position_id);
+  const gradeLevel = Number(DB.jobGrades.find(g => g.id === emp.grade_id)?.level || 0);
+  return Math.max(posLevel, gradeLevel);
+}
+function findEmployeeRef(opts = {}) {
+  if (opts.id) {
+    const byId = DB.employees.find(e => e.id === opts.id);
+    if (byId) return byId;
+  }
+  if (opts.name) {
+    const n = String(opts.name).trim().toLowerCase();
+    if (n) return DB.employees.find(e => (e.full_name || '').trim().toLowerCase() === n) || null;
+  }
+  return null;
+}
+function compareEmployeesByRole(a, b) {
+  const rankDiff = getEmployeeRoleRank(b) - getEmployeeRoleRank(a);
+  if (rankDiff !== 0) return rankDiff;
+  const posIdxA = a?.position_id ? DB.positions.findIndex(p => p.id === a.position_id) : 9999;
+  const posIdxB = b?.position_id ? DB.positions.findIndex(p => p.id === b.position_id) : 9999;
+  const idxDiff = (posIdxA === -1 ? 9999 : posIdxA) - (posIdxB === -1 ? 9999 : posIdxB);
+  if (idxDiff !== 0) return idxDiff;
+  return String(a?.employee_id || a?.full_name || '').localeCompare(String(b?.employee_id || b?.full_name || ''));
+}
+function sortByRole(list, getEmpFn = x => x) {
+  return (list || []).slice().sort((a, b) => compareEmployeesByRole(getEmpFn(a), getEmpFn(b)));
+}
 function getLeaveType(id) { return locName(DB.leaveTypes.find(lt => lt.id === id)); }
 function getSupName(id) { return locName(DB.suppliers.find(s => s.id === id)); }
 
