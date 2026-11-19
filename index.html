@@ -740,21 +740,15 @@ function sendOTPEmail(otpCode, userName) {
   emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
   .then(function(response) {
     console.log('✅ ផ្ញើអ៊ីមែលបានជោគជ័យ!', response.status);
-
-    // ១. បិទ loading function ប្រសិនបើមាន
     if (typeof showLoading === 'function') showLoading(false);
-
-    // ២. បង្ខំលាក់ overlay ដែលមានអក្សរ "Working..."
-    forceHideWorkingOverlay();
-
-    // ៣. បង្ហាញ modal បញ្ចូល OTP
     showOTPModal(userObj);
+    hideAllLoadingOverlays();
   })
   .catch(function(error) {
     console.error('❌ ការផ្ញើបរាជ័យ...', error);
     if (typeof showLoading === 'function') showLoading(false);
-    forceHideWorkingOverlay();
-    alert('មានបញ្ហាក្នុងការផ្ញើលេខកូដ។');
+    hideAllLoadingOverlays();
+    alert('មានបញ្ហាក្នុងការផ្ញើលេខកូដ។ សូមពិនិត្យ Console ឬការកំណត់ EmailJS។');
   });
 }
 
@@ -3235,6 +3229,24 @@ function forceHideWorkingOverlay() {
     }
   });
 }
+function hideAllLoadingOverlays() {
+  const keywords = ['working', 'កំពុងដំណើរការ'];
+
+  document.querySelectorAll('div, section, span, p').forEach(el => {
+    const rawText = (el.textContent || '').trim().toLowerCase();
+    const matchesLoadingText = keywords.some(k => rawText.includes(k));
+    const isSmallOrOverlay = rawText.length > 0 && rawText.length < 40;
+
+    if (matchesLoadingText && isSmallOrOverlay) {
+      const box =
+        el.closest('#loading, #loadingOverlay, [id*="loading" i], [class*="loading" i], .fixed, [class*="fixed"], [style*="position: fixed"]') ||
+        el;
+      box.classList.add('hidden');
+      box.style.setProperty('display', 'none', 'important');
+      box.style.setProperty('pointer-events', 'none', 'important');
+    }
+  });
+}
 function showOTPModal(userObj) {
   const modal = document.getElementById('modal');
   const modalTitle = document.getElementById('modalTitle');
@@ -3257,6 +3269,16 @@ function showOTPModal(userObj) {
   modal.classList.remove('hidden');
   modal.classList.add('flex');
   setTimeout(() => document.getElementById('otpInput')?.focus(), 80);
+  if (modal) {
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    modal.style.setProperty('z-index', '99999', 'important');
+    modal.style.setProperty('opacity', '1', 'important');
+  }
+
+  hideAllLoadingOverlays();
+  setTimeout(hideAllLoadingOverlays, 100);
+  setTimeout(hideAllLoadingOverlays, 500);
 }
 
 function verifyOTP(event) {
