@@ -793,6 +793,8 @@ function verifyOTP(event, correctCode, userName) {
     
     // អ្នកអាចហៅ Function ដើមរបស់អ្នកនៅទីនេះ ដូចជា loadData() ឬ showPage('dashboard')
     if (typeof showPage === 'function') showPage('dashboard');
+    if (typeof showLoading === 'function') showLoading(false);
+    if (typeof forceHideWorkingOverlay === 'function') forceHideWorkingOverlay();
     if (typeof showToast === 'function') showToast('✅ ចូលប្រើប្រាស់ជោគជ័យ');
   } else {
     errBox.textContent = '❌ លេខកូដមិនត្រឹមត្រូវ។ សូមព្យាយាមម្តងទៀត។';
@@ -3221,23 +3223,16 @@ function sendOTPEmail(otpCode, userObj) {
     });
 }
 function forceHideWorkingOverlay() {
-  const loadingTexts = ['Working...', 'កំពុងដំណើរការ...'];
-
+  const texts = ['Working...', 'កំពុងដំណើរការ...'];
   document.querySelectorAll('div, section, span, p').forEach(el => {
     const txt = (el.textContent || '').trim();
-    if (loadingTexts.includes(txt) && el.offsetParent !== null) {
+    if (texts.includes(txt) && el.offsetParent !== null) {
       const box =
-        el.closest('#loadingOverlay, #loading, [id*="loading" i], .fixed, [class*="fixed"], [style*="position: fixed"]') ||
+        el.closest('#loading, #loadingOverlay, [id*="loading" i], .fixed, [class*="fixed"], [style*="position: fixed"]') ||
         el;
       box.classList.add('hidden');
       box.style.setProperty('display', 'none', 'important');
     }
-  });
-
-  // ពិនិត្យ id ឬ class loading ទូទៅបន្ថែមប្រសិនបើមាន
-  document.querySelectorAll('#loading, #loadingOverlay, .loading-overlay').forEach(el => {
-    el.classList.add('hidden');
-    el.style.setProperty('display', 'none', 'important');
   });
 }
 function showOTPModal(userObj) {
