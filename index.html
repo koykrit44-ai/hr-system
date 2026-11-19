@@ -19,6 +19,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html-docx-js/dist/html-docx.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <style>
     :root {
       --bg-canvas: #f8fafc;
@@ -711,6 +712,88 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const fbDB = firebase.database();
 const fbAuth = firebase.auth();
+
+// =====================================================
+// ចាប់ផ្តើមកូដ 2FA (OTP តាមរយៈ EmailJS)
+// =====================================================
+const EMAILJS_PUBLIC_KEY  = 'j85KZoShGR6jieSp1';
+const EMAILJS_SERVICE_ID  = 'service_3rv2ikm';
+const EMAILJS_TEMPLATE_ID = 'template_knkax4e';
+
+if (typeof emailjs !== 'undefined') {
+  emailjs.init(EMAILJS_PUBLIC_KEY);
+}
+
+function generateOTP() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+function sendOTPEmail(otpCode, userName) {
+  const templateParams = {
+    to_email: 'koykrit44@gmail.com',
+    user_name: userName,
+    otp_code: otpCode
+  };
+
+  if (typeof showLoading === 'function') showLoading(true, 'កំពុងផ្ញើលេខកូដទៅ Gmail...');
+
+  emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
+    .then(function(response) {
+      console.log('✅ ផ្ញើអ៊ីមែលបានជោគជ័យ!', response.status, response.text);
+      if (typeof showLoading === 'function') showLoading(false);
+      showOTPModal(otpCode, userName);
+    }, function(error) {
+      console.error('❌ ការផ្ញើបរាជ័យ...', error);
+      if (typeof showLoading === 'function') showLoading(false);
+      alert('មានបញ្ហាក្នុងការផ្ញើលេខកូដ។ សូមពិនិត្យ Console ឬការកំណត់ EmailJS។');
+    });
+}
+
+function showOTPModal(otpCode, userName) {
+  const modal = document.getElementById('modal');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalBody = document.getElementById('modalBody');
+
+  modalTitle.innerHTML = '🔐 ការផ្ទៀងផ្ទាត់សុវត្ថិភាព (2FA)';
+  modalBody.innerHTML = `
+    <div class="text-center mb-4">
+      <p class="text-sm text-slate-700">លេខកូដ 6 ខ្ទង់ ត្រូវបានផ្ញើទៅ Gmail៖<br><b>koykrit44@gmail.com</b></p>
+    </div>
+    <div id="otpError" class="hidden bg-red-50 text-red-700 p-2 rounded mb-3 text-xs"></div>
+    <form onsubmit="verifyOTP(event, '${otpCode}', '${userName}')" class="space-y-4">
+      <div>
+        <input id="otpInput" type="text" inputmode="numeric" maxlength="6" class="input text-center text-2xl font-bold tracking-widest" placeholder="••••••" required autofocus>
+      </div>
+      <button type="submit" class="btn btn-primary w-full">ផ្ទៀងផ្ទាត់</button>
+    </form>
+  `;
+
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+}
+
+function verifyOTP(event, correctCode, userName) {
+  event.preventDefault();
+  const inputCode = document.getElementById('otpInput').value.trim();
+  const errBox = document.getElementById('otpError');
+
+  if (inputCode === correctCode) {
+    closeModal();
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('appScreen').classList.remove('hidden');
+    
+    // អ្នកអាចហៅ Function ដើមរបស់អ្នកនៅទីនេះ ដូចជា loadData() ឬ showPage('dashboard')
+    if (typeof showPage === 'function') showPage('dashboard');
+    if (typeof showToast === 'function') showToast('✅ ចូលប្រើប្រាស់ជោគជ័យ');
+  } else {
+    errBox.textContent = '❌ លេខកូដមិនត្រឹមត្រូវ។ សូមព្យាយាមម្តងទៀត។';
+    errBox.classList.remove('hidden');
+    document.getElementById('otpInput').value = '';
+  }
+}
+// =====================================================
+// បញ្ចប់កូដ 2FA
+// =====================================================
 
  // =====================================================
 // CLOUDINARY CONFIG
@@ -3093,67 +3176,68 @@ function getRoleLabel(role) {
 // =====================================================
 // LOGIN / LOGOUT
 // =====================================================
-async function doLogin(e) {
-  e.preventDefault();
-  const u = document.getElementById('loginUser').value.trim();
-  const p = document.getElementById('loginPass').value;
-  const err = document.getElementById('loginError');
-  err.classList.add('hidden');
-  if (!u || !p) { err.textContent = '❌ ' + t('fillRequired'); err.classList.remove('hidden'); return; }
+async function doLogin(event) {
+  event.preventDefault();
+  const username = document.getElementById('loginUser').value.trim();
+  const password = document.getElementById('loginPass').value;
+  const errorBox = document.getElementById('loginError');
+  errorBox.classList.add('hidden');
 
-  const user = DB.users.find(x => (x.username.toLowerCase() === u.toLowerCase() || (x.email && x.email.toLowerCase() === u.toLowerCase())));
-  if (!user) {
-    err.textContent = '❌ ' + t('loginInvalid');
-    err.classList.remove('hidden');
-    logAudit(null, 'LOGIN_FAILED', 'auth', null, `Failed: ${u}`);
-    saveDB();
-    return;
-  }
+  try {
+    if (typeof showLoading === 'function') showLoading(true, 'កំពុងផ្ទៀងផ្ទាត់...');
 
-  let authenticated = false;
-  if (typeof fbAuth !== 'undefined' && user.email) {
-    try {
-      await fbAuth.signInWithEmailAndPassword(user.email, p);
-      authenticated = true;
-    } catch (error) {
-      authenticated = verifyPassword(p, user.password);
+    // ១. ស្វែងរកគណនី
+    const usersSnap = await fbDB.ref('users').once('value');
+    const users = usersSnap.val() || {};
+    let matchedUser = null;
+    let matchedKey = null;
+
+    for (const key of Object.keys(users)) {
+      const u = users[key];
+      if (!u) continue;
+      const uname = (u.username || '').toLowerCase();
+      const email = (u.email || '').toLowerCase();
+      const input  = username.toLowerCase();
+
+      if (uname === input || email === input) {
+        matchedUser = u;
+        matchedKey = key;
+        break;
+      }
     }
-  } else {
-    authenticated = verifyPassword(p, user.password);
+
+    if (!matchedUser) {
+      throw new Error('ឈ្មោះអ្នកប្រើ ឬលេខសម្ងាត់មិនត្រឹមត្រូវ');
+    }
+
+    // ២. ផ្ទៀងផ្ទាត់លេខសម្ងាត់
+    const hash = matchedUser.passwordHash || matchedUser.password || '';
+    let isValid = false;
+
+    if (hash.startsWith('$2')) {
+      isValid = await bcrypt.compare(password, hash);
+    } else {
+      isValid = (password === hash);
+    }
+
+    if (!isValid) {
+      throw new Error('ឈ្មោះអ្នកប្រើ ឬលេខសម្ងាត់មិនត្រឹមត្រូវ');
+    }
+
+    // ៣. ✅ បើត្រូវ ផ្ញើ OTP ទៅ Gmail ជំនួសការចូលភ្លាមៗ
+    if (typeof showLoading === 'function') showLoading(false);
+    
+    const otp = generateOTP();
+    sendOTPEmail(otp, matchedUser.name || matchedUser.username);
+    
+    // ចំណាំ៖ មិនត្រូវបិទ loginScreen នៅទីនេះទេ! រង់ចាំឱ្យអ្នកប្រើបញ្ចូល OTP ត្រូវសិន។
+
+  } catch (err) {
+    if (typeof showLoading === 'function') showLoading(false);
+    console.error('Login error:', err);
+    errorBox.textContent = err.message || 'ឈ្មោះអ្នកប្រើ ឬលេខសម្ងាត់មិនត្រឹមត្រូវ';
+    errorBox.classList.remove('hidden');
   }
-
-  if (!authenticated) {
-    err.textContent = '❌ ' + t('loginInvalid');
-    err.classList.remove('hidden');
-    logAudit(null, 'LOGIN_FAILED', 'auth', null, `Failed: ${u}`);
-    return;
-  }
-
-  currentUser = { ...user };
-  delete currentUser.password;
-  sessionStorage.setItem(SESSION_KEY, JSON.stringify(currentUser));
-  sessionStorage.setItem(ACTIVITY_KEY, Date.now().toString());
-
-  logAudit(user.id, 'LOGIN_SUCCESS', 'auth', null, `${user.username} logged in`);
-  document.getElementById('loginUser').value = '';
-  document.getElementById('loginPass').value = '';
-  document.getElementById('loginScreen').classList.add('hidden');
-  document.getElementById('appScreen').classList.remove('hidden');
-  document.getElementById('userName').textContent = user.name;
-  document.getElementById('userRole').textContent = getRoleLabel(user.role);
-  document.getElementById('userAvatar').textContent = user.name.charAt(0);
-  const settingsMenu = document.getElementById('menu-settings');
-  if (settingsMenu) {
-    settingsMenu.classList.toggle('hidden', user.role !== 'super_admin');
-  }
-  document.getElementById('currentDate').textContent = formatCurrentDateText();
-
-  applyStaticTranslations();
-  updateBadges();
-  showPage('dashboard');
-  startSessionTimer();
-  toast((currentLang === 'km' ? '✅ សូមស្វាគមន៍ ' : '✅ Welcome ') + user.name);
-  saveDB();
 }
 
 function doLogout(auto = false) {
