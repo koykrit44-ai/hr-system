@@ -3221,13 +3221,23 @@ function sendOTPEmail(otpCode, userObj) {
     });
 }
 function forceHideWorkingOverlay() {
-  document.querySelectorAll('div, section, span').forEach(el => {
+  const loadingTexts = ['Working...', 'កំពុងដំណើរការ...'];
+
+  document.querySelectorAll('div, section, span, p').forEach(el => {
     const txt = (el.textContent || '').trim();
-    if (txt === 'Working...' && el.offsetParent !== null) {
-      const box = el.closest('.fixed, [class*="fixed"], [style*="position: fixed"]') || el;
+    if (loadingTexts.includes(txt) && el.offsetParent !== null) {
+      const box =
+        el.closest('#loadingOverlay, #loading, [id*="loading" i], .fixed, [class*="fixed"], [style*="position: fixed"]') ||
+        el;
       box.classList.add('hidden');
-      box.style.display = 'none';
+      box.style.setProperty('display', 'none', 'important');
     }
+  });
+
+  // ពិនិត្យ id ឬ class loading ទូទៅបន្ថែមប្រសិនបើមាន
+  document.querySelectorAll('#loading, #loadingOverlay, .loading-overlay').forEach(el => {
+    el.classList.add('hidden');
+    el.style.setProperty('display', 'none', 'important');
   });
 }
 function showOTPModal(userObj) {
