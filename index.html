@@ -712,7 +712,146 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const fbDB = firebase.database();
 const fbAuth = firebase.auth();
+// =====================================================
+// ទិន្នន័យអាសយដ្ឋាន (ខេត្ត ស្រុក ឃុំ ភូមិ) - គំរូសាកល្បង
+// =====================================================
+const cambodiaLocations = {
+  "តាកែវ": {
+    "គិរីវង់": {
+      "ព្រៃរំដេង": ["ព្រៃរំដេង", "គោកព្រាល", "ត្រពាំងស្តុក"],
+      "ស្វាយជ្រំ": ["ស្វាយជ្រំ", "ព្រៃជប់", "កំពង់ចិន"]
+    },
+    "ព្រៃកប្បាស": {
+      "ស្រែរនាម": ["ស្រែរនាម", "ព្រៃខ្លុង", "តាម៉ៅ"]
+    }
+  },
+  "ភ្នំពេញ": {
+    "ចំការមន": {
+      "ទន្លេបាសាក់": ["ទន្លេបាសាក់", "ផ្សារដើមគរ", "បឹងត្របែក"],
+      "ផ្សារដើមគរ": ["ផ្សារដើមគរ", "ផ្សារថ្មី"]
+    },
+    "ទួលគោក": {
+      "ទួលស្វាយព្រៃ": ["ទួលស្វាយព្រៃ", "ភ្នំពេញថ្មី", "ទួលគោក"]
+    }
+  },
+  "កណ្តាល": {
+    "តាខ្មៅ": {
+      "តាខ្មៅ": ["តាខ្មៅ", "ព្រែកឯង", "ដើមមាន"]
+    }
+  }
+};
 
+// បំពេញទិន្នន័យខេត្តនៅពេលបើក Form
+function populateProvinces() {
+  const provinceSelect = document.getElementById('addrProvince');
+  if (!provinceSelect) return;
+  
+  // សម្អាតចាស់
+  provinceSelect.innerHTML = '<option value="">-- ជ្រើសរើសខេត្ត --</option>';
+  
+  // បន្ថែមខេត្តថ្មី
+  Object.keys(cambodiaLocations).forEach(province => {
+    const option = document.createElement('option');
+    option.value = province;
+    option.textContent = province;
+    provinceSelect.appendChild(option);
+  });
+}
+
+// នៅពេលជ្រើសរើសខេត្ត -> បង្ហាញស្រុក
+function updateDistricts() {
+  const province = document.getElementById('addrProvince').value;
+  const districtSelect = document.getElementById('addrDistrict');
+  const communeSelect = document.getElementById('addrCommune');
+  const villageSelect = document.getElementById('addrVillage');
+  
+  districtSelect.innerHTML = '<option value="">-- ជ្រើសរើសស្រុក --</option>';
+  communeSelect.innerHTML = '<option value="">-- ជ្រើសរើសឃុំ --</option>';
+  villageSelect.innerHTML = '<option value="">-- ជ្រើសរើសភូមិ --</option>';
+  districtSelect.disabled = true;
+  communeSelect.disabled = true;
+  villageSelect.disabled = true;
+  
+  if (province && cambodiaLocations[province]) {
+    Object.keys(cambodiaLocations[province]).forEach(district => {
+      const option = document.createElement('option');
+      option.value = district;
+      option.textContent = district;
+      districtSelect.appendChild(option);
+    });
+    districtSelect.disabled = false;
+  }
+  updateFullAddress();
+}
+
+// នៅពេលជ្រើសរើសស្រុក -> បង្ហាញឃុំ
+function updateCommunes() {
+  const province = document.getElementById('addrProvince').value;
+  const district = document.getElementById('addrDistrict').value;
+  const communeSelect = document.getElementById('addrCommune');
+  const villageSelect = document.getElementById('addrVillage');
+  
+  communeSelect.innerHTML = '<option value="">-- ជ្រើសរើសឃុំ --</option>';
+  villageSelect.innerHTML = '<option value="">-- ជ្រើសរើសភូមិ --</option>';
+  communeSelect.disabled = true;
+  villageSelect.disabled = true;
+  
+  if (province && district && cambodiaLocations[province][district]) {
+    Object.keys(cambodiaLocations[province][district]).forEach(commune => {
+      const option = document.createElement('option');
+      option.value = commune;
+      option.textContent = commune;
+      communeSelect.appendChild(option);
+    });
+    communeSelect.disabled = false;
+  }
+  updateFullAddress();
+}
+
+// នៅពេលជ្រើសរើសឃុំ -> បង្ហាញភូមិ
+function updateVillages() {
+  const province = document.getElementById('addrProvince').value;
+  const district = document.getElementById('addrDistrict').value;
+  const commune = document.getElementById('addrCommune').value;
+  const villageSelect = document.getElementById('addrVillage');
+  
+  villageSelect.innerHTML = '<option value="">-- ជ្រើសរើសភូមិ --</option>';
+  villageSelect.disabled = true;
+  
+  if (province && district && commune && cambodiaLocations[province][district][commune]) {
+    cambodiaLocations[province][district][commune].forEach(village => {
+      const option = document.createElement('option');
+      option.value = village;
+      option.textContent = village;
+      villageSelect.appendChild(option);
+    });
+    villageSelect.disabled = false;
+  }
+  updateFullAddress();
+}
+
+// បង្កើតអាសយដ្ឋានពេញលេញ (ភូមិ ឃុំ ស្រុក ខេត្ត)
+function updateFullAddress() {
+  const province = document.getElementById('addrProvince').value;
+  const district = document.getElementById('addrDistrict').value;
+  const commune = document.getElementById('addrCommune').value;
+  const village = document.getElementById('addrVillage').value;
+  const street = document.getElementById('addrStreet') ? document.getElementById('addrStreet').value : '';
+  
+  const addressInput = document.getElementById('empAddress');
+  
+  let parts = [];
+  if (street) parts.push(street);
+  if (village) parts.push(`ភូមិ${village}`);
+  if (commune) parts.push(`ឃុំ${commune}`);
+  if (district) parts.push(`ស្រុក${district}`);
+  if (province) parts.push(`ខេត្ត${province}`);
+  
+  // បញ្ចូលជាអក្សរតែមួយ ដោយប្រើសញ្ញាក្បៀស
+  if (addressInput) {
+    addressInput.value = parts.join(', ');
+  }
+}
 // =====================================================
 // ចាប់ផ្តើមកូដ 2FA (OTP តាមរយៈ EmailJS)
 // =====================================================
@@ -6223,10 +6362,53 @@ function printProfilePDF(id) {
             <span class="info-label">អ៊ីមែល:</span>
             <span class="info-value">${e.email || '-'}</span>
           </div>
-          <div class="info-pair">
-            <span class="info-label">អាសយដ្ឋាន:</span>
-            <span class="info-value">${e.current_address || '-'}</span>
-          </div>
+          <div class="col-span-1 md:col-span-2 space-y-3">
+  <label class="block text-xs font-semibold text-slate-700 mb-1.5">អាសយដ្ឋាន (ជ្រើសរើសទីតាំង)</label>
+  
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <!-- ខេត្ត -->
+    <div>
+      <label class="block text-[11px] text-slate-500 mb-1">ខេត្ត/ក្រុង *</label>
+      <select id="addrProvince" class="input" onchange="updateDistricts()" required>
+        <option value="">-- ជ្រើសរើសខេត្ត --</option>
+        <!-- ទិន្នន័យនឹងត្រូវបំពេញដោយ JS -->
+      </select>
+    </div>
+    <!-- ស្រុក -->
+    <div>
+      <label class="block text-[11px] text-slate-500 mb-1">ស្រុក/ខណ្ឌ *</label>
+      <select id="addrDistrict" class="input" onchange="updateCommunes()" required disabled>
+        <option value="">-- ជ្រើសរើសស្រុក --</option>
+      </select>
+    </div>
+    <!-- ឃុំ -->
+    <div>
+      <label class="block text-[11px] text-slate-500 mb-1">ឃុំ/សង្កាត់ *</label>
+      <select id="addrCommune" class="input" onchange="updateVillages()" required disabled>
+        <option value="">-- ជ្រើសរើសឃុំ --</option>
+      </select>
+    </div>
+    <!-- ភូមិ -->
+    <div>
+      <label class="block text-[11px] text-slate-500 mb-1">ភូមិ *</label>
+      <select id="addrVillage" class="input" required disabled>
+        <option value="">-- ជ្រើសរើសភូមិ --</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- ផ្លូវ ឬផ្ទះលេខ -->
+  <div>
+    <label class="block text-[11px] text-slate-500 mb-1">ផ្លូវ ឬផ្ទះលេខ (បើមាន)</label>
+    <input id="addrStreet" type="text" class="input" placeholder="ឧទាហរណ៍៖ ផ្លូវលេខ 271, ផ្ទះលេខ 12A">
+  </div>
+
+  <!-- ប្រអប់បង្ហាញលទ្ធផលជាអក្សរ -->
+  <div>
+    <label class="block text-[11px] text-slate-500 mb-1">អាសយដ្ឋានពេញលេញ</label>
+    <textarea id="empAddress" class="input bg-slate-50 text-slate-700" rows="2" readonly placeholder="អាសយដ្ឋាននឹងបង្ហាញនៅទីនេះ..."></textarea>
+  </div>
+</div>
           <div class="info-pair">
             <span class="info-label">ទំនាក់ទំនង:</span>
             <span class="info-value">${e.emergency_name || '-'} (${e.emergency_phone || '-'})</span>
