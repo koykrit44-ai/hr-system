@@ -7323,63 +7323,85 @@ function exportEmployeesReportPDF2() {
     return;
   }
 
-  // ✅ បន្ថែមកូដតម្រៀប (ផ្នែក → កម្រិតការងារ ពីធំមកតូច → តួនាទី ពីធំមកតូច → ចូល/បញ្ចូលមុនទៅក្រោយ)
-  const getGradeScore = (e) => {
-    const posObj = (DB.positions || []).find(p => p.id === e.position_id);
-    const g = String(e.job_grade || e.grade || posObj?.grade || '').toUpperCase();
+  const getGradeRank = (emp) => {
+    const posObj = (DB.positions || []).find(p => p.id === emp.position_id);
+    const g = String(emp.job_grade || emp.grade || posObj?.grade || '').toUpperCase();
     const m = g.match(/G(\d+)/);
     if (m) return Number(m[1]) * 10;
     if (g.includes('DIRECTOR') || g.includes('នាយក')) return 60;
-    if (g.includes('MANAGER') || g.includes('ប្រធាន')) return 50;
-    if (g.includes('LEAD') || g.includes('SUPERVISOR') || g.includes('ប្រធានក្រុម')) return 40;
+    if (g.includes('MANAGER') || g.includes('ប្រធានផ្នែក')) return 50;
+    if (g.includes('LEAD') || g.includes('SUPERVISOR')) return 40;
     if (g.includes('SENIOR') || g.includes('ជាន់ខ្ពស់')) return 30;
     if (g.includes('OFFICER') || g.includes('STAFF')) return 20;
-    return 10;
+    if (g.includes('JUNIOR')) return 10;
+    return 0;
   };
 
-  const getPosScore = (posName) => {
+  const getPosRank = (posName) => {
     const p = String(posName || '').toLowerCase();
     if (p.includes('director') || p.includes('ceo') || p.includes('នាយក')) return 100;
-    if (p.includes('ប្រធានផ្នែក') || p.includes('ប្រធាននាយកដ្ឋាន') || p.includes('manager')) return 85;
-    if (p.includes('អនុប្រធាន') || p.includes('deputy')) return 78;
-    if (p.includes('ប្រធានក្រុម') || p.includes('supervisor') || p.includes('lead')) return 70;
-    if (p.includes('ជាន់ខ្ពស់') || p.includes('senior') || p.includes('chief')) return 55;
-    if (p.includes('គណនេយ្យ') || p.includes('accountant') || p.includes('officer') || p.includes('មន្ត្រី')) return 45;
-    if (p.includes('រដ្ឋបាល') || p.includes('admin') || p.includes('staff')) return 35;
-    if (p.includes('បើកបរ') || p.includes('driver')) return 25;
-    if (p.includes('កាន់សំបកទូ') || p.includes('សន្តិសុខ') || p.includes('guard')) return 15;
+    if (p.includes('manager') || p.includes('ប្រធានផ្នែក') || p.includes('ប្រធាននាយកដ្ឋាន')) return 85;
+    if (p.includes('chief') || p.includes('head')) return 75;
+    if (p.includes('supervisor') || p.includes('lead') || p.includes('ប្រធានក្រុម')) return 65;
+    if (p.includes('senior') || p.includes('ជាន់ខ្ពស់')) return 55;
+    if (p.includes('accountant') || p.includes('engineer') || p.includes('officer') || p.includes('executive') || p.includes('មន្ត្រី')) return 45;
+    if (p.includes('staff') || p.includes('assistant') || p.includes('ជំនួយការ')) return 35;
+    if (p.includes('driver') || p.includes('បើកបរ')) return 25;
+    if (p.includes('សំបកទូ') || p.includes('guard') || p.includes('security') || p.includes('សន្តិសុខ')) return 15;
     return 10;
   };
 
-  const originalIndexMap = new Map(DB.employees.map((item, idx) => [item.id, idx]));
+  const isDriverDept = (emp) => {
+    const dept = String(getDeptName(emp.department_id) || '').toLowerCase();
+    return dept.includes('driver') || dept.includes('បើកបរ');
+  };
+
+  const isDriverEmp = (emp) => {
+    const pos = String(getPosName(emp.position_id) || '').toLowerCase();
+    return isDriverDept(emp) || pos.includes('driver') || pos.includes('បើកបរ');
+  };
+
+  const compareCode = (a, b) => {
+    const codeA = String(a.code || a.employee_id || '').trim();
+    const codeB = String(b.code || b.employee_id || '').trim();
+    return codeA.localeCompare(codeB, undefined, { numeric: true, sensitivity: 'base' });
+  };
+
+  const originalIndexMap = new Map(list.map((emp, idx) => [emp, idx]));
+
   list.sort((a, b) => {
-    // ១. តម្រៀបតាមផ្នែក
-    const deptA = getDeptName(a.department_id) || '';
-    const deptB = getDeptName(b.department_id) || '';
+    const deptA = String(getDeptName(a.department_id) || '');
+    const deptB = String(getDeptName(b.department_id) || '');
     const deptCmp = deptA.localeCompare(deptB, 'km');
     if (deptCmp !== 0) return deptCmp;
 
-    // ២. តម្រៀបតាមកម្រិតការងារ ពីធំមកតូច
-    const gradeDiff = getGradeScore(b) - getGradeScore(a);
+    if (isDriverDept(a) && isDriverDept(b)) {
+      const codeCmp = compareCode(a, b);
+      if (codeCmp !== 0) return codeCmp;
+    }
+
+    const gradeDiff = getGradeRank(b) - getGradeRank(a);
     if (gradeDiff !== 0) return gradeDiff;
 
-    // ៣. តម្រៀបតាមតួនាទី ពីធំមកតូច
-    const posA = getPosName(a.position_id) || '';
-    const posB = getPosName(b.position_id) || '';
-    const posDiff = getPosScore(posB) - getPosScore(posA);
-    if (posDiff !== 0) return posDiff;
+    const posA = String(getPosName(a.position_id) || '');
+    const posB = String(getPosName(b.position_id) || '');
+    const posRankDiff = getPosRank(posB) - getPosRank(posA);
+    if (posRankDiff !== 0) return posRankDiff;
 
     const posNameCmp = posA.localeCompare(posB, 'km');
     if (posNameCmp !== 0) return posNameCmp;
 
-    // ៤. តម្រៀបបុគ្គលិកចូលធ្វើការមុន / បញ្ចូលមុន → ក្រោយ
-    const timeA = a.hire_date ? new Date(a.hire_date).getTime() : Number.MAX_SAFE_INTEGER;
-    const timeB = b.hire_date ? new Date(b.hire_date).getTime() : Number.MAX_SAFE_INTEGER;
-    if (timeA !== timeB) return timeA - timeB;
+    if (isDriverEmp(a) && isDriverEmp(b)) {
+      const codeCmp = compareCode(a, b);
+      if (codeCmp !== 0) return codeCmp;
+    }
 
-    return (originalIndexMap.get(a.id) ?? 0) - (originalIndexMap.get(b.id) ?? 0);
+    const dateA = a.hire_date ? new Date(a.hire_date).getTime() : Number.MAX_SAFE_INTEGER;
+    const dateB = b.hire_date ? new Date(b.hire_date).getTime() : Number.MAX_SAFE_INTEGER;
+    if (dateA !== dateB) return dateA - dateB;
+
+    return (originalIndexMap.get(a) ?? 0) - (originalIndexMap.get(b) ?? 0);
   });
-  // ✅ ចប់កូដតម្រៀប
 
   const printWindow = window.open('', '_blank');
   if (!printWindow) {
