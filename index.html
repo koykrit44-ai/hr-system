@@ -7323,6 +7323,64 @@ function exportEmployeesReportPDF2() {
     return;
   }
 
+  // ✅ បន្ថែមកូដតម្រៀប (ផ្នែក → កម្រិតការងារ ពីធំមកតូច → តួនាទី ពីធំមកតូច → ចូល/បញ្ចូលមុនទៅក្រោយ)
+  const getGradeScore = (e) => {
+    const posObj = (DB.positions || []).find(p => p.id === e.position_id);
+    const g = String(e.job_grade || e.grade || posObj?.grade || '').toUpperCase();
+    const m = g.match(/G(\d+)/);
+    if (m) return Number(m[1]) * 10;
+    if (g.includes('DIRECTOR') || g.includes('នាយក')) return 60;
+    if (g.includes('MANAGER') || g.includes('ប្រធាន')) return 50;
+    if (g.includes('LEAD') || g.includes('SUPERVISOR') || g.includes('ប្រធានក្រុម')) return 40;
+    if (g.includes('SENIOR') || g.includes('ជាន់ខ្ពស់')) return 30;
+    if (g.includes('OFFICER') || g.includes('STAFF')) return 20;
+    return 10;
+  };
+
+  const getPosScore = (posName) => {
+    const p = String(posName || '').toLowerCase();
+    if (p.includes('director') || p.includes('ceo') || p.includes('នាយក')) return 100;
+    if (p.includes('ប្រធានផ្នែក') || p.includes('ប្រធាននាយកដ្ឋាន') || p.includes('manager')) return 85;
+    if (p.includes('អនុប្រធាន') || p.includes('deputy')) return 78;
+    if (p.includes('ប្រធានក្រុម') || p.includes('supervisor') || p.includes('lead')) return 70;
+    if (p.includes('ជាន់ខ្ពស់') || p.includes('senior') || p.includes('chief')) return 55;
+    if (p.includes('គណនេយ្យ') || p.includes('accountant') || p.includes('officer') || p.includes('មន្ត្រី')) return 45;
+    if (p.includes('រដ្ឋបាល') || p.includes('admin') || p.includes('staff')) return 35;
+    if (p.includes('បើកបរ') || p.includes('driver')) return 25;
+    if (p.includes('កាន់សំបកទូ') || p.includes('សន្តិសុខ') || p.includes('guard')) return 15;
+    return 10;
+  };
+
+  const originalIndexMap = new Map(DB.employees.map((item, idx) => [item.id, idx]));
+  list.sort((a, b) => {
+    // ១. តម្រៀបតាមផ្នែក
+    const deptA = getDeptName(a.department_id) || '';
+    const deptB = getDeptName(b.department_id) || '';
+    const deptCmp = deptA.localeCompare(deptB, 'km');
+    if (deptCmp !== 0) return deptCmp;
+
+    // ២. តម្រៀបតាមកម្រិតការងារ ពីធំមកតូច
+    const gradeDiff = getGradeScore(b) - getGradeScore(a);
+    if (gradeDiff !== 0) return gradeDiff;
+
+    // ៣. តម្រៀបតាមតួនាទី ពីធំមកតូច
+    const posA = getPosName(a.position_id) || '';
+    const posB = getPosName(b.position_id) || '';
+    const posDiff = getPosScore(posB) - getPosScore(posA);
+    if (posDiff !== 0) return posDiff;
+
+    const posNameCmp = posA.localeCompare(posB, 'km');
+    if (posNameCmp !== 0) return posNameCmp;
+
+    // ៤. តម្រៀបបុគ្គលិកចូលធ្វើការមុន / បញ្ចូលមុន → ក្រោយ
+    const timeA = a.hire_date ? new Date(a.hire_date).getTime() : Number.MAX_SAFE_INTEGER;
+    const timeB = b.hire_date ? new Date(b.hire_date).getTime() : Number.MAX_SAFE_INTEGER;
+    if (timeA !== timeB) return timeA - timeB;
+
+    return (originalIndexMap.get(a.id) ?? 0) - (originalIndexMap.get(b.id) ?? 0);
+  });
+  // ✅ ចប់កូដតម្រៀប
+
   const printWindow = window.open('', '_blank');
   if (!printWindow) {
     toast('❌ Browser បិទ Popup', 'error');
