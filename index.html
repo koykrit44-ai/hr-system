@@ -6362,16 +6362,15 @@ function printProfilePDF(id) {
             <span class="info-label">អ៊ីមែល:</span>
             <span class="info-value">${e.email || '-'}</span>
           </div>
-          <div class="col-span-1 md:col-span-2 space-y-3">
-  <label class="block text-xs font-semibold text-slate-700 mb-1.5">អាសយដ្ឋាន (ជ្រើសរើសទីតាំង)</label>
+          <div class="mb-4 col-span-1 md:col-span-2">
+  <label class="block text-xs font-semibold text-slate-700 mb-2">អាសយដ្ឋាន (ជ្រើសរើសទីតាំង)</label>
   
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
     <!-- ខេត្ត -->
     <div>
       <label class="block text-[11px] text-slate-500 mb-1">ខេត្ត/ក្រុង *</label>
       <select id="addrProvince" class="input" onchange="updateDistricts()" required>
         <option value="">-- ជ្រើសរើសខេត្ត --</option>
-        <!-- ទិន្នន័យនឹងត្រូវបំពេញដោយ JS -->
       </select>
     </div>
     <!-- ស្រុក -->
@@ -6397,13 +6396,11 @@ function printProfilePDF(id) {
     </div>
   </div>
 
-  <!-- ផ្លូវ ឬផ្ទះលេខ -->
-  <div>
+  <div class="mb-3">
     <label class="block text-[11px] text-slate-500 mb-1">ផ្លូវ ឬផ្ទះលេខ (បើមាន)</label>
-    <input id="addrStreet" type="text" class="input" placeholder="ឧទាហរណ៍៖ ផ្លូវលេខ 271, ផ្ទះលេខ 12A">
+    <input id="addrStreet" type="text" class="input" placeholder="ឧទាហរណ៍៖ ផ្លូវលេខ 271, ផ្ទះលេខ 12A" oninput="updateFullAddress()">
   </div>
 
-  <!-- ប្រអប់បង្ហាញលទ្ធផលជាអក្សរ -->
   <div>
     <label class="block text-[11px] text-slate-500 mb-1">អាសយដ្ឋានពេញលេញ</label>
     <textarea id="empAddress" class="input bg-slate-50 text-slate-700" rows="2" readonly placeholder="អាសយដ្ឋាននឹងបង្ហាញនៅទីនេះ..."></textarea>
@@ -17367,6 +17364,131 @@ window.addEventListener('resize', () => {
     document.body.style.overflow = '';
   }
 });
+
+  // =====================================================
+// កូដបន្ថែមថ្មីសម្រាប់ Form បុគ្គលិក (ជំនួសកូដចាស់)
+// =====================================================
+function showAddEmployeeModal() {
+  const modal = document.getElementById('modal');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalBody = document.getElementById('modalBody');
+
+  // កំណត់ទំហំធំសម្រាប់ Form
+  document.getElementById('modalContainer').style.maxWidth = '880px';
+  
+  modalTitle.innerHTML = '➕ បន្ថែមបុគ្គលិកថ្មី';
+
+  // កូដ HTML សម្រាប់ Form ថ្មី
+  modalBody.innerHTML = `
+    <form id="addEmployeeForm" onsubmit="saveNewEmployee(event)">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
+        <!-- នាមខ្លួន -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">នាមខ្លួន *</label>
+          <input id="empFirstName" type="text" class="input" required>
+        </div>
+        
+        <!-- នាមត្រកូល -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">នាមត្រកូល *</label>
+          <input id="empLastName" type="text" class="input" required>
+        </div>
+        
+        <!-- លេខទូរស័ព្ទ -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">លេខទូរស័ព្ទ *</label>
+          <input id="empPhone" type="text" class="input" required>
+        </div>
+        
+        <!-- អ៊ីមែល -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">អ៊ីមែល</label>
+          <input id="empEmail" type="email" class="input">
+        </div>
+
+        <!-- អាសយដ្ឋានថ្មី (ជាមួយ Dropdown) -->
+        <div class="md:col-span-2 mt-2">
+          <label class="block text-xs font-semibold text-slate-700 mb-2">អាសយដ្ឋាន (ជ្រើសរើសទីតាំង)</label>
+          
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+            <div>
+              <label class="block text-[11px] text-slate-500 mb-1">ខេត្ត/ក្រុង *</label>
+              <select id="addrProvince" class="input" onchange="updateDistricts()" required>
+                <option value="">-- ជ្រើសរើសខេត្ត --</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[11px] text-slate-500 mb-1">ស្រុក/ខណ្ឌ *</label>
+              <select id="addrDistrict" class="input" onchange="updateCommunes()" required disabled>
+                <option value="">-- ជ្រើសរើសស្រុក --</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[11px] text-slate-500 mb-1">ឃុំ/សង្កាត់ *</label>
+              <select id="addrCommune" class="input" onchange="updateVillages()" required disabled>
+                <option value="">-- ជ្រើសរើសឃុំ --</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[11px] text-slate-500 mb-1">ភូមិ *</label>
+              <select id="addrVillage" class="input" required disabled>
+                <option value="">-- ជ្រើសរើសភូមិ --</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="block text-[11px] text-slate-500 mb-1">ផ្លូវ ឬផ្ទះលេខ (បើមាន)</label>
+            <input id="addrStreet" type="text" class="input" placeholder="ឧទាហរណ៍៖ ផ្លូវលេខ 271, ផ្ទះលេខ 12A" oninput="updateFullAddress()">
+          </div>
+
+          <div>
+            <label class="block text-[11px] text-slate-500 mb-1">អាសយដ្ឋានពេញលេញ</label>
+            <textarea id="empAddress" class="input bg-slate-50 text-slate-700" rows="2" readonly placeholder="អាសយដ្ឋាននឹងបង្ហាញនៅទីនេះ..."></textarea>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ប៊ូតុងរក្សាទុក -->
+      <div class="flex justify-end gap-2 mt-6 pt-4 border-t border-slate-200">
+        <button type="button" onclick="closeModal()" class="btn btn-secondary">បោះបង់</button>
+        <button type="submit" class="btn btn-primary">💾 រក្សាទុក</button>
+      </div>
+    </form>
+  `;
+
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+
+  // ហៅ Function បំពេញទិន្នន័យខេត្ត
+  setTimeout(() => {
+    if (typeof populateProvinces === 'function') {
+      populateProvinces();
+    }
+  }, 100);
+}
+
+// Function សម្រាប់រក្សាទុកទិន្នន័យ (ឧទាហរណ៍)
+function saveNewEmployee(event) {
+  event.preventDefault();
+  
+  // ទាញយកទិន្នន័យពី Form
+  const firstName = document.getElementById('empFirstName').value;
+  const lastName = document.getElementById('empLastName').value;
+  const phone = document.getElementById('empPhone').value;
+  const email = document.getElementById('empEmail').value;
+  const address = document.getElementById('empAddress').value;
+
+  // នៅទីនេះ អ្នកអាចដាក់កូដដើម្បី Save ទៅ Firebase (fbDB.ref('employees').push(...))
+  
+  console.log("ទិន្នន័យថ្មី:", { firstName, lastName, phone, email, address });
+  
+  closeModal();
+  if(typeof showToast === 'function') showToast('✅ បន្ថែមបុគ្គលិកបានជោគជ័យ');
+  if(typeof renderEmployees === 'function') renderEmployees(); // Refresh តារាង
+}
 </script>
 </body>
 </html>
