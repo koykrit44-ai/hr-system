@@ -7323,6 +7323,12 @@ function exportEmployeesReportPDF2() {
     return;
   }
 
+  const getDeptPriority = (deptName) => {
+    const d = String(deptName || '').toLowerCase();
+    if (d.includes('រដ្ឋបាល') || d.includes('admin')) return 0; // ផ្នែករដ្ឋបាលនៅលើគេបង្អស់
+    return 1;
+  };
+
   const getGradeRank = (emp) => {
     const posObj = (DB.positions || []).find(p => p.id === emp.position_id);
     const g = String(emp.job_grade || emp.grade || posObj?.grade || '').toUpperCase();
@@ -7372,17 +7378,26 @@ function exportEmployeesReportPDF2() {
   list.sort((a, b) => {
     const deptA = String(getDeptName(a.department_id) || '');
     const deptB = String(getDeptName(b.department_id) || '');
+
+    // ០. ផ្នែករដ្ឋបាល (រដ្ឋបាល / Admin) នៅលើគេបង្អស់
+    const deptPriorityDiff = getDeptPriority(deptA) - getDeptPriority(deptB);
+    if (deptPriorityDiff !== 0) return deptPriorityDiff;
+
+    // ១. តម្រៀបតាមផ្នែកផ្សេងៗ
     const deptCmp = deptA.localeCompare(deptB, 'km');
     if (deptCmp !== 0) return deptCmp;
 
+    // ២. ផ្នែក Driver តម្រៀបតាម Code (EMP0013, EMP0014, ...)
     if (isDriverDept(a) && isDriverDept(b)) {
       const codeCmp = compareCode(a, b);
       if (codeCmp !== 0) return codeCmp;
     }
 
+    // ៣. កម្រិតការងារ ពីធំមកតូច
     const gradeDiff = getGradeRank(b) - getGradeRank(a);
     if (gradeDiff !== 0) return gradeDiff;
 
+    // ៤. តួនាទី ពីធំមកតូច
     const posA = String(getPosName(a.position_id) || '');
     const posB = String(getPosName(b.position_id) || '');
     const posRankDiff = getPosRank(posB) - getPosRank(posA);
@@ -7391,11 +7406,13 @@ function exportEmployeesReportPDF2() {
     const posNameCmp = posA.localeCompare(posB, 'km');
     if (posNameCmp !== 0) return posNameCmp;
 
+    // ៥. តួនាទី Driver/បើកបរ តម្រៀបតាម Code
     if (isDriverEmp(a) && isDriverEmp(b)) {
       const codeCmp = compareCode(a, b);
       if (codeCmp !== 0) return codeCmp;
     }
 
+    // ៦. បុគ្គលិកចូលធ្វើការមុន/បញ្ចូលមុន → ក្រោយ
     const dateA = a.hire_date ? new Date(a.hire_date).getTime() : Number.MAX_SAFE_INTEGER;
     const dateB = b.hire_date ? new Date(b.hire_date).getTime() : Number.MAX_SAFE_INTEGER;
     if (dateA !== dateB) return dateA - dateB;
