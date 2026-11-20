@@ -712,145 +712,222 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const fbDB = firebase.database();
 const fbAuth = firebase.auth();
-// =====================================================
-// ទិន្នន័យអាសយដ្ឋាន (ខេត្ត ស្រុក ឃុំ ភូមិ) - គំរូសាកល្បង
-// =====================================================
-const cambodiaLocations = {
+// ទិន្នន័យខេត្ត ស្រុក ឃុំ ភូមិ និងកូដប្រៃសណីយ៍ (គំរូពេញលេញ តាកែវ-គិរីវង់-ព្រៃរំដេង និងខេត្តសំខាន់ៗ)
+const cambodiaAddressData = {
   "តាកែវ": {
-    "គិរីវង់": {
-      "ព្រៃរំដេង": ["ព្រៃរំដេង", "គោកព្រាល", "ត្រពាំងស្តុក"],
-      "ស្វាយជ្រំ": ["ស្វាយជ្រំ", "ព្រៃជប់", "កំពង់ចិន"]
-    },
-    "ព្រៃកប្បាស": {
-      "ស្រែរនាម": ["ស្រែរនាម", "ព្រៃខ្លុង", "តាម៉ៅ"]
+    postal: "210000",
+    districts: {
+      "គិរីវង់": {
+        postal: "210400",
+        communes: {
+          "ព្រៃរំដេង": { postal: "210409", villages: ["ព្រៃរំដេង", "បួរ", "ដីក្រហម", "គោករកា", "ត្រពាំងស្រង់", "ចមពល", "ព្រៃជ្រៅ", "បឹងតាជ័យ", "ត្រពាំងឈូក", "ស្វាយ", "ទួលពង្រ"] },
+          "អង្គប្រាសាទ": { postal: "210401", villages: ["អង្គប្រាសាទ", "ភ្នំល្ងៀង", "ពោធិ៍", "ស្វាយទង", "ទួលស្លែង"] },
+          "ភ្នំដិន": { postal: "210407", villages: ["ភ្នំដិនជើង", "ភ្នំដិនត្បូង", "ផ្សារភ្នំដិន", "អណ្តូងជ្រៃ"] },
+          "ព្រះបាទជាន់ជុំ": { postal: "210402", villages: ["ពូជ", "កំពង់", "ត្រពាំងស្រងែ", "ជ្រោយ"] }
+        }
+      },
+      "ដូនកែវ": {
+        postal: "210800",
+        communes: {
+          "រកាក្នុង": { postal: "210802", villages: ["ភូមិ១", "ភូមិ២", "ភូមិ៣", "ច្រកត្នោត"] },
+          "រកាក្រៅ": { postal: "210803", villages: ["ព្រៃរំដេង", "ថ្នល់បែក", "តាដួង"] }
+        }
+      },
+      "បាទី": {
+        postal: "210200",
+        communes: {
+          "ត្រពាំងសាប": { postal: "210214", villages: ["ត្រពាំងសាប", "ពោធិ៍", "ស្តុក"] },
+          "ចំប៉ី": { postal: "210201", villages: ["ចំប៉ី", "ទន្លេបាទី"] }
+        }
+      }
     }
   },
   "ភ្នំពេញ": {
-    "ចំការមន": {
-      "ទន្លេបាសាក់": ["ទន្លេបាសាក់", "ផ្សារដើមគរ", "បឹងត្របែក"],
-      "ផ្សារដើមគរ": ["ផ្សារដើមគរ", "ផ្សារថ្មី"]
-    },
-    "ទួលគោក": {
-      "ទួលស្វាយព្រៃ": ["ទួលស្វាយព្រៃ", "ភ្នំពេញថ្មី", "ទួលគោក"]
+    isCapital: true,
+    postal: "120000",
+    districts: {
+      "ចំការមន": {
+        postal: "120100",
+        communes: {
+          "ទន្លេបាសាក់": { postal: "120101", villages: ["ភូមិ១", "ភូមិ២", "ភូមិ៣", "កោះពេជ្រ"] },
+          "ទួលទំពូងទី១": { postal: "120105", villages: ["ភូមិ១", "ភូមិ២", "ភូមិ៣"] }
+        }
+      },
+      "សែនសុខ": {
+        postal: "120800",
+        communes: {
+          "ភ្នំពេញថ្មី": { postal: "120801", villages: ["ភូមិភ្នំពេញថ្មី", "រោងចក្រ", "ពោងពាយ"] },
+          "ទឹកថ្លា": { postal: "120802", villages: ["ទឹកថ្លា", "ផ្សារទឹកថ្លា", "បុរី១០០ខ្នង"] }
+        }
+      },
+      "ពោធិ៍សែនជ័យ": {
+        postal: "120900",
+        communes: {
+          "ចោមចៅទី១": { postal: "120901", villages: ["ត្រពាំងថ្លឹង", "ទួលពង្រ", "គោកចំបក់"] },
+          "កាកាបទី១": { postal: "120904", villages: ["ប៉ប្រកខាងជើង", "តាងួន"] }
+        }
+      }
     }
   },
   "កណ្តាល": {
-    "តាខ្មៅ": {
-      "តាខ្មៅ": ["តាខ្មៅ", "ព្រែកឯង", "ដើមមាន"]
+    postal: "080000",
+    districts: {
+      "តាខ្មៅ": {
+        postal: "081100",
+        communes: {
+          "តាខ្មៅ": { postal: "081104", villages: ["តាខ្មៅ", "ព្រែកសំរោង", "ថ្មី"] },
+          "ព្រែកហូរ": { postal: "081103", villages: ["ព្រែកហូរកើត", "ព្រែកហូរលិច"] }
+        }
+      }
+    }
+  },
+  "សៀមរាប": {
+    postal: "170000",
+    districts: {
+      "សៀមរាប": {
+        postal: "171000",
+        communes: {
+          "ស្លក្រាម": { postal: "171001", villages: ["ស្លក្រាម", "បឹងដូនប៉ា", "ទ្រាំង"] },
+          "ស្វាយដង្គំ": { postal: "171002", villages: ["ស្វាយដង្គំ", "តាភុល"] }
+        }
+      }
     }
   }
+  // អ្នកអាចបន្ថែមខេត្តផ្សេងទៀតតាមទម្រង់ដូចខាងលើបានយ៉ាងងាយស្រួល
 };
 
-// បំពេញទិន្នន័យខេត្តនៅពេលបើក Form
-function populateProvinces() {
-  const provinceSelect = document.getElementById('addrProvince');
-  if (!provinceSelect) return;
-  
-  // សម្អាតចាស់
-  provinceSelect.innerHTML = '<option value="">-- ជ្រើសរើសខេត្ត --</option>';
-  
-  // បន្ថែមខេត្តថ្មី
-  Object.keys(cambodiaLocations).forEach(province => {
-    const option = document.createElement('option');
-    option.value = province;
-    option.textContent = province;
-    provinceSelect.appendChild(option);
+function populateProvinces(existingEmp = null) {
+  const provEl = document.getElementById('addrProvince');
+  if (!provEl) return;
+  provEl.innerHTML = '<option value="">-- ជ្រើសរើសខេត្ត --</option>';
+  Object.keys(cambodiaAddressData).forEach((prov) => {
+    const isCap = cambodiaAddressData[prov].isCapital;
+    const label = isCap ? `រាជធានី${prov}` : `ខេត្ត${prov}`;
+    provEl.innerHTML += `<option value="${prov}">${label}</option>`;
   });
+
+  if (existingEmp) {
+    provEl.value = existingEmp.province || '';
+    loadDistricts(existingEmp.district || '', existingEmp.commune || '', existingEmp.village || '');
+    document.getElementById('addrStreet').value = existingEmp.street_house || '';
+    document.getElementById('f_postal_code').value = existingEmp.postal_code || '';
+    document.getElementById('f_addr').value = existingEmp.current_address || '';
+  }
 }
 
-// នៅពេលជ្រើសរើសខេត្ត -> បង្ហាញស្រុក
-function updateDistricts() {
-  const province = document.getElementById('addrProvince').value;
-  const districtSelect = document.getElementById('addrDistrict');
-  const communeSelect = document.getElementById('addrCommune');
-  const villageSelect = document.getElementById('addrVillage');
-  
-  districtSelect.innerHTML = '<option value="">-- ជ្រើសរើសស្រុក --</option>';
-  communeSelect.innerHTML = '<option value="">-- ជ្រើសរើសឃុំ --</option>';
-  villageSelect.innerHTML = '<option value="">-- ជ្រើសរើសភូមិ --</option>';
-  districtSelect.disabled = true;
-  communeSelect.disabled = true;
-  villageSelect.disabled = true;
-  
-  if (province && cambodiaLocations[province]) {
-    Object.keys(cambodiaLocations[province]).forEach(district => {
-      const option = document.createElement('option');
-      option.value = district;
-      option.textContent = district;
-      districtSelect.appendChild(option);
-    });
-    districtSelect.disabled = false;
+function loadDistricts(selectedDist = '', selectedCom = '', selectedVil = '') {
+  const prov = document.getElementById('addrProvince').value;
+  const distEl = document.getElementById('addrDistrict');
+  const comEl = document.getElementById('addrCommune');
+  const vilEl = document.getElementById('addrVillage');
+  const postalEl = document.getElementById('f_postal_code');
+
+  distEl.innerHTML = '<option value="">-- ជ្រើសរើសស្រុក/ខណ្ឌ --</option>';
+  comEl.innerHTML = '<option value="">-- ជ្រើសរើសឃុំ/សង្កាត់ --</option>';
+  vilEl.innerHTML = '<option value="">-- ជ្រើសរើសភូមិ --</option>';
+  comEl.disabled = true;
+  vilEl.disabled = true;
+
+  if (!prov || !cambodiaAddressData[prov]) {
+    distEl.disabled = true;
+    postalEl.value = '';
+    updateFullAddress();
+    return;
   }
+
+  distEl.disabled = false;
+  postalEl.value = cambodiaAddressData[prov].postal;
+  Object.keys(cambodiaAddressData[prov].districts).forEach((d) => {
+    distEl.innerHTML += `<option value="${d}">${d}</option>`;
+  });
+
+  if (selectedDist) {
+    distEl.value = selectedDist;
+    loadCommunes(selectedCom, selectedVil);
+  } else {
+    updateFullAddress();
+  }
+}
+
+function loadCommunes(selectedCom = '', selectedVil = '') {
+  const prov = document.getElementById('addrProvince').value;
+  const dist = document.getElementById('addrDistrict').value;
+  const comEl = document.getElementById('addrCommune');
+  const vilEl = document.getElementById('addrVillage');
+  const postalEl = document.getElementById('f_postal_code');
+
+  comEl.innerHTML = '<option value="">-- ជ្រើសរើសឃុំ/សង្កាត់ --</option>';
+  vilEl.innerHTML = '<option value="">-- ជ្រើសរើសភូមិ --</option>';
+  vilEl.disabled = true;
+
+  const distObj = cambodiaAddressData[prov]?.districts?.[dist];
+  if (!distObj) {
+    comEl.disabled = true;
+    updateFullAddress();
+    return;
+  }
+
+  comEl.disabled = false;
+  postalEl.value = distObj.postal;
+  Object.keys(distObj.communes).forEach((c) => {
+    comEl.innerHTML += `<option value="${c}">${c}</option>`;
+  });
+
+  if (selectedCom) {
+    comEl.value = selectedCom;
+    loadVillages(selectedVil);
+  } else {
+    updateFullAddress();
+  }
+}
+
+function loadVillages(selectedVil = '') {
+  const prov = document.getElementById('addrProvince').value;
+  const dist = document.getElementById('addrDistrict').value;
+  const com = document.getElementById('addrCommune').value;
+  const vilEl = document.getElementById('addrVillage');
+  const postalEl = document.getElementById('f_postal_code');
+
+  vilEl.innerHTML = '<option value="">-- ជ្រើសរើសភូមិ --</option>';
+  const comObj = cambodiaAddressData[prov]?.districts?.[dist]?.communes?.[com];
+  if (!comObj) {
+    vilEl.disabled = true;
+    updateFullAddress();
+    return;
+  }
+
+  vilEl.disabled = false;
+  postalEl.value = comObj.postal; // កំណត់កូដប្រៃសណីយ៍ស្វ័យប្រវត្តិ
+  comObj.villages.forEach((v) => {
+    vilEl.innerHTML += `<option value="${v}">${v}</option>`;
+  });
+
+  if (selectedVil) vilEl.value = selectedVil;
   updateFullAddress();
 }
 
-// នៅពេលជ្រើសរើសស្រុក -> បង្ហាញឃុំ
-function updateCommunes() {
-  const province = document.getElementById('addrProvince').value;
-  const district = document.getElementById('addrDistrict').value;
-  const communeSelect = document.getElementById('addrCommune');
-  const villageSelect = document.getElementById('addrVillage');
-  
-  communeSelect.innerHTML = '<option value="">-- ជ្រើសរើសឃុំ --</option>';
-  villageSelect.innerHTML = '<option value="">-- ជ្រើសរើសភូមិ --</option>';
-  communeSelect.disabled = true;
-  villageSelect.disabled = true;
-  
-  if (province && district && cambodiaLocations[province][district]) {
-    Object.keys(cambodiaLocations[province][district]).forEach(commune => {
-      const option = document.createElement('option');
-      option.value = commune;
-      option.textContent = commune;
-      communeSelect.appendChild(option);
-    });
-    communeSelect.disabled = false;
-  }
-  updateFullAddress();
-}
-
-// នៅពេលជ្រើសរើសឃុំ -> បង្ហាញភូមិ
-function updateVillages() {
-  const province = document.getElementById('addrProvince').value;
-  const district = document.getElementById('addrDistrict').value;
-  const commune = document.getElementById('addrCommune').value;
-  const villageSelect = document.getElementById('addrVillage');
-  
-  villageSelect.innerHTML = '<option value="">-- ជ្រើសរើសភូមិ --</option>';
-  villageSelect.disabled = true;
-  
-  if (province && district && commune && cambodiaLocations[province][district][commune]) {
-    cambodiaLocations[province][district][commune].forEach(village => {
-      const option = document.createElement('option');
-      option.value = village;
-      option.textContent = village;
-      villageSelect.appendChild(option);
-    });
-    villageSelect.disabled = false;
-  }
-  updateFullAddress();
-}
-
-// បង្កើតអាសយដ្ឋានពេញលេញ (ភូមិ ឃុំ ស្រុក ខេត្ត)
 function updateFullAddress() {
-  const province = document.getElementById('addrProvince').value;
-  const district = document.getElementById('addrDistrict').value;
-  const commune = document.getElementById('addrCommune').value;
-  const village = document.getElementById('addrVillage').value;
-  const street = document.getElementById('addrStreet') ? document.getElementById('addrStreet').value : '';
-  
-  const addressInput = document.getElementById('empAddress');
-  
-  let parts = [];
+  const prov = document.getElementById('addrProvince').value;
+  const dist = document.getElementById('addrDistrict').value;
+  const com = document.getElementById('addrCommune').value;
+  const vil = document.getElementById('addrVillage').value;
+  const street = document.getElementById('addrStreet').value.trim();
+  const isCap = Boolean(cambodiaAddressData[prov]?.isCapital);
+
+  const parts = [];
   if (street) parts.push(street);
-  if (village) parts.push(`ភូមិ${village}`);
-  if (commune) parts.push(`ឃុំ${commune}`);
-  if (district) parts.push(`ស្រុក${district}`);
-  if (province) parts.push(`ខេត្ត${province}`);
-  
-  // បញ្ចូលជាអក្សរតែមួយ ដោយប្រើសញ្ញាក្បៀស
-  if (addressInput) {
-    addressInput.value = parts.join(', ');
-  }
+  if (vil) parts.push(vil.startsWith('ភូមិ') ? vil : `ភូមិ${vil}`);
+  if (com) parts.push(com.startsWith('ឃុំ') || com.startsWith('សង្កាត់') ? com : `${isCap ? 'សង្កាត់' : 'ឃុំ'}${com}`);
+  if (dist) parts.push(dist.startsWith('ស្រុក') || dist.startsWith('ខណ្ឌ') ? dist : `${isCap ? 'ខណ្ឌ' : 'ស្រុក'}${dist}`);
+  if (prov) parts.push(isCap ? `រាជធានី${prov}` : `ខេត្ត${prov}`);
+
+  document.getElementById('f_addr').value = parts.join(' ');
+}
+
+function resetAddressPicker() {
+  document.getElementById('addrProvince').value = '';
+  document.getElementById('addrStreet').value = '';
+  loadDistricts();
 }
 // =====================================================
 // ចាប់ផ្តើមកូដ 2FA (OTP តាមរយៈ EmailJS)
@@ -4227,7 +4304,63 @@ function openEmpForm(id) {
           <div><label class="text-sm font-medium">${t('phone')} 1 <span class="text-red-500">*</span></label><input id="f_phone" class="input" value="${escapeHtml(emp.phone || '')}" required></div>
           <div><label class="text-sm font-medium">${t('phone')} 2</label><input id="f_phone2" class="input" value="${escapeHtml(emp.phone2 || '')}"></div>
           <div><label class="text-sm font-medium">${t('email')}</label><input id="f_email" type="email" class="input" value="${escapeHtml(emp.email || '')}"></div>
-          <div class="md:col-span-2"><label class="text-sm font-medium">${t('address')}</label><textarea id="f_addr" rows="2" class="input">${escapeHtml(emp.current_address || '')}</textarea></div>
+          <!-- ផ្នែកអាសយដ្ឋានកម្ពុជា ជ្រើសរើសតាមលំដាប់ + កូដប្រៃសណីយ៍ស្វ័យប្រវត្តិ -->
+<div class="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 space-y-3">
+  <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-2">
+    <span class="font-bold text-sm text-slate-800 dark:text-slate-100">
+      📍 អាសយដ្ឋានបច្ចុប្បន្ន (ខេត្ត → ស្រុក → ឃុំ → ភូមិ)
+    </span>
+    <button type="button" onclick="resetAddressPicker()" class="text-xs text-blue-600 hover:underline">
+      សម្អាតអាសយដ្ឋាន
+    </button>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+    <div>
+      <label class="block text-xs font-semibold mb-1">១. ខេត្ត / រាជធានី</label>
+      <select id="addrProvince" onchange="loadDistricts()" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900">
+        <option value="">-- ជ្រើសរើសខេត្ត --</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-xs font-semibold mb-1">២. ស្រុក / ខណ្ឌ</label>
+      <select id="addrDistrict" onchange="loadCommunes()" disabled class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 disabled:opacity-50">
+        <option value="">-- ជ្រើសរើសស្រុក/ខណ្ឌ --</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-xs font-semibold mb-1">៣. ឃុំ / សង្កាត់</label>
+      <select id="addrCommune" onchange="loadVillages()" disabled class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 disabled:opacity-50">
+        <option value="">-- ជ្រើសរើសឃុំ/សង្កាត់ --</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-xs font-semibold mb-1">៤. ភូមិ</label>
+      <select id="addrVillage" onchange="updateFullAddress()" disabled class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 disabled:opacity-50">
+        <option value="">-- ជ្រើសរើសភូមិ --</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+    <div class="md:col-span-2">
+      <label class="block text-xs font-semibold mb-1">៥. ផ្លូវលេខ ឬ ផ្ទះលេខ (វាយបញ្ចូលដោយដៃបើមាន)</label>
+      <input type="text" id="addrStreet" oninput="updateFullAddress()" placeholder="ឧ. ផ្ទះលេខ 24 ផ្លូវលេខ 271 (ទុកទទេបើគ្មាន)" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900" />
+    </div>
+    <div>
+      <label class="block text-xs font-semibold mb-1">៦. កូដប្រៃសណីយ៍ (ស្វ័យប្រវត្តិ)</label>
+      <input type="text" id="f_postal_code" placeholder="000000" class="w-full px-3 py-2 text-sm font-mono font-bold rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900" />
+    </div>
+  </div>
+
+  <div>
+    <label class="block text-xs font-semibold mb-1">លទ្ធផលអាសយដ្ឋានពេញលេញ (អាចកែសម្រួលដោយដៃបាន)</label>
+    <textarea id="f_addr" rows="2" placeholder="ឧ. ភូមិព្រៃរំដេង ឃុំព្រៃរំដេង ស្រុកគិរីវង់ ខេត្តតាកែវ" class="w-full px-3 py-2 text-sm font-medium rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900"></textarea>
+  </div>
+</div>
         </div>
         <h4 class="font-bold text-slate-700 mt-6 mb-3">🚨 ${t('empTabEmergency')}</h4>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -4363,6 +4496,7 @@ function openEmpForm(id) {
   renderDocList();
   renderInsuranceList();
   openModal();
+  populateProvinces(emp);
 }
 // ✅ បើក Form ផ្ទេរផ្នែក
 function openBulkTransferModal() {
@@ -5017,7 +5151,14 @@ function saveEmpForm(e, id) {
       phone: phone,
       phone2: document.getElementById('f_phone2').value,
       email: email,
-      current_address: document.getElementById('f_addr').value,
+      province: document.getElementById('addrProvince')?.value || '',
+district: document.getElementById('addrDistrict')?.value || '',
+commune: document.getElementById('addrCommune')?.value || '',
+village: document.getElementById('addrVillage')?.value || '',
+street_house: document.getElementById('addrStreet')?.value || '',
+postal_code: document.getElementById('f_postal_code')?.value || '',
+address: document.getElementById('f_addr')?.value || '',
+current_address: document.getElementById('f_addr')?.value || '',
       emergency_name: emgName,
       emergency_relationship: document.getElementById('f_emg_rel').value,
       emergency_phone: emgPhone,
