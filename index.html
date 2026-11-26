@@ -18082,55 +18082,6 @@ function saveNewEmployee(event) {
   if(typeof showToast === 'function') showToast('✅ បន្ថែមបុគ្គលិកបានជោគជ័យ');
   if(typeof renderEmployees === 'function') renderEmployees(); // Refresh តារាង
 }
-  // =====================================================
-// កូដបន្ថែមសម្រាប់ប្រភេទសម្ភារៈថ្មី (ក្បាលឡាន និងរម៉ក)
-// =====================================================
-// ១. បន្ថែមទៅក្នុងបញ្ជីទិន្នន័យគោល (Master Catalogs)
-if (typeof MASTER_CATALOGS !== 'undefined' && MASTER_CATALOGS.assetCategoryGroup) {
-    const hasTruckHead = MASTER_CATALOGS.assetCategoryGroup.some(item => item.code === 'Truck Head');
-    if (!hasTruckHead) {
-        MASTER_CATALOGS.assetCategoryGroup.push(
-            { code: 'Truck Head', name_km: 'ក្បាលឡានកុងតឺន័រ', name_en: 'Container Truck Head' },
-            { code: 'Container Chassis', name_km: 'រម៉កដឹកទូរកុងតឺន័រ', name_en: 'Container Chassis' }
-        );
-    }
-}
-
-// ២. បន្ថែមទៅក្នុង Form បន្ថែមសម្ភារៈ (ដោយប្រើ MutationObserver)
-// វានឹងរង់ចាំមើលពេលដែល Form បើក ហើយវានឹងបន្ថែមជម្រើសដោយស្វ័យប្រវត្តិ
-document.addEventListener('DOMContentLoaded', () => {
-    const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-            if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-                // ពិនិត្យមើលថាតើមានប្រអប់ជម្រើសប្រភេទសម្ភារៈឬអត់
-                const assetCategorySelect = document.getElementById('assetCategory');
-                
-                if (assetCategorySelect && !assetCategorySelect.dataset.hasNewOptions) {
-                    // ពិនិត្យថាតើវាជាប្រអប់របស់យើងឬអត់ (ដើម្បីកុំឱ្យវាបន្ថែមស្ទួន)
-                    const options = Array.from(assetCategorySelect.options).map(o => o.value);
-                    
-                    if (!options.includes('Truck Head')) {
-                        const opt1 = document.createElement('option');
-                        opt1.value = 'Truck Head';
-                        opt1.textContent = 'ក្បាលឡានកុងតឺន័រ';
-                        
-                        const opt2 = document.createElement('option');
-                        opt2.value = 'Container Chassis';
-                        opt2.textContent = 'រម៉កដឹកទូរកុងតឺន័រ';
-                        
-                        assetCategorySelect.appendChild(opt1);
-                        assetCategorySelect.appendChild(opt2);
-                    }
-                    // ដាក់សញ្ញាថាបានបន្ថែមរួចហើយ
-                    assetCategorySelect.dataset.hasNewOptions = 'true';
-                }
-            }
-        });
-    });
-
-    // ចាប់ផ្តើមសង្កេតមើលរាល់ការផ្លាស់ប្តូរក្នុងទំព័រ
-    observer.observe(document.body, { childList: true, subtree: true });
-});
 </script>
 </body>
 </html>
