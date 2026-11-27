@@ -6053,28 +6053,32 @@ function printEmployeeContract(empId) {
       .cover-divider { display: block; margin: 2.5mm auto 0; }
 
       .cover-brand {
-        position: absolute;
-        top: 15mm;
-        left: 0;
-        width: 128px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-      }
+  position: absolute;
+  top: 16mm;
+  left: 2mm;
+  width: max-content;
+  min-width: 175px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
 
-      .cover-brand img {
-        max-width: 112px;
-        max-height: 68px;
-        object-fit: contain;
-      }
+.cover-brand img {
+  width: auto;
+  max-width: 155px;
+  max-height: 82px;
+  object-fit: contain;
+  display: block;
+}
 
-      .cover-company-name {
-        margin-top: 2mm;
-        font-family: 'Khmer OS Muol Light', 'Moul', serif;
-        font-size: 10.5px;
-        line-height: 1.45;
-      }
+.cover-company-name {
+  margin-top: 2mm;
+  font-family: 'Khmer OS Muol Light', 'Moul', serif;
+  font-size: 10.5px;
+  line-height: 1.4;
+  white-space: nowrap;
+}
 
       .cover-title {
         position: absolute;
