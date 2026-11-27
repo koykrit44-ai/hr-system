@@ -7697,7 +7697,13 @@ function exportEmployeesReportPDF2() {
 // ✅ ORGANIZATION CHART - ចាត់ថ្នាក់តាម Grade (ស្អាត)
 // =====================================================
 function renderOrgChart() {
-  if (!DB.employees.length) {
+  // ✅ ច្រោះយកតែបុគ្គលិកដែលនៅធ្វើការ (មិនបង្ហាញអ្នកលាឈប់ និងអ្នកបញ្ឈប់)
+  const visibleEmployees = (DB.employees || []).filter(e => {
+    const st = String(e.status || '').toLowerCase();
+    return st !== 'resigned' && st !== 'terminated';
+  });
+
+  if (!visibleEmployees.length) {
     document.getElementById('pageContent').innerHTML = `
       <div class="card text-center py-12 text-slate-400">
         <div class="text-4xl mb-3">👥</div>
@@ -7706,10 +7712,10 @@ function renderOrgChart() {
     `;
     return;
   }
-  
+
   // ✅ ចាត់ថ្នាក់បុគ្គលិកតាម Grade Level
   const employeesByGrade = {};
-  DB.employees.forEach(e => {
+  visibleEmployees.forEach(e => {
     const grade = DB.jobGrades.find(g => g.id === e.grade_id);
     const level = grade?.level || 1;
     if (!employeesByGrade[level]) employeesByGrade[level] = [];
