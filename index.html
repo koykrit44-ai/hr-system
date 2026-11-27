@@ -9,6 +9,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;600;700&family=Moul&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Siemreap&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script> 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -46,6 +48,33 @@
     }
 
     .tabular-nums { font-variant-numeric: tabular-nums; }
+    .font-mono-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ផ្ទៃខាងក្រោយ Login ស្អាតបែប Executive Grid */
+    .login-bg {
+      background-color: #0f172a;
+      background-image:
+        linear-gradient(to right, rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+      background-size: 32px 32px;
+    }
+
+    /* កាត Dashboard ស្អាតបែប Single-Elevation */
+    .kpi-modern {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-hairline);
+      border-radius: 12px;
+      padding: 18px 20px;
+      transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+    .kpi-modern:hover {
+      border-color: #93c5fd;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+    }
 
     /* Sidebar */
     .app-sidebar {
@@ -552,7 +581,7 @@
 <!-- ន<script src="/_aistudio-iframe.js?v=29045eb3"></script> --></head>
 <body>
   <div id="loadingOverlay">
-    <div class="spinner"></div>
+    <div id="aeLoadingLottie" style="width:72px;height:72px;"></div>
     <div class="loading-text" id="loadingText" data-i18n="loadingText">កំពុងដំណើរការ...</div>
   </div>
 
@@ -565,6 +594,7 @@
   <div id="loginScreen" class="min-h-screen login-bg flex items-center justify-center p-4">
     <div class="bg-white/95 backdrop-blur-xl border border-white/20 p-8 rounded-2xl shadow-2xl w-full max-w-md">
       <div class="text-center mb-6">
+        <div id="aeLoginLottie" class="w-16 h-16 mx-auto mb-2"></div>
         <div id="loginLogo" class="w-20 h-20 bg-slate-900 rounded-2xl mx-auto flex items-center justify-center mb-3 shadow-md overflow-hidden">
           <img src="415-logo.png" alt="Logo" class="w-full h-full object-cover" onerror="this.style.display='none';this.parentElement.textContent='HR';this.parentElement.classList.add('text-white','font-bold','text-2xl');">
         </div>
@@ -2512,13 +2542,18 @@ const MASTER_CATALOGS = {
     { code: 'opening', name_km: 'ស្តុកដើមគ្រា', name_en: 'Opening Balance' }
   ],
   assetCategoryGroup: [
-    { code: 'IT Equipment', name_km: 'ឧបករណ៍ព័ត៌មានវិទ្យា (IT)', name_en: 'IT Equipment' },
-    { code: 'Office Equipment', name_km: 'សម្ភារៈការិយាល័យ', name_en: 'Office Equipment' },
-    { code: 'Communication', name_km: 'ឧបករណ៍ទំនាក់ទំនង', name_en: 'Communication' },
-    { code: 'Safety/Uniform', name_km: 'សុវត្ថិភាព និងឯកសណ្ឋាន', name_en: 'Safety & Uniform' },
-    { code: 'Vehicle/Operation', name_km: 'រថយន្ត និងប្រតិបត្តិការ', name_en: 'Vehicle & Operations' },
-    { code: 'Warehouse Equipment', name_km: 'ឧបករណ៍ឃ្លាំង', name_en: 'Warehouse Equipment' },
-    { code: 'Facilities', name_km: 'សម្ភារៈអគារ និងប្រព័ន្ធត្រជាក់', name_en: 'Facilities' },
+    { code: 'IT Equipment', name_km: '1. សម្ភារៈបច្ចេកវិទ្យាព័ត៌មាន (IT Equipment)', name_en: '1. IT Equipment' },
+    { code: 'Office Equipment', name_km: '2. សម្ភារៈការិយាល័យ (Office Equipment)', name_en: '2. Office Equipment' },
+    { code: 'Communication', name_km: '3. សម្ភារៈទំនាក់ទំនង (Communication)', name_en: '3. Communication Equipment' },
+    { code: 'Truck & Tractor Head', name_km: '4A. ក្បាលរថយន្ត (Truck & Tractor Head)', name_en: '4A. Truck & Tractor Head' },
+    { code: 'Trailer & Chassis', name_km: '4B. រ៉ឺម៉ក និងសាស៊ី (Trailer & Chassis)', name_en: '4B. Trailer & Chassis' },
+    { code: 'Heavy Equipment', name_km: '4C. គ្រឿងចក្រធុនធ្ងន់ (Heavy Equipment)', name_en: '4C. Heavy Equipment' },
+    { code: 'Vehicle/Operation', name_km: '5. គ្រឿងបរិក្ខារយានយន្ត (Vehicle Equipment)', name_en: '5. Vehicle Equipment & Accessories' },
+    { code: 'Maintenance & Workshop', name_km: '6. សម្ភារៈជួសជុល និងយានដ្ឋាន (Workshop)', name_en: '6. Maintenance & Workshop Equipment' },
+    { code: 'Spare Parts & Consumables', name_km: '7. គ្រឿងបន្លាស់ និងសម្ភារៈប្រើប្រាស់ (Spare Parts)', name_en: '7. Spare Parts & Consumables' },
+    { code: 'Safety/Uniform', name_km: '8. សម្ភារៈសុវត្ថិភាព និងឯកសណ្ឋាន (Safety & Uniform)', name_en: '8. Safety & Uniform' },
+    { code: 'Warehouse Equipment', name_km: '9. សម្ភារៈឃ្លាំង និងលើកដាក់ទំនិញ (Warehouse)', name_en: '9. Warehouse & Loading Equipment' },
+    { code: 'Facilities', name_km: '10. សម្ភារៈអគារ និងអនាម័យ (Facility & Cleaning)', name_en: '10. Facility & Cleaning Equipment' },
     { code: 'Truck Head', name_km: 'ក្បាលឡានកុងតឺន័រ', name_en: 'Container Truck Head' },
     { code: 'Container Chassis', name_km: 'រម៉កដឹកទូរកុងតឺន័រ', name_en: 'Container Chassis' }
   ],
@@ -2788,48 +2823,200 @@ const DEFAULT_ASSET_STATUSES = [
 ];
 
 const DEFAULT_ASSET_CATEGORIES = [
-  // IT Equipment
-  { code: 'IT-LAP', name: 'Laptop', name_km: 'កុំព្យូទ័រយួរដៃ (Laptop)', name_en: 'Laptop', group: 'IT Equipment', icon: '💻' },
-  { code: 'IT-DES', name: 'Desktop', name_km: 'កុំព្យូទ័រលើតុ (Desktop)', name_en: 'Desktop', group: 'IT Equipment', icon: '🖥️' },
-  { code: 'IT-MON', name: 'Monitor', name_km: 'អេក្រង់កុំព្យូទ័រ (Monitor)', name_en: 'Monitor', group: 'IT Equipment', icon: '🖥️' },
-  { code: 'IT-PRN', name: 'Printer', name_km: 'ម៉ាស៊ីនព្រីន (Printer)', name_en: 'Printer', group: 'IT Equipment', icon: '🖨️' },
-  { code: 'IT-SCN', name: 'Scanner', name_km: 'ម៉ាស៊ីនស្កេន (Scanner)', name_en: 'Scanner', group: 'IT Equipment', icon: '📠' },
-  { code: 'IT-SVR', name: 'Server', name_km: 'ម៉ាស៊ីនមេ (Server)', name_en: 'Server', group: 'IT Equipment', icon: '🖧' },
-  { code: 'IT-UPS', name: 'UPS', name_km: 'ឧបករណ៍រក្សាភ្លើង (UPS)', name_en: 'UPS', group: 'IT Equipment', icon: '🔋' },
-  { code: 'IT-RTR', name: 'Router', name_km: 'ឧបករណ៍ចែកអ៊ីនធឺណិត (Router)', name_en: 'Router', group: 'IT Equipment', icon: '📡' },
-  { code: 'IT-SWT', name: 'Switch', name_km: 'ឧបករណ៍បណ្តាញ (Network Switch)', name_en: 'Network Switch', group: 'IT Equipment', icon: '🔌' },
-  { code: 'IT-TAB', name: 'Tablet', name_km: 'ថេប្លេត (Tablet)', name_en: 'Tablet', group: 'IT Equipment', icon: '📲' },
-  { code: 'IT-CAM', name: 'CCTV Camera', name_km: 'កាមេរ៉ាសុវត្ថិភាព (CCTV)', name_en: 'CCTV Camera', group: 'IT Equipment', icon: '📹' },
-  { code: 'IT-ADP', name: 'Adapter / Charger', name_km: 'ដុំសាកភ្លើង និងខ្សែតភ្ជាប់', name_en: 'Adapter / Charger', group: 'IT Equipment', icon: '🔌' },
-  // Office Equipment
-  { code: 'OF-DSK', name: 'Desk', name_km: 'តុការិយាល័យ', name_en: 'Office Desk', group: 'Office Equipment', icon: '🪑' },
-  { code: 'OF-CHR', name: 'Chair', name_km: 'កៅអីការិយាល័យ', name_en: 'Office Chair', group: 'Office Equipment', icon: '💺' },
-  { code: 'OF-CAB', name: 'Cabinet', name_km: 'ទូដាក់ឯកសារ', name_en: 'Filing Cabinet', group: 'Office Equipment', icon: '🗄️' },
-  { code: 'OF-TBL', name: 'Meeting Table', name_km: 'តុប្រជុំ', name_en: 'Meeting Table', group: 'Office Equipment', icon: '🪑' },
-  { code: 'OF-PRJ', name: 'Projector', name_km: 'ម៉ាស៊ីនបញ្ចាំងស្លាយ (Projector)', name_en: 'Projector', group: 'Office Equipment', icon: '📽️' },
-  { code: 'OF-AC', name: 'Air Conditioner', name_km: 'ម៉ាស៊ីនត្រជាក់', name_en: 'Air Conditioner', group: 'Facilities', icon: '❄️' },
-  // Communication
-  { code: 'CM-PHN', name: 'Mobile Phone', name_km: 'ទូរស័ព្ទដៃក្រុមហ៊ុន', name_en: 'Mobile Phone', group: 'Communication', icon: '📱' },
-  { code: 'CM-SIM', name: 'SIM Card', name_km: 'ស៊ីមកាតក្រុមហ៊ុន', name_en: 'SIM Card', group: 'Communication', icon: '📞' },
-  { code: 'CM-TEL', name: 'Telephone', name_km: 'ទូរស័ព្ទលើតុ', name_en: 'Desk Telephone', group: 'Communication', icon: '☎️' },
-  { code: 'CM-WTP', name: 'Walkie-Talkie', name_km: 'វិទ្យុទាក់ទង (Walkie-Talkie)', name_en: 'Walkie-Talkie', group: 'Communication', icon: '📻' },
-  // Safety / Uniform
-  { code: 'SF-HLM', name: 'Helmet', name_km: 'មួកសុវត្ថិភាព', name_en: 'Safety Helmet', group: 'Safety/Uniform', icon: '⛑️' },
-  { code: 'SF-SHO', name: 'Safety Shoes', name_km: 'ស្បែកជើងសុវត្ថិភាព', name_en: 'Safety Shoes', group: 'Safety/Uniform', icon: '👞' },
-  { code: 'SF-VST', name: 'Safety Vest', name_km: 'អាវកាក់សុវត្ថិភាព', name_en: 'Safety Vest', group: 'Safety/Uniform', icon: '🦺' },
-  { code: 'SF-UNI', name: 'Uniform', name_km: 'ឯកសណ្ឋានក្រុមហ៊ុន', name_en: 'Company Uniform', group: 'Safety/Uniform', icon: '👕' },
-  { code: 'SF-GLV', name: 'Gloves', name_km: 'ស្រោមដៃការពារ', name_en: 'Safety Gloves', group: 'Safety/Uniform', icon: '🧤' },
-  { code: 'SF-GOG', name: 'Safety Goggles', name_km: 'វ៉ែនតាសុវត្ថិភាព', name_en: 'Safety Goggles', group: 'Safety/Uniform', icon: '🥽' },
-  { code: 'SF-MSK', name: 'Safety Mask', name_km: 'ម៉ាសការពារធូលី', name_en: 'Safety Mask', group: 'Safety/Uniform', icon: '😷' },
-  // Vehicle / Operation / Warehouse
-  { code: 'VH-TOL', name: 'Tools', name_km: 'ប្រអប់ឧបករណ៍ជាង', name_en: 'Tool Kit', group: 'Vehicle/Operation', icon: '🔧' },
-  { code: 'VH-JCK', name: 'Jack', name_km: 'ដង្កៀបលើករថយន្ត (Jack)', name_en: 'Hydraulic Jack', group: 'Vehicle/Operation', icon: '🔧' },
-  { code: 'VH-BAT', name: 'Battery', name_km: 'អាគុយរថយន្ត', name_en: 'Vehicle Battery', group: 'Vehicle/Operation', icon: '🔋' },
+  // 1. IT Equipment
+  { code: 'IT-LAP', name: 'Laptop', name_km: 'Laptop (កុំព្យូទ័រយួរដៃ)', name_en: 'Laptop', group: 'IT Equipment', icon: '💻' },
+  { code: 'IT-DES', name: 'Desktop Computer', name_km: 'Desktop Computer (កុំព្យូទ័រលើតុ)', name_en: 'Desktop Computer', group: 'IT Equipment', icon: '🖥️' },
+  { code: 'IT-MON', name: 'Monitor', name_km: 'Monitor (អេក្រង់កុំព្យូទ័រ)', name_en: 'Monitor', group: 'IT Equipment', icon: '🖥️' },
+  { code: 'IT-PRN', name: 'Printer', name_km: 'Printer (ម៉ាស៊ីនបោះពុម្ព)', name_en: 'Printer', group: 'IT Equipment', icon: '🖨️' },
+  { code: 'IT-SCN', name: 'Scanner', name_km: 'Scanner (ម៉ាស៊ីនស្កេន)', name_en: 'Scanner', group: 'IT Equipment', icon: '📠' },
+  { code: 'IT-SVR', name: 'Server', name_km: 'Server (ម៉ាស៊ីនមេ)', name_en: 'Server', group: 'IT Equipment', icon: '🖧' },
+  { code: 'IT-UPS', name: 'UPS', name_km: 'UPS (ឧបករណ៍ផ្គត់ផ្គង់ថាមពលបម្រុង)', name_en: 'UPS', group: 'IT Equipment', icon: '🔋' },
+  { code: 'IT-RTR', name: 'Router', name_km: 'Router (ឧបករណ៍បញ្ជូនអ៊ីនធឺណិត)', name_en: 'Router', group: 'IT Equipment', icon: '📡' },
+  { code: 'IT-SWT', name: 'Network Switch', name_km: 'Network Switch (ឧបករណ៍បណ្តាញ)', name_en: 'Network Switch', group: 'IT Equipment', icon: '🔌' },
+  { code: 'IT-KBM', name: 'Keyboard / Mouse', name_km: 'Keyboard / Mouse', name_en: 'Keyboard / Mouse', group: 'IT Equipment', icon: '⌨️' },
+  { code: 'IT-HDD', name: 'External Hard Drive', name_km: 'External Hard Drive', name_en: 'External Hard Drive', group: 'IT Equipment', icon: '💾' },
+  { code: 'IT-PRJ', name: 'Projector', name_km: 'Projector (ម៉ាស៊ីនបញ្ចាំងស្លាយ)', name_en: 'Projector', group: 'IT Equipment', icon: '📽️' },
+  { code: 'IT-NVR', name: 'CCTV / NVR / DVR', name_km: 'CCTV / NVR / DVR', name_en: 'CCTV / NVR / DVR', group: 'IT Equipment', icon: '📹' },
+  { code: 'IT-WAP', name: 'Wi-Fi Access Point', name_km: 'Wi-Fi Access Point', name_en: 'Wi-Fi Access Point', group: 'IT Equipment', icon: '📶' },
+  { code: 'IT-BCS', name: 'Barcode Scanner', name_km: 'Barcode Scanner', name_en: 'Barcode Scanner', group: 'IT Equipment', icon: '🔫' },
+  { code: 'IT-TAB', name: 'Tablet', name_km: 'Tablet (ថេប្លេត)', name_en: 'Tablet', group: 'IT Equipment', icon: '📲' },
+  { code: 'IT-CAM', name: 'CCTV Camera', name_km: 'CCTV Camera (កាមេរ៉ាសុវត្ថិភាព)', name_en: 'CCTV Camera', group: 'IT Equipment', icon: '📹' },
+  { code: 'IT-ADP', name: 'Adapter / Charger', name_km: 'Adapter / Charger (ដុំសាកភ្លើង)', name_en: 'Adapter / Charger', group: 'IT Equipment', icon: '🔌' },
+
+  // 2. Office Equipment
+  { code: 'OF-DSK', name: 'Desk', name_km: 'Desk (តុធ្វើការ)', name_en: 'Desk', group: 'Office Equipment', icon: '🪑' },
+  { code: 'OF-CHR', name: 'Office Chair', name_km: 'Office Chair (កៅអីការិយាល័យ)', name_en: 'Office Chair', group: 'Office Equipment', icon: '💺' },
+  { code: 'OF-CAB', name: 'Cabinet', name_km: 'Cabinet (ទូដាក់ឯកសារ)', name_en: 'Cabinet', group: 'Office Equipment', icon: '🗄️' },
+  { code: 'OF-TBL', name: 'Meeting Table', name_km: 'Meeting Table (តុប្រជុំ)', name_en: 'Meeting Table', group: 'Office Equipment', icon: '🪑' },
+  { code: 'OF-SOF', name: 'Sofa', name_km: 'Sofa (សាឡុង)', name_en: 'Sofa', group: 'Office Equipment', icon: '🛋️' },
+  { code: 'OF-BSH', name: 'Bookshelf', name_km: 'Bookshelf (ធ្នើដាក់សៀវភៅ)', name_en: 'Bookshelf', group: 'Office Equipment', icon: '📚' },
+  { code: 'OF-FLC', name: 'Filing Cabinet', name_km: 'Filing Cabinet (ទូដាក់ឯកសារ)', name_en: 'Filing Cabinet', group: 'Office Equipment', icon: '🗄️' },
+  { code: 'OF-WBD', name: 'Whiteboard', name_km: 'Whiteboard (ក្តារស)', name_en: 'Whiteboard', group: 'Office Equipment', icon: '📝' },
+  { code: 'OF-PSC', name: 'Projector Screen', name_km: 'Projector Screen (ផ្ទាំងបញ្ចាំង)', name_en: 'Projector Screen', group: 'Office Equipment', icon: '🖼️' },
+  { code: 'OF-SAF', name: 'Safe Box', name_km: 'Safe Box (ទូដែកដាក់ប្រាក់)', name_en: 'Safe Box', group: 'Office Equipment', icon: '🔐' },
+  { code: 'OF-SHR', name: 'Paper Shredder', name_km: 'Paper Shredder (ម៉ាស៊ីនកាត់ឯកសារ)', name_en: 'Paper Shredder', group: 'Office Equipment', icon: '📄' },
+  { code: 'OF-WDP', name: 'Water Dispenser', name_km: 'Water Dispenser (ម៉ាស៊ីនទឹក)', name_en: 'Water Dispenser', group: 'Office Equipment', icon: '🚰' },
+  { code: 'OF-REF', name: 'Refrigerator', name_km: 'Refrigerator (ទូទឹកកក)', name_en: 'Refrigerator', group: 'Office Equipment', icon: '🧊' },
+  { code: 'OF-AC', name: 'Air Conditioner', name_km: 'Air Conditioner (ម៉ាស៊ីនត្រជាក់)', name_en: 'Air Conditioner', group: 'Office Equipment', icon: '❄️' },
+  { code: 'OF-FAN', name: 'Electric Fan', name_km: 'Electric Fan (កង្ហារ)', name_en: 'Electric Fan', group: 'Office Equipment', icon: '🌀' },
+  { code: 'OF-PRJ', name: 'Projector', name_km: 'Projector (ម៉ាស៊ីនបញ្ចាំងស្លាយ)', name_en: 'Projector', group: 'Office Equipment', icon: '📽️' },
+
+  // 3. Communication Equipment
+  { code: 'CM-PHN', name: 'Mobile Phone', name_km: 'Mobile Phone (ទូរស័ព្ទដៃ)', name_en: 'Mobile Phone', group: 'Communication', icon: '📱' },
+  { code: 'CM-SIM', name: 'SIM Card', name_km: 'SIM Card (ស៊ីមកាត)', name_en: 'SIM Card', group: 'Communication', icon: '📞' },
+  { code: 'CM-TEL', name: 'Telephone', name_km: 'Telephone (ទូរស័ព្ទការិយាល័យ)', name_en: 'Telephone', group: 'Communication', icon: '☎️' },
+  { code: 'CM-WTP', name: 'Walkie-Talkie', name_km: 'Walkie-Talkie (វិទ្យុទាក់ទង)', name_en: 'Walkie-Talkie', group: 'Communication', icon: '📻' },
+  { code: 'CM-TWR', name: 'Two-Way Radio', name_km: 'Two-Way Radio (ឧបករណ៍ទាក់ទង)', name_en: 'Two-Way Radio', group: 'Communication', icon: '📻' },
+  { code: 'CM-GPS', name: 'GPS Tracker', name_km: 'GPS Tracker (ឧបករណ៍តាមដានទីតាំង)', name_en: 'GPS Tracker', group: 'Communication', icon: '🛰️' },
+  { code: 'CM-ANT', name: 'Radio Antenna', name_km: 'Radio Antenna (អង់តែន)', name_en: 'Radio Antenna', group: 'Communication', icon: '📡' },
+  { code: 'CM-HDS', name: 'Communication Headset', name_km: 'Communication Headset (កាសទាក់ទង)', name_en: 'Communication Headset', group: 'Communication', icon: '🎧' },
+
+  // 4A. Truck & Tractor Head
+  { code: 'VH-TRH', name: 'Tractor Head', name_km: 'Tractor Head (ក្បាលឡានដឹកទូរកុងតឺន័រ)', name_en: 'Tractor Head', group: 'Truck & Tractor Head', icon: '🚛' },
+  { code: 'VH-PMV', name: 'Prime Mover', name_km: 'Prime Mover (ក្បាលរថយន្តអូសរ៉ឺម៉ក)', name_en: 'Prime Mover', group: 'Truck & Tractor Head', icon: '🚛' },
+  { code: 'VH-HTK', name: 'Heavy Truck', name_km: 'Heavy Truck (ឡានដឹកទំនិញធុនធ្ងន់)', name_en: 'Heavy Truck', group: 'Truck & Tractor Head', icon: '🚚' },
+  { code: 'VH-DMP', name: 'Dump Truck', name_km: 'Dump Truck (ឡានបែន)', name_en: 'Dump Truck', group: 'Truck & Tractor Head', icon: '🚚' },
+  { code: 'VH-FLT', name: 'Flatbed Truck', name_km: 'Flatbed Truck (ឡានដឹកទំនិញរាប)', name_en: 'Flatbed Truck', group: 'Truck & Tractor Head', icon: '🚚' },
+  { code: 'VH-CRN', name: 'Crane Truck', name_km: 'Crane Truck (ឡានស្ទូច)', name_en: 'Crane Truck', group: 'Truck & Tractor Head', icon: '🏗️' },
+  { code: 'VH-WTK', name: 'Water Truck', name_km: 'Water Truck (ឡានដឹកទឹក)', name_en: 'Water Truck', group: 'Truck & Tractor Head', icon: '🚚' },
+  { code: 'VH-FTK', name: 'Fuel Tank Truck', name_km: 'Fuel Tank Truck (ឡានដឹកប្រេង)', name_en: 'Fuel Tank Truck', group: 'Truck & Tractor Head', icon: '⛽' },
+  { code: 'VH-STK', name: 'Service Truck', name_km: 'Service Truck (ឡានសេវាកម្មជួសជុល)', name_en: 'Service Truck', group: 'Truck & Tractor Head', icon: '🚐' },
+  { code: 'VH-PKP', name: 'Pickup Truck', name_km: 'Pickup Truck (ឡាន Pickup)', name_en: 'Pickup Truck', group: 'Truck & Tractor Head', icon: '🛻' },
+  { code: 'VH-CAR', name: 'Company Car', name_km: 'Company Car (រថយន្តក្រុមហ៊ុន)', name_en: 'Company Car', group: 'Truck & Tractor Head', icon: '🚗' },
+  { code: 'VH-BUS', name: 'Staff Shuttle / Bus', name_km: 'Staff Shuttle / Bus (រថយន្តដឹកបុគ្គលិក)', name_en: 'Staff Shuttle / Bus', group: 'Truck & Tractor Head', icon: '🚌' },
+
+  // 4B. Trailer & Chassis
+  { code: 'TR-CNT', name: 'Container Trailer', name_km: 'Container Trailer (រ៉ឺម៉កដឹកទូរកុងតឺន័រ)', name_en: 'Container Trailer', group: 'Trailer & Chassis', icon: '🚛' },
+  { code: 'TR-20F', name: '20FT Trailer', name_km: '20FT Trailer (រ៉ឺម៉ក ២០ ហ្វីត)', name_en: '20FT Trailer', group: 'Trailer & Chassis', icon: '🚛' },
+  { code: 'TR-40F', name: '40FT Trailer', name_km: '40FT Trailer (រ៉ឺម៉ក ៤០ ហ្វីត)', name_en: '40FT Trailer', group: 'Trailer & Chassis', icon: '🚛' },
+  { code: 'TR-SKL', name: 'Skeletal Trailer', name_km: 'Skeletal Trailer (រ៉ឺម៉កសាស៊ី)', name_en: 'Skeletal Trailer', group: 'Trailer & Chassis', icon: '🚛' },
+  { code: 'TR-FLT', name: 'Flatbed Trailer', name_km: 'Flatbed Trailer (រ៉ឺម៉ករាប)', name_en: 'Flatbed Trailer', group: 'Trailer & Chassis', icon: '🚛' },
+  { code: 'TR-LWB', name: 'Lowbed Trailer', name_km: 'Lowbed Trailer (រ៉ឺម៉កដឹកគ្រឿងចក្រធុនធ្ងន់)', name_en: 'Lowbed Trailer', group: 'Trailer & Chassis', icon: '🚛' },
+  { code: 'TR-EXT', name: 'Extendable Trailer', name_km: 'Extendable Trailer (រ៉ឺម៉កពង្រីកប្រវែង)', name_en: 'Extendable Trailer', group: 'Trailer & Chassis', icon: '🚛' },
+  { code: 'TR-SDL', name: 'Side Loader Trailer', name_km: 'Side Loader Trailer (រ៉ឺម៉កលើកទូរពីចំហៀង)', name_en: 'Side Loader Trailer', group: 'Trailer & Chassis', icon: '🚛' },
+  { code: 'TR-CHS', name: 'Trailer Chassis', name_km: 'Trailer Chassis (តួសាស៊ីរ៉ឺម៉ក)', name_en: 'Trailer Chassis', group: 'Trailer & Chassis', icon: '⚙️' },
+  { code: 'TR-AXL', name: 'Trailer Axle', name_km: 'Trailer Axle (អ័ក្សរ៉ឺម៉ក)', name_en: 'Trailer Axle', group: 'Trailer & Chassis', icon: '⚙️' },
+
+  // 4C. Heavy Equipment
+  { code: 'HE-RST', name: 'Reach Stacker', name_km: 'Reach Stacker (ម៉ាស៊ីនស្តាក់ឃ័រលើកទូរ)', name_en: 'Reach Stacker', group: 'Heavy Equipment', icon: '🏗️' },
+  { code: 'HE-ECH', name: 'Empty Container Handler', name_km: 'Empty Container Handler (ម៉ាស៊ីនលើកទូរទទេ)', name_en: 'Empty Container Handler', group: 'Heavy Equipment', icon: '🏗️' },
+  { code: 'HE-FKL', name: 'Forklift', name_km: 'Forklift (រថយន្តលើកទំនិញ)', name_en: 'Forklift', group: 'Heavy Equipment', icon: '🚜' },
+  { code: 'HE-HDF', name: 'Heavy Duty Forklift', name_km: 'Heavy Duty Forklift (រថយន្តលើកទំនិញធុនធ្ងន់)', name_en: 'Heavy Duty Forklift', group: 'Heavy Equipment', icon: '🚜' },
+  { code: 'HE-CNH', name: 'Container Handler', name_km: 'Container Handler (ម៉ាស៊ីនលើកទូរកុងតឺន័រ)', name_en: 'Container Handler', group: 'Heavy Equipment', icon: '🏗️' },
+  { code: 'HE-TPL', name: 'Top Loader', name_km: 'Top Loader (ម៉ាស៊ីនលើកទូរពីខាងលើ)', name_en: 'Top Loader', group: 'Heavy Equipment', icon: '🏗️' },
+  { code: 'HE-SDL', name: 'Side Loader', name_km: 'Side Loader (ម៉ាស៊ីនលើកទូរពីចំហៀង)', name_en: 'Side Loader', group: 'Heavy Equipment', icon: '🏗️' },
+  { code: 'HE-MCR', name: 'Mobile Crane', name_km: 'Mobile Crane (រថយន្តស្ទូចចល័ត)', name_en: 'Mobile Crane', group: 'Heavy Equipment', icon: '🏗️' },
+  { code: 'HE-TCR', name: 'Tower Crane', name_km: 'Tower Crane (ស្ទូចប៉ម)', name_en: 'Tower Crane', group: 'Heavy Equipment', icon: '🏗️' },
+  { code: 'HE-EXC', name: 'Excavator', name_km: 'Excavator (អេស្កាវ៉ាទ័រ)', name_en: 'Excavator', group: 'Heavy Equipment', icon: '🚜' },
+  { code: 'HE-WLD', name: 'Wheel Loader', name_km: 'Wheel Loader (ម៉ាស៊ីនប៉ែលកង់)', name_en: 'Wheel Loader', group: 'Heavy Equipment', icon: '🚜' },
+  { code: 'HE-TTR', name: 'Terminal Tractor', name_km: 'Terminal Tractor (ក្បាលអូសក្នុងទីតាំងចំណតទូរ)', name_en: 'Terminal Tractor', group: 'Heavy Equipment', icon: '🚛' },
+  { code: 'HE-CSP', name: 'Container Spreader', name_km: 'Container Spreader (ឧបករណ៍ចាប់លើកទូរ)', name_en: 'Container Spreader', group: 'Heavy Equipment', icon: '🪝' },
+  { code: 'HE-GEN', name: 'Generator', name_km: 'Generator (ម៉ាស៊ីនភ្លើង)', name_en: 'Generator', group: 'Heavy Equipment', icon: '⚡' },
+
+  // 5. Vehicle Equipment & Accessories
+  { code: 'VH-BAT', name: 'Truck Battery', name_km: 'Truck Battery (អាគុយឡាន)', name_en: 'Truck Battery', group: 'Vehicle/Operation', icon: '🔋' },
+  { code: 'VH-TTR', name: 'Truck Tires', name_km: 'Truck Tires (សំបកកង់ឡាន)', name_en: 'Truck Tires', group: 'Vehicle/Operation', icon: '🛞' },
+  { code: 'VH-TIR', name: 'Spare Tire', name_km: 'Spare Tire (កង់បម្រុង)', name_en: 'Spare Tire', group: 'Vehicle/Operation', icon: '🛞' },
+  { code: 'VH-RIM', name: 'Wheel Rim', name_km: 'Wheel Rim (យ៉ាន់កង់)', name_en: 'Wheel Rim', group: 'Vehicle/Operation', icon: '🛞' },
+  { code: 'VH-JCK', name: 'Jack', name_km: 'Jack (ដែកគាស់ឡាន)', name_en: 'Jack', group: 'Vehicle/Operation', icon: '🔧' },
+  { code: 'VH-WSP', name: 'Wheel Spanner', name_km: 'Wheel Spanner (សោដោះកង់)', name_en: 'Wheel Spanner', group: 'Vehicle/Operation', icon: '🔧' },
+  { code: 'VH-CMP', name: 'Air Compressor', name_km: 'Air Compressor (ម៉ាស៊ីនបូមខ្យល់)', name_en: 'Air Compressor', group: 'Vehicle/Operation', icon: '💨' },
+  { code: 'VH-HJK', name: 'Hydraulic Jack', name_km: 'Hydraulic Jack (ដែកគាស់ធារាសាស្ត្រ)', name_en: 'Hydraulic Jack', group: 'Vehicle/Operation', icon: '🔧' },
+  { code: 'VH-FRX', name: 'Fire Extinguisher', name_km: 'Fire Extinguisher (បំពង់ពន្លត់អគ្គិភ័យ)', name_en: 'Fire Extinguisher', group: 'Vehicle/Operation', icon: '🧯' },
+  { code: 'VH-GPS', name: 'GPS Device', name_km: 'GPS Device (ឧបករណ៍ GPS)', name_en: 'GPS Device', group: 'Vehicle/Operation', icon: '🛰️' },
+  { code: 'VH-DSC', name: 'Dash Camera', name_km: 'Dash Camera (កាមេរ៉ាមុខឡាន)', name_en: 'Dash Camera', group: 'Vehicle/Operation', icon: '📷' },
+  { code: 'VH-RVC', name: 'Reverse Camera', name_km: 'Reverse Camera (កាមេរ៉ាក្រោយឡាន)', name_en: 'Reverse Camera', group: 'Vehicle/Operation', icon: '📷' },
+  { code: 'VH-FTN', name: 'Fuel Tank', name_km: 'Fuel Tank (ធុងប្រេង)', name_en: 'Fuel Tank', group: 'Vehicle/Operation', icon: '⛽' },
+  { code: 'VH-HYD', name: 'Hydraulic System', name_km: 'Hydraulic System (ប្រព័ន្ធធារាសាស្ត្រ)', name_en: 'Hydraulic System', group: 'Vehicle/Operation', icon: '⚙️' },
+  { code: 'VH-FWC', name: 'Fifth Wheel Coupling', name_km: 'Fifth Wheel Coupling (ឧបករណ៍ភ្ជាប់ក្បាលឡាននិងរ៉ឺម៉ក)', name_en: 'Fifth Wheel Coupling', group: 'Vehicle/Operation', icon: '⚙️' },
+  { code: 'VH-ABS', name: 'Air Brake System', name_km: 'Air Brake System (ប្រព័ន្ធហ្វ្រាំងខ្យល់)', name_en: 'Air Brake System', group: 'Vehicle/Operation', icon: '⚙️' },
+  { code: 'VH-LNG', name: 'Landing Gear', name_km: 'Landing Gear (ជើងទម្រ Trailer)', name_en: 'Landing Gear', group: 'Vehicle/Operation', icon: '🔩' },
+  { code: 'VH-TWL', name: 'Container Twist Lock', name_km: 'Container Twist Lock (ឧបករណ៍ចាក់សោទូរ)', name_en: 'Container Twist Lock', group: 'Vehicle/Operation', icon: '🔒' },
+  { code: 'VH-RWT', name: 'Reflective Warning Triangle', name_km: 'Reflective Warning Triangle (ត្រីកោណសញ្ញាព្រមាន)', name_en: 'Reflective Warning Triangle', group: 'Vehicle/Operation', icon: '⚠️' },
+  { code: 'VH-FAK', name: 'Vehicle First Aid Kit', name_km: 'Vehicle First Aid Kit (ប្រអប់សង្គ្រោះបឋម)', name_en: 'Vehicle First Aid Kit', group: 'Vehicle/Operation', icon: '🩹' },
+  { code: 'VH-TOL', name: 'Tools', name_km: 'ប្រអប់ឧបករណ៍ជាង (Tool Kit)', name_en: 'Tool Kit', group: 'Vehicle/Operation', icon: '🔧' },
   { code: 'VH-SPR', name: 'Spare Parts', name_km: 'គ្រឿងបន្លាស់សំខាន់ៗ', name_en: 'Spare Parts', group: 'Vehicle/Operation', icon: '⚙️' },
   { code: 'VH-EQP', name: 'Equipment', name_km: 'គ្រឿងចក្រ និងឧបករណ៍ប្រតិបត្តិការ', name_en: 'Operations Equipment', group: 'Vehicle/Operation', icon: '🚜' },
-  { code: 'VH-GPS', name: 'GPS Tracker', name_km: 'ឧបករណ៍តាមដាន GPS រថយន្ត', name_en: 'GPS Tracker', group: 'Vehicle/Operation', icon: '🛰️' },
-  { code: 'VH-TIR', name: 'Spare Tire', name_km: 'សំបកកង់បម្រុង', name_en: 'Spare Tire', group: 'Vehicle/Operation', icon: '🛞' },
-  { code: 'WH-PAL', name: 'Pallet Jack', name_km: 'រទេះលើកទំនិញក្នុងឃ្លាំង (Pallet Jack)', name_en: 'Pallet Jack', group: 'Warehouse Equipment', icon: '🏗️' }
+
+  // 6. Maintenance & Workshop Equipment
+  { code: 'WS-TBX', name: 'Tool Box', name_km: 'Tool Box (ប្រអប់ដាក់ឧបករណ៍)', name_en: 'Tool Box', group: 'Maintenance & Workshop', icon: '🧰' },
+  { code: 'WS-SPN', name: 'Spanner Set', name_km: 'Spanner Set (សំណុំសោ)', name_en: 'Spanner Set', group: 'Maintenance & Workshop', icon: '🔧' },
+  { code: 'WS-SCR', name: 'Screwdriver Set', name_km: 'Screwdriver Set (សំណុំទួណឺវីស)', name_en: 'Screwdriver Set', group: 'Maintenance & Workshop', icon: '🪛' },
+  { code: 'WS-PLR', name: 'Pliers', name_km: 'Pliers (ដង្កាប់)', name_en: 'Pliers', group: 'Maintenance & Workshop', icon: '🔧' },
+  { code: 'WS-HMR', name: 'Hammer', name_km: 'Hammer (ញញួរ)', name_en: 'Hammer', group: 'Maintenance & Workshop', icon: '🔨' },
+  { code: 'WS-WLD', name: 'Welding Machine', name_km: 'Welding Machine (ម៉ាស៊ីនផ្សារដែក)', name_en: 'Welding Machine', group: 'Maintenance & Workshop', icon: '⚡' },
+  { code: 'WS-GRD', name: 'Grinding Machine', name_km: 'Grinding Machine (ម៉ាស៊ីនកិនដែក)', name_en: 'Grinding Machine', group: 'Maintenance & Workshop', icon: '⚙️' },
+  { code: 'WS-DRL', name: 'Drill Machine', name_km: 'Drill Machine (ម៉ាស៊ីនខួង)', name_en: 'Drill Machine', group: 'Maintenance & Workshop', icon: '🔩' },
+  { code: 'WS-HLF', name: 'Hydraulic Lift', name_km: 'Hydraulic Lift (ម៉ាស៊ីនលើករថយន្ត)', name_en: 'Hydraulic Lift', group: 'Maintenance & Workshop', icon: '🏗️' },
+  { code: 'WS-GRS', name: 'Grease Gun', name_km: 'Grease Gun (កាំភ្លើងបាញ់ខ្លាញ់)', name_en: 'Grease Gun', group: 'Maintenance & Workshop', icon: '🔫' },
+  { code: 'WS-OPM', name: 'Oil Pump', name_km: 'Oil Pump (ម៉ាស៊ីនបូមប្រេង)', name_en: 'Oil Pump', group: 'Maintenance & Workshop', icon: '⛽' },
+  { code: 'WS-CMP', name: 'Air Compressor', name_km: 'Air Compressor (ម៉ាស៊ីនបូមខ្យល់)', name_en: 'Air Compressor', group: 'Maintenance & Workshop', icon: '💨' },
+  { code: 'WS-BCH', name: 'Battery Charger', name_km: 'Battery Charger (ម៉ាស៊ីនសាកអាគុយ)', name_en: 'Battery Charger', group: 'Maintenance & Workshop', icon: '🔋' },
+  { code: 'WS-DGS', name: 'Diagnostic Scanner', name_km: 'Diagnostic Scanner (ម៉ាស៊ីនស្កេនកំហុសឡាន)', name_en: 'Diagnostic Scanner', group: 'Maintenance & Workshop', icon: '📱' },
+  { code: 'WS-TCH', name: 'Tire Changer', name_km: 'Tire Changer (ម៉ាស៊ីនដោះសំបកកង់)', name_en: 'Tire Changer', group: 'Maintenance & Workshop', icon: '🛞' },
+  { code: 'WS-WBL', name: 'Wheel Balancer', name_km: 'Wheel Balancer (ម៉ាស៊ីនថ្លឹងកង់)', name_en: 'Wheel Balancer', group: 'Maintenance & Workshop', icon: '🛞' },
+  { code: 'WS-PWS', name: 'Pressure Washer', name_km: 'Pressure Washer (ម៉ាស៊ីនបាញ់ទឹកសម្អាត)', name_en: 'Pressure Washer', group: 'Maintenance & Workshop', icon: '💦' },
+
+  // 7. Spare Parts & Consumables
+  { code: 'SP-EOL', name: 'Engine Oil', name_km: 'Engine Oil (ប្រេងម៉ាស៊ីន)', name_en: 'Engine Oil', group: 'Spare Parts & Consumables', icon: '🛢️' },
+  { code: 'SP-GOL', name: 'Gear Oil', name_km: 'Gear Oil (ប្រេងប្រអប់លេខ)', name_en: 'Gear Oil', group: 'Spare Parts & Consumables', icon: '🛢️' },
+  { code: 'SP-HOL', name: 'Hydraulic Oil', name_km: 'Hydraulic Oil (ប្រេងធារាសាស្ត្រ)', name_en: 'Hydraulic Oil', group: 'Spare Parts & Consumables', icon: '🛢️' },
+  { code: 'SP-BFL', name: 'Brake Fluid', name_km: 'Brake Fluid (ប្រេងហ្វ្រាំង)', name_en: 'Brake Fluid', group: 'Spare Parts & Consumables', icon: '🧪' },
+  { code: 'SP-CLT', name: 'Coolant', name_km: 'Coolant (ទឹកម៉ាស៊ីន)', name_en: 'Coolant', group: 'Spare Parts & Consumables', icon: '🧪' },
+  { code: 'SP-OFL', name: 'Oil Filter', name_km: 'Oil Filter (តម្រងប្រេង)', name_en: 'Oil Filter', group: 'Spare Parts & Consumables', icon: '⚙️' },
+  { code: 'SP-AFL', name: 'Air Filter', name_km: 'Air Filter (តម្រងខ្យល់)', name_en: 'Air Filter', group: 'Spare Parts & Consumables', icon: '⚙️' },
+  { code: 'SP-FFL', name: 'Fuel Filter', name_km: 'Fuel Filter (តម្រងប្រេងម៉ាស៊ូត)', name_en: 'Fuel Filter', group: 'Spare Parts & Consumables', icon: '⚙️' },
+  { code: 'SP-BPD', name: 'Brake Pad', name_km: 'Brake Pad (បន្ទះហ្វ្រាំង)', name_en: 'Brake Pad', group: 'Spare Parts & Consumables', icon: '⚙️' },
+  { code: 'SP-BLN', name: 'Brake Lining', name_km: 'Brake Lining (ស្បែកហ្វ្រាំង)', name_en: 'Brake Lining', group: 'Spare Parts & Consumables', icon: '⚙️' },
+  { code: 'SP-CPL', name: 'Clutch Plate', name_km: 'Clutch Plate (ចានក្ដាប់)', name_en: 'Clutch Plate', group: 'Spare Parts & Consumables', icon: '⚙️' },
+  { code: 'SP-BLT', name: 'Belts', name_km: 'Belts (ខ្សែក្រវាត់ម៉ាស៊ីន)', name_en: 'Belts', group: 'Spare Parts & Consumables', icon: '➰' },
+  { code: 'SP-BLB', name: 'Bulbs', name_km: 'Bulbs (អំពូលភ្លើង)', name_en: 'Bulbs', group: 'Spare Parts & Consumables', icon: '💡' },
+  { code: 'SP-BRG', name: 'Bearings', name_km: 'Bearings (ប៊ែរីង)', name_en: 'Bearings', group: 'Spare Parts & Consumables', icon: '⚙️' },
+  { code: 'SP-NTB', name: 'Nuts & Bolts', name_km: 'Nuts & Bolts (ប៊ូឡុង និងគ្រាប់)', name_en: 'Nuts & Bolts', group: 'Spare Parts & Consumables', icon: '🔩' },
+  { code: 'SP-GRS', name: 'Grease', name_km: 'Grease (ខ្លាញ់រំអិល)', name_en: 'Grease', group: 'Spare Parts & Consumables', icon: '🛢️' },
+  { code: 'SP-WRD', name: 'Welding Rod', name_km: 'Welding Rod (ដែកផ្សារ)', name_en: 'Welding Rod', group: 'Spare Parts & Consumables', icon: '🥢' },
+
+  // 8. Safety & Uniform
+  { code: 'SF-HLM', name: 'Safety Helmet', name_km: 'Safety Helmet (មួកសុវត្ថិភាព)', name_en: 'Safety Helmet', group: 'Safety/Uniform', icon: '⛑️' },
+  { code: 'SF-SHO', name: 'Safety Shoes', name_km: 'Safety Shoes (ស្បែកជើងសុវត្ថិភាព)', name_en: 'Safety Shoes', group: 'Safety/Uniform', icon: '👞' },
+  { code: 'SF-VST', name: 'Safety Vest', name_km: 'Safety Vest (អាវចំណាំងផ្លាត)', name_en: 'Safety Vest', group: 'Safety/Uniform', icon: '🦺' },
+  { code: 'SF-UNI', name: 'Uniform', name_km: 'Uniform (ឯកសណ្ឋាន)', name_en: 'Uniform', group: 'Safety/Uniform', icon: '👕' },
+  { code: 'SF-GLV', name: 'Gloves', name_km: 'Gloves (ស្រោមដៃ)', name_en: 'Gloves', group: 'Safety/Uniform', icon: '🧤' },
+  { code: 'SF-GOG', name: 'Safety Goggles', name_km: 'Safety Goggles (វ៉ែនតាការពារ)', name_en: 'Safety Goggles', group: 'Safety/Uniform', icon: '🥽' },
+  { code: 'SF-MSK', name: 'Face Mask', name_km: 'Face Mask (ម៉ាស់)', name_en: 'Face Mask', group: 'Safety/Uniform', icon: '😷' },
+  { code: 'SF-RNC', name: 'Raincoat', name_km: 'Raincoat (អាវភ្លៀង)', name_en: 'Raincoat', group: 'Safety/Uniform', icon: '🧥' },
+  { code: 'SF-HRN', name: 'Safety Harness', name_km: 'Safety Harness (ខ្សែក្រវាត់សុវត្ថិភាព)', name_en: 'Safety Harness', group: 'Safety/Uniform', icon: '🪢' },
+  { code: 'SF-EAR', name: 'Ear Protection', name_km: 'Ear Protection (ឧបករណ៍ការពារត្រចៀក)', name_en: 'Ear Protection', group: 'Safety/Uniform', icon: '🎧' },
+  { code: 'SF-FAK', name: 'First Aid Kit', name_km: 'First Aid Kit (ប្រអប់សង្គ្រោះបឋម)', name_en: 'First Aid Kit', group: 'Safety/Uniform', icon: '🩹' },
+  { code: 'SF-FRX', name: 'Fire Extinguisher', name_km: 'Fire Extinguisher (បំពង់ពន្លត់អគ្គិភ័យ)', name_en: 'Fire Extinguisher', group: 'Safety/Uniform', icon: '🧯' },
+
+  // 9. Warehouse & Loading Equipment
+  { code: 'WH-PLT', name: 'Pallet', name_km: 'Pallet (ប៉ាឡែត)', name_en: 'Pallet', group: 'Warehouse Equipment', icon: '📦' },
+  { code: 'WH-PAL', name: 'Pallet Jack', name_km: 'Pallet Jack (រទេះលើកប៉ាឡែត)', name_en: 'Pallet Jack', group: 'Warehouse Equipment', icon: '🏗️' },
+  { code: 'WH-EPT', name: 'Electric Pallet Truck', name_km: 'Electric Pallet Truck (រទេះអគ្គិសនីលើកប៉ាឡែត)', name_en: 'Electric Pallet Truck', group: 'Warehouse Equipment', icon: '🚜' },
+  { code: 'WH-HTR', name: 'Hand Trolley', name_km: 'Hand Trolley (រទេះដឹកឥវ៉ាន់)', name_en: 'Hand Trolley', group: 'Warehouse Equipment', icon: '🛒' },
+  { code: 'WH-RCK', name: 'Warehouse Rack', name_km: 'Warehouse Rack (ធ្នើដាក់សម្ភារៈ)', name_en: 'Warehouse Rack', group: 'Warehouse Equipment', icon: '🗄️' },
+  { code: 'WH-SHF', name: 'Storage Shelf', name_km: 'Storage Shelf (ធ្នើស្តុក)', name_en: 'Storage Shelf', group: 'Warehouse Equipment', icon: '🗄️' },
+  { code: 'WH-SCL', name: 'Weighing Scale', name_km: 'Weighing Scale (ជញ្ជីង)', name_en: 'Weighing Scale', group: 'Warehouse Equipment', icon: '⚖️' },
+  { code: 'WH-RMP', name: 'Loading Ramp', name_km: 'Loading Ramp (ផ្លូវជម្រាលសម្រាប់ឡើងចុះទំនិញ)', name_en: 'Loading Ramp', group: 'Warehouse Equipment', icon: '📐' },
+  { code: 'WH-STP', name: 'Cargo Strap', name_km: 'Cargo Strap (ខ្សែចងទំនិញ)', name_en: 'Cargo Strap', group: 'Warehouse Equipment', icon: '🎗️' },
+  { code: 'WH-LSL', name: 'Lifting Sling', name_km: 'Lifting Sling (ខ្សែលើកទំនិញ)', name_en: 'Lifting Sling', group: 'Warehouse Equipment', icon: '🪢' },
+  { code: 'WH-CHB', name: 'Chain Block', name_km: 'Chain Block (ឧបករណ៍ស្ទូចដៃ)', name_en: 'Chain Block', group: 'Warehouse Equipment', icon: '⛓️' },
+  { code: 'WH-LHK', name: 'Lifting Hook', name_km: 'Lifting Hook (ទំពក់លើកទំនិញ)', name_en: 'Lifting Hook', group: 'Warehouse Equipment', icon: '🪝' },
+
+  // 10. Facility & Cleaning Equipment
+  { code: 'FC-GEN', name: 'Generator', name_km: 'Generator (ម៉ាស៊ីនភ្លើង)', name_en: 'Generator', group: 'Facilities', icon: '⚡' },
+  { code: 'FC-WPM', name: 'Water Pump', name_km: 'Water Pump (ម៉ាស៊ីនបូមទឹក)', name_en: 'Water Pump', group: 'Facilities', icon: '🚰' },
+  { code: 'FC-WTN', name: 'Water Tank', name_km: 'Water Tank (ធុងទឹក)', name_en: 'Water Tank', group: 'Facilities', icon: '🛢️' },
+  { code: 'FC-CAM', name: 'CCTV Camera', name_km: 'CCTV Camera (កាមេរ៉ាសុវត្ថិភាព)', name_en: 'CCTV Camera', group: 'Facilities', icon: '📹' },
+  { code: 'FC-FAL', name: 'Fire Alarm', name_km: 'Fire Alarm (ប្រព័ន្ធសំឡេងអាសន្ន)', name_en: 'Fire Alarm', group: 'Facilities', icon: '🚨' },
+  { code: 'FC-FHS', name: 'Fire Hose', name_km: 'Fire Hose (ទុយោពន្លត់អគ្គិភ័យ)', name_en: 'Fire Hose', group: 'Facilities', icon: '🧯' },
+  { code: 'FC-VAC', name: 'Vacuum Cleaner', name_km: 'Vacuum Cleaner (ម៉ាស៊ីនបូមធូលី)', name_en: 'Vacuum Cleaner', group: 'Facilities', icon: '🧹' },
+  { code: 'FC-FCM', name: 'Floor Cleaning Machine', name_km: 'Floor Cleaning Machine (ម៉ាស៊ីនសម្អាតកម្រាល)', name_en: 'Floor Cleaning Machine', group: 'Facilities', icon: '🧹' },
+  { code: 'FC-TRB', name: 'Trash Bin', name_km: 'Trash Bin (ធុងសំរាម)', name_en: 'Trash Bin', group: 'Facilities', icon: '🗑️' },
+  { code: 'FC-LDR', name: 'Ladder', name_km: 'Ladder (ជណ្ដើរ)', name_en: 'Ladder', group: 'Facilities', icon: '🪜' },
+  { code: 'FC-ELT', name: 'Electrical Tools', name_km: 'Electrical Tools (ឧបករណ៍អគ្គិសនី)', name_en: 'Electrical Tools', group: 'Facilities', icon: '🔌' },
+  { code: 'FC-EXC', name: 'Extension Cable', name_km: 'Extension Cable (ខ្សែភ្លើងបន្ថែម)', name_en: 'Extension Cable', group: 'Facilities', icon: '🔌' }
 ];
 
 const DEFAULT_ASSET_LOCATIONS = [
@@ -4127,14 +4314,17 @@ function renderDashboard() {
   }, 50);
 }
 function kpiCardWithBadge(icon, label, value, sub, color, page, badgeCount) {
-  return `<div onclick="showPage('${page}')" class="card card-click relative" style="border-left:4px solid ${color};">
-    ${badgeCount > 0 ? `<div class="kpi-badge">${badgeCount > 99 ? '99+' : badgeCount}</div>` : ''}
-    <div class="flex items-center justify-between mb-2">
-      <span class="text-sm text-slate-500">${label}</span>
-      <div class="w-10 h-10 rounded-lg flex items-center justify-center text-xl" style="background:${color}20;">${icon}</div>
+  return `<div onclick="showPage('${page}')" class="kpi-modern card-click relative">
+    ${badgeCount > 0 ? `<div class="kpi-badge font-mono-num">${badgeCount > 99 ? '99+' : badgeCount}</div>` : ''}
+    <div class="flex items-center justify-between mb-3 gap-2">
+      <span class="text-xs font-semibold text-slate-500 truncate">${label}</span>
+      <div class="w-9 h-9 rounded-lg flex items-center justify-center text-lg shrink-0" style="background:${color}18;color:${color};">${icon}</div>
     </div>
-    <div class="text-3xl font-bold text-slate-800">${value}</div>
-    <div class="text-xs text-slate-500 mt-1">${sub} <span class="text-blue-500">→</span></div>
+    <div class="text-2xl sm:text-3xl font-bold text-slate-900 font-mono-num">${value}</div>
+    <div class="text-xs text-slate-500 mt-1.5 flex items-center justify-between">
+      <span>${sub}</span>
+      <span class="text-blue-600 font-semibold">→</span>
+    </div>
   </div>`;
 }
 // =====================================================
@@ -12112,15 +12302,12 @@ function exportIssueReportPDF2() {
         * { box-sizing: border-box; }
         body { font-family: 'Siemreap', sans-serif; margin: 0; padding: 15px; color: #1e293b; font-size: 11px; }
         .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 2px solid #1e40af; min-height: 90px; }
-        .header-left { display: flex; flex-direction: column; align-items: center; text-align: center; width: 220px; }
+        .header-left { display: flex; flex-direction: column; align-items: center; text-align: center; width: 260px; }
         .logo-box { width: 65px; height: 65px; display: flex; align-items: center; justify-content: center; margin-bottom: 5px; }
         .logo-box img { width: 100%; height: 100%; object-fit: contain; }
-        .company-name-kh { font-family: 'Moul', serif; font-size: 11px; color: #1e40af; }
-        .company-name-en { font-family: 'Moul', serif; font-size: 9px; color: #1e40af; margin-top: 3px; }
-        .header-right { text-align: center; font-family: 'Moul', serif; font-size: 12px; line-height: 1.8; color: #1e40af; padding-top: 6px; }
-        .title { font-family: 'Moul', serif; font-size: 16px; margin: 12px 0 3px; text-align: center; color: #1e40af; }
-        .subtitle { font-family: 'Moul', serif; font-size: 11px; margin: 0 0 15px; text-align: center; color: #1e40af; }
-        .section { margin-bottom: 20px; }
+        .company-info { text-align: center; width: 100%; }
+        .company-name-kh { font-family: 'Moul', serif; font-size: 12px; color: #1e40af; line-height: 1.5; white-space: nowrap; }
+        .company-name-en { font-family: 'Moul', serif; font-size: 10px; color: #1e40af; margin-top: 3px; white-space: nowrap; }
         .section-title { font-family: 'Moul', serif; font-size: 13px; color: white; padding: 8px 12px; background: #1e40af; border-radius: 4px; margin-bottom: 10px; }
         table { width: 100%; border-collapse: collapse; font-family: 'Siemreap', sans-serif; font-size: 10px; }
         th, td { border: 1px solid #333; padding: 5px 6px; text-align: center; }
@@ -12139,9 +12326,9 @@ function exportIssueReportPDF2() {
       <div class="header">
         <div class="header-left">
           <div class="logo-box">${DB.settings.companyLogo ? `<img src="${DB.settings.companyLogo}">` : ''}</div>
-          <div>
-            <div class="company-name-kh">ក្រុមហ៊ុន សុកន ត្រេនស្ព័ត ឯ.ក</div>
-            <div class="company-name-en">SOKAN TRANSPORT PTE., LTD.</div>
+          <div class="company-info">
+            <div class="company-name-kh">${escapeHtml(DB.settings.companyName || 'ក្រុមហ៊ុន សុកន ត្រេនស្ព័ត ឯ.ក')}</div>
+            <div class="company-name-en">${escapeHtml(DB.settings.companyNameEn || 'SOKAN TRANSPORT PTE., LTD.')}</div>
           </div>
         </div>
         <div class="header-right">
@@ -12452,12 +12639,20 @@ function openAssetForm(id) {
           <label class="text-sm font-medium dark:text-slate-300">${t('assetCategory')} <span class="text-red-500">*</span></label>
           <select id="a_category" class="input" required onchange="updateAssetCategoryInfo()">
             <option value="">${t('selectPrompt')}</option>
-            ${DB.assetCategories.map(c => `
-              <option value="${c.id}" data-code="${c.code}" data-name="${escapeHtml(c.name)}" data-group="${escapeHtml(c.group)}"
-                ${a.category_id === c.id ? 'selected' : ''}>
-                ${c.icon || '📦'} ${escapeHtml(locName(c))} (${escapeHtml(getCatalogLabel(MASTER_CATALOGS.assetCategoryGroup, c.group, c.group))})
-              </option>
-            `).join('')}
+            ${(() => {
+              const knownGroups = new Set(MASTER_CATALOGS.assetCategoryGroup.map(g => g.code));
+              const others = DB.assetCategories.filter(c => !knownGroups.has(c.group));
+              const renderOpt = c => `
+                <option value="${c.id}" data-code="${c.code}" data-name="${escapeHtml(c.name)}" data-group="${escapeHtml(c.group)}"
+                  ${a.category_id === c.id ? 'selected' : ''}>
+                  ${c.icon || '📦'} ${escapeHtml(locName(c))}
+                </option>`;
+              const grouped = MASTER_CATALOGS.assetCategoryGroup.map(g => {
+                const items = DB.assetCategories.filter(c => c.group === g.code);
+                return items.length ? `<optgroup label="${escapeHtml(locName(g))}">${items.map(renderOpt).join('')}</optgroup>` : '';
+              }).join('');
+              return grouped + (others.length ? `<optgroup label="ផ្សេងៗ (Other)">${others.map(renderOpt).join('')}</optgroup>` : '');
+            })()}
           </select>
         </div>
         <div>
@@ -17872,7 +18067,21 @@ function showPage(page) {
   setTimeout(updateBadges, 50);
 }
 function exportXLSX(data, filename) {
-  const ws = XLSX.utils.json_to_sheet(data);
+  const headers = data.length ? Object.keys(data[0]) : [];
+  const lastCol = Math.max(headers.length - 1, 0);
+  const wsData = [
+    [DB.settings.companyName || 'ក្រុមហ៊ុន សុកន ត្រេនស្ព័ត ឯ.ក'],
+    [DB.settings.companyNameEn || 'SOKAN TRANSPORT PTE., LTD.'],
+    [String(filename || 'Report').replace(/_/g, ' ')],
+    [],
+    ...(headers.length ? [headers, ...data.map(row => headers.map(h => row[h] ?? ''))] : [])
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  ws['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: lastCol } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: lastCol } },
+    { s: { r: 2, c: 0 }, e: { r: 2, c: lastCol } }
+  ];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Report');
   XLSX.writeFile(wb, `${filename}_${new Date().toISOString().split('T')[0]}.xlsx`);
@@ -18082,6 +18291,68 @@ function saveNewEmployee(event) {
   if(typeof showToast === 'function') showToast('✅ បន្ថែមបុគ្គលិកបានជោគជ័យ');
   if(typeof renderEmployees === 'function') renderEmployees(); // Refresh តារាង
 }
+// =====================================================
+// AFTER EFFECTS LOTTIE INITIALIZER
+// =====================================================
+(function initAfterEffectsLottie() {
+  if (typeof lottie === 'undefined') return;
+
+  // កូដ JSON ចេញពី Adobe After Effects (Bodymovin / Lottie)
+  const aeOrbitJson = {
+    v: '5.9.0', fr: 60, ip: 0, op: 180, w: 120, h: 120, nm: 'AE_Orbit', ddd: 0, assets: [],
+    layers: [
+      {
+        ddd: 0, ind: 1, ty: 4, nm: 'Ring1', sr: 1,
+        ks: {
+          o: { a: 0, k: 100 },
+          r: { a: 1, k: [{ t: 0, s: [0], e: [360], i: { x: [0.5], y: [0.5] }, o: { x: [0.5], y: [0.5] } }, { t: 180, s: [360] }] },
+          p: { a: 0, k: [60, 60, 0] }, a: { a: 0, k: [0, 0, 0] }, s: { a: 0, k: [100, 100, 100] }
+        },
+        shapes: [{
+          ty: 'gr', nm: 'G1',
+          it: [
+            { ty: 'el', p: { a: 0, k: [0, 0] }, s: { a: 0, k: [92, 92] } },
+            { ty: 'st', c: { a: 0, k: [0.145, 0.388, 0.922, 1] }, o: { a: 0, k: 95 }, w: { a: 0, k: 4 }, lc: 2, lj: 2 },
+            { ty: 'tm', s: { a: 0, k: 0 }, e: { a: 0, k: 68 }, o: { a: 0, k: 0 } },
+            { ty: 'tr', p: { a: 0, k: [0, 0] }, a: { a: 0, k: [0, 0] }, s: { a: 0, k: [100, 100] }, r: { a: 0, k: 0 }, o: { a: 0, k: 100 } }
+          ]
+        }],
+        ip: 0, op: 180, st: 0
+      },
+      {
+        ddd: 0, ind: 2, ty: 4, nm: 'Ring2', sr: 1,
+        ks: {
+          o: { a: 0, k: 100 },
+          r: { a: 1, k: [{ t: 0, s: [360], e: [0], i: { x: [0.5], y: [0.5] }, o: { x: [0.5], y: [0.5] } }, { t: 180, s: [0] }] },
+          p: { a: 0, k: [60, 60, 0] }, a: { a: 0, k: [0, 0, 0] }, s: { a: 0, k: [100, 100, 100] }
+        },
+        shapes: [{
+          ty: 'gr', nm: 'G2',
+          it: [
+            { ty: 'el', p: { a: 0, k: [0, 0] }, s: { a: 0, k: [64, 64] } },
+            { ty: 'st', c: { a: 0, k: [0.063, 0.725, 0.506, 1] }, o: { a: 0, k: 90 }, w: { a: 0, k: 3.5 }, lc: 2, lj: 2 },
+            { ty: 'tm', s: { a: 0, k: 10 }, e: { a: 0, k: 72 }, o: { a: 0, k: 0 } },
+            { ty: 'tr', p: { a: 0, k: [0, 0] }, a: { a: 0, k: [0, 0] }, s: { a: 0, k: [100, 100] }, r: { a: 0, k: 0 }, o: { a: 0, k: 100 } }
+          ]
+        }],
+        ip: 0, op: 180, st: 0
+      }
+    ]
+  };
+
+  ['aeLoadingLottie', 'aeLoginLottie'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) {
+      lottie.loadAnimation({
+        container: el,
+        renderer: 'svg',
+        loop: true,
+        autoplay: true,
+        animationData: JSON.parse(JSON.stringify(aeOrbitJson))
+      });
+    }
+  });
+})();
 </script>
 </body>
 </html>
