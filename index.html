@@ -6389,7 +6389,7 @@ function printEmployeeContract(empId) {
             <div class="role">ជ.អគ្គនាយកក្រុមហ៊ុន<br>ភាគី និយោជក</div>
             <div class="signature-space"></div>
             <div class="meta">
-              <div>ឈ្មោះ៖ ........................</div>
+              <div>ឈ្មោះ៖ <b>ឈឹម ទិត្យរិទ្ធី</b></div>
               <div>ថ្ងៃទី.......ខែ.....ឆ្នាំ២០.....</div>
             </div>
           </div>
@@ -6398,7 +6398,7 @@ function printEmployeeContract(empId) {
             <div class="role">ហត្ថលេខា ឬស្នាមមេដៃ<br>ភាគី និយោជិត</div>
             <div class="signature-space"></div>
             <div class="meta">
-              <div>ឈ្មោះ៖ ........................</div>
+              <div>ឈ្មោះ៖ <b>${data.khmerName}</b></div>
               <div>ថ្ងៃទី.......ខែ.....ឆ្នាំ២០.....</div>
             </div>
           </div>
@@ -6407,7 +6407,7 @@ function printEmployeeContract(empId) {
             <div class="role">រដ្ឋបាលផ្នែករថយន្ត</div>
             <div class="signature-space"></div>
             <div class="meta">
-              <div>ឈ្មោះ៖ ........................</div>
+              <div>ឈ្មោះ៖ <b>កុយ គ្រីត</b></div>
               <div>ថ្ងៃទី.......ខែ.....ឆ្នាំ២០.....</div>
             </div>
           </div>
@@ -6460,13 +6460,23 @@ function printEmployeeContract(empId) {
   const age = calculateExactAge(emp.date_of_birth);
   const rawName = emp.full_name || `${emp.first_name || ''} ${emp.last_name || ''}`.trim();
 
+  // ✅ កាត់យកតែឈ្មោះភាសាខ្មែរសុទ្ធ
+  const khmerMatches = String(rawName || '').match(/[\u1780-\u17FF\u200B]+/g);
+  const khmerOnlyName = khmerMatches && khmerMatches.length > 0 ? khmerMatches.join(' ') : rawName;
+
+  // ✅ ទាញយកមុខតំណែង (ការពារកុំឱ្យចេញ undefined)
+  const posObj = (DB.positions || []).find(p => String(p.id) === String(emp.position_id));
+  const resolvedPosName = posObj
+    ? (typeof locTitle === 'function' ? locTitle(posObj) : (posObj.title_km || posObj.title || posObj.title_en))
+    : (typeof getPosName === 'function' ? getPosName(emp.position_id) : '');
+  const finalPosName = (resolvedPosName && resolvedPosName !== '-')
+    ? resolvedPosName
+    : (emp.position_name || emp.position || '........................................');
+
   const data = {
     fullName: escapeHtml(rawName || '........................................'),
-    positionName: escapeHtml(
-      typeof getPosName === 'function'
-        ? getPosName(emp.position_id)
-        : (emp.position_name || '........................................')
-    ),
+    khmerName: escapeHtml(khmerOnlyName || '........................'),
+    positionName: escapeHtml(finalPosName),
     genderKh: emp.gender === 'M' ? 'ប្រុស' : 'ស្រី',
     ageKh: age !== null ? toKhmerNum(age) : '....',
     nationalId: escapeHtml(emp.national_id ? toKhmerNum(emp.national_id) : '........................'),
