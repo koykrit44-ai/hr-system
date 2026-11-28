@@ -5974,6 +5974,8 @@ function printEmployeeContract(empId) {
 
   function computeContractDates(hireDateStr, today = new Date()) {
     const todayLocal = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    // ✅ ដាក់ថ្ងៃទី ០១ ខែ ០១ ជារៀងរាល់ឆ្នាំ (ឆ្នាំប្តូរស្វ័យប្រវត្តិ)
+    const signDateObj = new Date(todayLocal.getFullYear(), 0, 1);
     let startDateObj;
 
     const hireDate = parseLocalDate(hireDateStr);
@@ -5992,7 +5994,7 @@ function printEmployeeContract(empId) {
     const endDateObj = addMonthsSafe(startDateObj, 12);
 
     return {
-      sign: formatKhmerDate(todayLocal),
+      sign: formatKhmerDate(signDateObj),
       start: formatKhmerDate(startDateObj),
       end: formatKhmerDate(endDateObj)
     };
